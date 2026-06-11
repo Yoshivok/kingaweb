@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lumina Optika - Prémium optikai szalon és szemészeti szakrendelő. Személyre szabott látásvizsgálat, dizájner szemüvegkeretek és modern látásszimuláció.">
+  <meta name="keywords" content="optika, látásvizsgálat, szemüveg, napszemüveg, kontaktlencse, szemészet, Lumina Optika">
+  <meta name="author" content="Lumina Optika">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Lumina Optika — Prémium Szemészeti Szolgáltatások">
+  <meta property="og:description" content="Tapasztalja meg a tökéletes látás élményét. Prémium vizsgálatok, exkluzív keretek és szakértő gondoskodás nyugodt környezetben.">
+  <meta property="og:image" content="assets/frame-1200.webp">
+
+  <title>Lumina Optika — Ahol a precizitás találkozik az eleganciával</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="index.css?v=28">
+</head>
+<body>
+
+  <!-- Fejléc (Header) -->
+  <header id="main-header" class="header">
+    <div class="header-container">
+      <a href="#" class="logo" id="logo-link">
+        <span class="logo-icon">
+          <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="4"/>
+            <circle cx="35" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3"/>
+            <circle cx="65" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M 50,45 A 25,25 0 0,0 50,55" fill="none" stroke="currentColor" stroke-width="3"/>
+          </svg>
+        </span>
+        <span class="logo-text">Lumina <span class="logo-accent">Optika</span></span>
+      </a>
+      
+      <nav class="nav-menu" id="navigation-menu" aria-label="Fő navigáció">
+        <a href="#services-section" class="nav-link">Vizsgálatok</a>
+        <a href="#simulator-section" class="nav-link">Látásszimulátor</a>
+        <a href="#products-section" class="nav-link">Termékek</a>
+        <a href="#contact-section" class="nav-link">Kapcsolat</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-primary btn-book" id="header-booking-btn" aria-haspopup="dialog">Időpontfoglalás</button>
+        <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-expanded="false" aria-controls="navigation-menu" aria-label="Menü megnyitása">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobil Navigáció (Overlay) -->
+  <div class="mobile-menu-overlay" id="mobile-menu-overlay" aria-hidden="true">
+    <nav class="mobile-nav-links">
+      <a href="#services-section" class="mobile-nav-link">Vizsgálatok</a>
+      <a href="#simulator-section" class="mobile-nav-link">Látásszimulátor</a>
+      <a href="#products-section" class="mobile-nav-link">Termékek</a>
+      <a href="#contact-section" class="mobile-nav-link">Kapcsolat</a>
+      <button class="btn btn-primary btn-book" id="mobile-booking-btn">Időpontfoglalás</button>
+    </nav>
+  </div>
+
+  <main>
+    <!-- Landing / Hero Szekció -->
+    <section id="hero-section" class="hero">
+      <canvas id="hero-canvas" class="hero-canvas"></canvas>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <span class="hero-tagline">Exkluzív Szemészeti Szalon</span>
+        <h1 class="hero-title">A tökéletes látás művészete</h1>
+        <p class="hero-description">Modern technológia, válogatott prémium keretek és személyre szabott gondoskodás egy megnyugtató, elegáns környezetben.</p>
+        <div class="hero-cta-group">
+          <button class="btn btn-primary btn-large" id="hero-cta-booking" aria-haspopup="dialog">Foglaljon Időpontot</button>
+          <a href="#simulator-section" class="btn btn-secondary btn-large">Látásszimulátor</a>
+        </div>
+      </div>
+      <div class="scroll-indicator" aria-hidden="true">
+        <span class="mouse-icon">
+          <span class="wheel"></span>
+        </span>
+        <span class="scroll-text">Görgessen a részletekért</span>
+      </div>
+    </section>
+
+    <!-- Kezelések és vizsgálatok Szekció -->
+    <section id="services-section" class="section services-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">Szakértelem és Precizitás</span>
+          <h2 class="section-title">Kezelések & Vizsgálatok</h2>
+          <p class="section-description">A legmodernebb diagnosztikai berendezésekkel és szakértő optometristákkal biztosítjuk látása egészségét. Minden vizsgálatunk fájdalommentes és személyre szabott.</p>
+        </div>
+
+        <div class="services-grid">
+          <!-- Szolgáltatás 1 -->
+          <div class="service-card">
+            <div class="service-header">
+              <span class="service-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </span>
+              <h3 class="service-title">Komplett Optometriai Látásvizsgálat</h3>
+            </div>
+            <p class="service-text">Részletes dioptria meghatározás távolra és közelre, a szem fénytörési hibáinak pontos elemzése modern computeres és szubjektív módszerekkel.</p>
+            <div class="service-meta">
+              <span class="service-duration">45 perc</span>
+              <span class="service-price">12 000 Ft</span>
+            </div>
+            <button class="btn btn-outline btn-full service-booking-trigger" data-service="1">Időpontfoglalás</button>
+          </div>
+
+          <!-- Szolgáltatás 2 -->
+          <div class="service-card">
+            <div class="service-header">
+              <span class="service-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="6" cy="6" r="3"/>
+                  <circle cx="18" cy="18" r="3"/>
+                  <line x1="20" y1="4" x2="4" y2="20"/>
+                </svg>
+              </span>
+              <h3 class="service-title">Kontaktlencse Illesztés & Tanácsadás</h3>
+            </div>
+            <p class="service-text">Szemfelszíni mérések, a legmegfelelőbb kontaktlencse típus kiválasztása, a lencsék felhelyezésének és tisztításának gyakorlati betanítása.</p>
+            <div class="service-meta">
+              <span class="service-duration">60 perc</span>
+              <span class="service-price">15 000 Ft</span>
+            </div>
+            <button class="btn btn-outline btn-full service-booking-trigger" data-service="2">Időpontfoglalás</button>
+          </div>
+
+          <!-- Szolgáltatás 3 -->
+          <div class="service-card">
+            <div class="service-header">
+              <span class="service-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </span>
+              <h3 class="service-title">Szemüvegkészítés & Lencse-választás</h3>
+            </div>
+            <p class="service-text">Személyre szabott szaktanácsadás a megfelelő keret és a látási igényeinek leginkább megfelelő (vékonyított, kékfényszűrős stb.) lencsék kiválasztásához.</p>
+            <div class="service-meta">
+              <span class="service-duration">30 perc</span>
+              <span class="service-price">Ingyenes *</span>
+            </div>
+            <button class="btn btn-outline btn-full service-booking-trigger" data-service="3">Időpontfoglalás</button>
+          </div>
+
+          <!-- Szolgáltatás 4 -->
+          <div class="service-card">
+            <div class="service-header">
+              <span class="service-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </span>
+              <h3 class="service-title">Gyermek Szemészeti Szűrés</h3>
+            </div>
+            <p class="service-text">Különleges türelemmel végzett, játékos, mégis rendkívül alapos szemvizsgálat gyermekeknek a kancsalság és a rejtett látáshibák korai kiszűrésére.</p>
+            <div class="service-meta">
+              <span class="service-duration">45 perc</span>
+              <span class="service-price">14 000 Ft</span>
+            </div>
+            <button class="btn btn-outline btn-full service-booking-trigger" data-service="4">Időpontfoglalás</button>
+          </div>
+        </div>
+        <p class="services-asterisk">* Ingyenes szemüvegkeret vagy lencse vásárlása esetén, egyébként 8 000 Ft.</p>
+      </div>
+    </section>
+
+    <!-- Látásszimulátor Szekció -->
+    <section id="simulator-section" class="section simulator-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">Interaktív Tapasztalat</span>
+          <h2 class="section-title">Látásszimulátor</h2>
+          <p class="section-description">Tekintsen körbe a szimulátorunkkal, és tapasztalja meg, hogyan befolyásolják a különböző látáshibák a mindennapokat, valamint azt, hogy miként javítja a látást a megfelelő korrekciós lencse.</p>
+        </div>
+
+        <div class="simulator-layout">
+          <!-- Szimulátor Vezérlők -->
+          <div class="simulator-controls">
+            <h3 class="controls-title">Válasszon látástípust:</h3>
+            <div class="condition-selector" role="radiogroup" aria-label="Látáshiba típusok">
+              <button class="condition-btn active" data-condition="normal" role="radio" aria-checked="true" id="cond-normal">Normál Látás</button>
+              <button class="condition-btn" data-condition="myopia" role="radio" aria-checked="false" id="cond-myopia">Rövidlátás (Myopia)</button>
+              <button class="condition-btn" data-condition="hyperopia" role="radio" aria-checked="false" id="cond-hyperopia">Távollátás (Hyperopia)</button>
+              <button class="condition-btn" data-condition="astigmatism" role="radio" aria-checked="false" id="cond-astigmatism" disabled>Asztigmia</button>
+              <button class="condition-btn" data-condition="farkasvaksag" role="radio" aria-checked="false" id="cond-farkasvaksag">Farkasvakság</button>
+            </div>
+
+            <!-- Magyarázó kártya -->
+            <div class="info-card" id="simulator-info-card">
+              <h4 class="info-card-title">Normál Látás</h4>
+              <p class="info-card-text">A fény sugarai pontosan a retinán fókuszálódnak, így a közeli és távoli tárgyak egyaránt tisztán, élesen és torzításmentesen látszódnak.</p>
+            </div>
+
+            <!-- Interakciós vezérlők -->
+            <div class="lens-toggles">
+              <label class="switch-container">
+                <input type="checkbox" id="lens-toggle" checked>
+                <span class="switch-slider"></span>
+                <span class="switch-label">Korrekciós lencse (lupé) aktiválása</span>
+              </label>
+              <p class="lens-instruction">Mozgassa az egeret a kép felett a korrekciós lencse használatoihoz!</p>
+            </div>
+          </div>
+
+          <!-- Szimulátor Képkeret (Vizualizáció) -->
+          <div class="simulator-viewport" id="simulator-viewport">
+            <svg class="svg-filters" aria-hidden="true" style="position: absolute; width: 0; height: 0;">
+              <defs>
+                <!-- Myopia Blur -->
+                <filter id="myopia-blur">
+                  <feGaussianBlur stdDeviation="7" />
+                </filter>
+                <!-- Hyperopia Blur -->
+                <filter id="hyperopia-blur">
+                  <feGaussianBlur stdDeviation="5" />
+                </filter>
+                <!-- Astigmatism directional distortion -->
+                <filter id="astigmatism-distort">
+                  <feGaussianBlur stdDeviation="3,0" />
+                </filter>
+                <!-- Farkasvakság (Nyctalopia) does not require a blur SVG filter -->
+              </defs>
+            </svg>
+
+            <div class="image-container" id="simulator-images">
+              <!-- Base image layer (sharp or blurred depending on mode) -->
+              <div class="sim-layer sim-layer-base" id="sim-layer-base"></div>
+              
+              <!-- Extra effect layer (e.g. sharp book on blurred bg, or blurred book on sharp bg) -->
+              <div class="sim-layer sim-layer-effect" id="sim-layer-effect"></div>
+              
+              <!-- Sharp corrected lens layer -->
+              <div class="sim-layer sim-layer-corrected" id="sim-layer-corrected"></div>
+              
+              <!-- Visual representation of lens glass overlay -->
+              <div class="lens-glass-indicator" id="lens-glass-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Termékek Szekció -->
+    <section id="products-section" class="section products-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-subtitle">Exkluzív Választék</span>
+          <h2 class="section-title">Kiemelt Termékeink</h2>
+          <p class="section-description">Fedezze fel a legújabb dizájner kereteket, precíziós lencséket és stílusos kiegészítőket, amelyek ötvözik a divatot a tökéletes optikai minőséggel.</p>
+        </div>
+
+        <!-- Szűrők -->
+        <div class="filter-container" aria-label="Termék kategória szűrő">
+          <button class="filter-btn active" data-filter="all" id="filter-all">Összes</button>
+          <button class="filter-btn" data-filter="frames" id="filter-frames">Szemüvegkeretek</button>
+          <button class="filter-btn" data-filter="sunglasses" id="filter-sunglasses">Napszemüvegek</button>
+          <button class="filter-btn" data-filter="lenses" id="filter-lenses">Dioptriás Lencsék</button>
+          <button class="filter-btn" data-filter="accessories" id="filter-accessories">Kiegészítők</button>
+        </div>
+
+        <!-- Termék Grid -->
+        <div class="product-grid" id="product-grid">
+          <!-- Kártya 1: Szemüvegkeret -->
+          <div class="product-card" data-category="frames">
+            <div class="product-image-wrapper">
+              <img src="assets/frame-600.webp" srcset="assets/frame-600.webp 600w, assets/frame-1200.webp 1200w" sizes="(max-width: 768px) 90vw, 300px" alt="Aura Titanium szemüvegkeret" loading="lazy" decoding="async" width="600" height="600" class="product-image">
+              <span class="product-badge">Prémium</span>
+            </div>
+            <div class="product-info">
+              <span class="product-brand">AURA DESIGN</span>
+              <h3 class="product-title">Titanium Light</h3>
+              <p class="product-desc">Ultrakönnyű, japán titánötvözetből készült minimalist keret, egész napos kényelem.</p>
+              <div class="product-footer">
+                <span class="product-price">68 000 Ft</span>
+                <button class="btn btn-outline btn-sm product-action-btn" aria-label="Részletek - Titanium Light">Érdekel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kártya 2: Napszemüveg -->
+          <div class="product-card" data-category="sunglasses">
+            <div class="product-image-wrapper">
+              <img src="assets/sunglasses-600.webp" srcset="assets/sunglasses-600.webp 600w, assets/sunglasses-1200.webp 1200w" sizes="(max-width: 768px) 90vw, 300px" alt="Solari Gold napszemüveg" loading="lazy" decoding="async" width="600" height="600" class="product-image">
+              <span class="product-badge">Új kollekció</span>
+            </div>
+            <div class="product-info">
+              <span class="product-brand">SOLARI</span>
+              <h3 class="product-title">Classic Gold Polarized</h3>
+              <p class="product-desc">Kézzel készített acetát keret aranyozott részletekkel és polarizált UV-védő lencsékkel.</p>
+              <div class="product-footer">
+                <span class="product-price">85 000 Ft</span>
+                <button class="btn btn-outline btn-sm product-action-btn" aria-label="Részletek - Classic Gold Polarized">Érdekel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kártya 3: Dioptriás lencse -->
+          <div class="product-card" data-category="lenses">
+            <div class="product-image-wrapper">
+              <img src="assets/lenses-600.webp" srcset="assets/lenses-600.webp 600w, assets/lenses-1200.webp 1200w" sizes="(max-width: 768px) 90vw, 300px" alt="Lumina HD dioptriás lencse" loading="lazy" decoding="async" width="600" height="600" class="product-image">
+            </div>
+            <div class="product-info">
+              <span class="product-brand">LUMINA TECH</span>
+              <h3 class="product-title">HD Focus Pro</h3>
+              <p class="product-desc">Egyedi csiszolású progresszív lencse kékfény-szűrővel és tükröződésmentes bevonattal.</p>
+              <div class="product-footer">
+                <span class="product-price">42 000 Ft / db</span>
+                <button class="btn btn-outline btn-sm product-action-btn" aria-label="Részletek - HD Focus Pro">Érdekel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kártya 4: Kiegészítő -->
+          <div class="product-card" data-category="accessories">
+            <div class="product-image-wrapper">
+              <img src="assets/case-600.webp" srcset="assets/case-600.webp 600w, assets/case-1200.webp 1200w" sizes="(max-width: 768px) 90vw, 300px" alt="Bőr szemüvegtok" loading="lazy" decoding="async" width="600" height="600" class="product-image">
+            </div>
+            <div class="product-info">
+              <span class="product-brand">LUMINA LEATHER</span>
+              <h3 class="product-title">Classic Case & Cleaner Kit</h3>
+              <p class="product-desc">Valódi bőrből készült védőtok mikroszálas tisztítókendővel és prémium lencsespray-vel.</p>
+              <div class="product-footer">
+                <span class="product-price">18 500 Ft</span>
+                <button class="btn btn-outline btn-sm product-action-btn" aria-label="Részletek - Classic Case Kit">Érdekel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Lábléc / Elérhetőségek (Footer) -->
+  <footer id="contact-section" class="footer">
+    <div class="container footer-grid">
+      
+      <!-- Céginfó -->
+      <div class="footer-info">
+        <a href="#" class="logo footer-logo">
+          <span class="logo-text">Lumina <span class="logo-accent">Optika</span></span>
+        </a>
+        <p class="footer-about">Prémium optikai szaküzlet és látásvizsgálati központ. Gondoskodó figyelem és a legmagasabb minőség az Ön látásáért.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Facebook" class="social-link">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="Instagram" class="social-link">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Elérhetőségek -->
+      <div class="footer-contact">
+        <h3 class="footer-title">Kapcsolat</h3>
+        <ul class="contact-list">
+          <li>
+            <span class="contact-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <span>1052 Budapest, Bécsi utca 4.</span>
+          </li>
+          <li>
+            <span class="contact-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </span>
+            <a href="tel:+3612345678" class="contact-link">+36 1 234 5678</a>
+          </li>
+          <li>
+            <span class="contact-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </span>
+            <a href="mailto:info@luminaoptika.hu" class="contact-link">info@luminaoptika.hu</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Nyitvatartás -->
+      <div class="footer-hours">
+        <h3 class="footer-title">Nyitvatartás</h3>
+        <table class="hours-table">
+          <tr>
+            <td>Hétfő - Péntek:</td>
+            <td>09:00 - 19:00</td>
+          </tr>
+          <tr>
+            <td>Szombat:</td>
+            <td>10:00 - 15:00</td>
+          </tr>
+          <tr>
+            <td>Vasárnap:</td>
+            <td>Zárva</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Térkép helye -->
+      <div class="footer-map-container">
+        <h3 class="footer-title">Térkép</h3>
+        <div class="footer-map" id="footer-map" aria-label="Térkép Budapest Bécsi utca 4">
+          <!-- Stylized Mock Interactive Map -->
+          <div class="mock-map">
+            <div class="map-bg"></div>
+            <div class="map-routes"></div>
+            <div class="map-pin" title="Lumina Optika">
+              <div class="pin-ring"></div>
+              <div class="pin-dot"></div>
+            </div>
+            <span class="map-label">Bécsi utca 4.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Lumina Optika. Minden jog fenntartva. | <a href="#" class="footer-bottom-link">Adatvédelmi tájékoztató</a></p>
+    </div>
+  </footer>
+
+  <!-- Időpontfoglaló Modális Ablak (Native Dialog) -->
+  <!-- MANDATORY: closedby="any" enables native light dismiss. ID matches aria-labelledby for a11y. -->
+  <dialog id="booking-dialog" class="booking-dialog" closedby="any" aria-labelledby="dialog-title">
+    <div class="dialog-wrapper">
+      <button class="dialog-close-btn" id="dialog-close-btn" aria-label="Bezárás">&times;</button>
+      
+      <h2 id="dialog-title" class="dialog-main-title">Online Időpontfoglalás</h2>
+      
+      <!-- Progress Bar -->
+      <div class="booking-progress-container" aria-label="Foglalási folyamat lépései">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar-fill" style="width: 25%;"></div>
+        </div>
+        <div class="progress-steps">
+          <span class="progress-step active" data-step="1" id="step-ind-1">1. Szolgáltatás</span>
+          <span class="progress-step" data-step="2" id="step-ind-2">2. Dátum & Idő</span>
+          <span class="progress-step" data-step="3" id="step-ind-3">3. Adatai</span>
+          <span class="progress-step" data-step="4" id="step-ind-4">4. Kész</span>
+        </div>
+      </div>
+
+      <form id="booking-form" class="booking-form" novalidate>
+        <!-- LÉPÉS 1: Szolgáltatás választás -->
+        <div class="booking-step-panel active" data-step="1" id="step-panel-1">
+          <h3 class="step-panel-title">Melyik vizsgálatra érkezne?</h3>
+          <div class="booking-options-grid" role="radiogroup" aria-label="Vizsgálat kiválasztása">
+            
+            <label class="booking-option-card">
+              <input type="radio" name="booking-service" value="general-exam" checked>
+              <div class="option-card-content">
+                <span class="option-title">Komplett Látásvizsgálat</span>
+                <span class="option-desc">Computeress és szubjektív vizsgálat felnőtteknek.</span>
+                <span class="option-meta">45 perc | 12 000 Ft</span>
+              </div>
+            </label>
+
+            <label class="booking-option-card">
+              <input type="radio" name="booking-service" value="contact-lens">
+              <div class="option-card-content">
+                <span class="option-title">Kontaktlencse Illesztés</span>
+                <span class="option-desc">Mérések, illesztés és betanítás mintalencsével.</span>
+                <span class="option-meta">60 perc | 15 000 Ft</span>
+              </div>
+            </label>
+
+            <label class="booking-option-card">
+              <input type="radio" name="booking-service" value="glasses-fitting">
+              <div class="option-card-content">
+                <span class="option-title">Szemüvegkészítés Tanácsadás</span>
+                <span class="option-desc">Keret és lencseválasztás optometrista segítségével.</span>
+                <span class="option-meta">30 perc | Ingyenes *</span>
+              </div>
+            </label>
+
+            <label class="booking-option-card">
+              <input type="radio" name="booking-service" value="pediatric-exam">
+              <div class="option-card-content">
+                <span class="option-title">Gyermek Szemészeti Szűrés</span>
+                <span class="option-desc">Játékos, kíméletes vizsgálat gyermekek részére.</span>
+                <span class="option-meta">45 perc | 14 000 Ft</span>
+              </div>
+            </label>
+
+          </div>
+          <div class="step-actions">
+            <button type="button" class="btn btn-primary btn-next" id="btn-to-step2">Következő lépés</button>
+          </div>
+        </div>
+
+        <!-- LÉPÉS 2: Dátum és Időpont választás -->
+        <div class="booking-step-panel" data-step="2" id="step-panel-2">
+          <h3 class="step-panel-title">Válasszon egy Önnek megfelelő időpontot</h3>
+          <div class="datetime-grid">
+            
+            <!-- Naptár modul -->
+            <div class="calendar-module">
+              <div class="calendar-header">
+                <button type="button" id="prev-month" aria-label="Előző hónap">&lsaquo;</button>
+                <span id="calendar-month-year">2026. Május</span>
+                <button type="button" id="next-month" aria-label="Következő hónap">&rsaquo;</button>
+              </div>
+              <div class="calendar-weekdays">
+                <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+              </div>
+              <div class="calendar-days" id="calendar-days-grid" role="grid" aria-label="Foglalható napok">
+                <!-- JavaScript tölti fel -->
+              </div>
+            </div>
+
+            <!-- Idősáv modul -->
+            <div class="time-module">
+              <h4 class="time-module-title" id="selected-day-label">Válasszon egy napot</h4>
+              <div class="time-slots-grid" id="time-slots-container" role="radiogroup" aria-label="Szabad órák">
+                <!-- JavaScript tölti fel, ha ki van választva nap -->
+                <p class="time-placeholder">Kérjük, először kattintson egy napra a naptárban!</p>
+              </div>
+            </div>
+
+          </div>
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step1">Vissza</button>
+            <button type="button" class="btn btn-primary btn-next" id="btn-to-step3" disabled>Következő lépés</button>
+          </div>
+        </div>
+
+        <!-- LÉPÉS 3: Adatok megadása -->
+        <div class="booking-step-panel" data-step="3" id="step-panel-3">
+          <h3 class="step-panel-title">Kérjük, adja meg adatait a foglaláshoz</h3>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="booking-name" class="form-label">Teljes Név <span class="required">*</span></label>
+              <input type="text" id="booking-name" class="form-control" autocomplete="name" required placeholder="Gipsz Jakab">
+              <span class="form-error" id="name-error" aria-live="polite">Név megadása kötelező</span>
+            </div>
+
+            <div class="form-group">
+              <label for="booking-email" class="form-label">E-mail Cím <span class="required">*</span></label>
+              <input type="email" id="booking-email" class="form-control" autocomplete="email" required placeholder="pelda@email.hu">
+              <span class="form-error" id="email-error" aria-live="polite">Érvényes e-mail cím szükséges</span>
+            </div>
+
+            <div class="form-group">
+              <label for="booking-phone" class="form-label">Telefonszám <span class="required">*</span></label>
+              <input type="tel" id="booking-phone" class="form-control" autocomplete="tel" required placeholder="+36 30 123 4567">
+              <span class="form-error" id="phone-error" aria-live="polite">Érvényes telefonszám szükséges (+36...)</span>
+            </div>
+
+            <div class="form-group">
+              <label for="booking-message" class="form-label">Megjegyzés / Különleges kérés</label>
+              <textarea id="booking-message" class="form-control text-area" placeholder="Pl. első kontaktlencse viselő, meglévő szemüveg adatai, panaszok..."></textarea>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step2">Vissza</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-booking">Foglalás Véglegesítése</button>
+          </div>
+        </div>
+
+        <!-- LÉPÉS 4: Sikeres foglalás -->
+        <div class="booking-step-panel success-panel" data-step="4" id="step-panel-4">
+          <div class="success-icon-wrapper">
+            <svg class="success-checkmark" viewBox="0 0 52 52">
+              <circle class="success-checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+              <path class="success-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+          </div>
+          <h3 class="success-title">Sikeres Foglalás!</h3>
+          <p class="success-text">Köszönjük bizalmát! Időpontját sikeresen rögzítettük a rendszerünkben. A részletekről megerősítő e-mailt küldtünk az Ön által megadott címre.</p>
+          
+          <div class="summary-card" id="booking-summary-card">
+            <!-- JavaScript tölti ki az elmentett adatokkal -->
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn btn-primary" id="btn-close-booking">Bezárás</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Globális Toast Értesítések (Pl. LocalStorage-ból betöltött korábbi foglalás) -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <script src="index.js?v=26"></script>
+</body>
+</html>

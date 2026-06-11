@@ -1,0 +1,14 @@
+{
+  "name": "lumina-optika",
+  "version": "1.0.0",
+  "description": "Lumina Optika prémium weboldal",
+  "scripts": {
+    "dev": "npx http-server -p 3000 -c-1"
+  },
+  "keywords": [
+    "optika",
+    "premium"
+  ],
+  "author": "Lumina Optika",
+  "license": "ISC"
+}
