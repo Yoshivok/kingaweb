@@ -48,6 +48,17 @@ function initHeroCanvas() {
   let lastBlur = -1;
   let entranceDone = false;
 
+  const bookingDialog = document.getElementById('booking-dialog');
+  if (bookingDialog) {
+    bookingDialog.addEventListener('close', () => {
+      // Amikor bezárul a dialógus, és látható a canvas, indítsuk újra a loopot
+      if (isCanvasVisible) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    });
+  }
+
   // Csökkentett mozgás igény tiszteletben tartása (akadálymentesség + alacsony teljesítményű eszközök)
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -185,6 +196,11 @@ function initHeroCanvas() {
 
   function animate(currentTime) {
     if (!isCanvasVisible) return; // Ha nem látszik, teljesen megáll a loop
+
+    // Ha a foglalási ablak nyitva van, ne pazaroljunk CPU-t a háttérben futó animációra
+    if (bookingDialog && bookingDialog.open) {
+      return;
+    }
 
     // Görgetési arány kiszámítása az elhomályosodáshoz
     const scrollY = window.scrollY || window.pageYOffset || 0;
@@ -837,12 +853,23 @@ function initBookingSystem() {
 
   // Lépésváltó fő funkció
   function goToStep(stepNum) {
+    const prevStep = bookingState.step;
     bookingState.step = stepNum;
 
-    // Panelek láthatósága
+    // Haladási irány meghatározása (forward/backward) a CSS animációkhoz
+    const directionClass = stepNum > prevStep ? 'slide-forward' : 'slide-backward';
+
+    // Panelek láthatósága és animációs osztályai
     steps.forEach(panel => {
       const panelStep = parseInt(panel.getAttribute('data-step'));
-      panel.classList.toggle('active', panelStep === stepNum);
+      if (panelStep === stepNum) {
+        panel.classList.add('active');
+        panel.classList.remove('slide-forward', 'slide-backward');
+        void panel.offsetWidth; // Force reflow a CSS animáció újraindításához
+        panel.classList.add(directionClass);
+      } else {
+        panel.classList.remove('active', 'slide-forward', 'slide-backward');
+      }
     });
 
     // Haladási indikátorok
@@ -904,6 +931,11 @@ function initBookingSystem() {
 
     // Hónap és év kiírása
     monthYearLabel.textContent = `${year}. ${hungarianMonths[month]}`;
+
+    // Átmeneti effekt a naptárhoz (halványítás)
+    daysGrid.style.opacity = '0';
+    daysGrid.style.transform = 'scale(0.98)';
+    daysGrid.style.transition = 'none';
 
     // Naptár rács ürítése
     daysGrid.innerHTML = '';
@@ -976,6 +1008,13 @@ function initBookingSystem() {
       const btn = createDayButton(day, true, true);
       daysGrid.appendChild(btn);
     }
+
+    // Finom animációs tranzíció befejezése
+    requestAnimationFrame(() => {
+      daysGrid.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
+      daysGrid.style.opacity = '1';
+      daysGrid.style.transform = 'scale(1)';
+    });
   }
 
   function createDayButton(num, isOtherMonth, isDisabled) {
@@ -1016,11 +1055,22 @@ function initBookingSystem() {
   ];
 
   function renderTimeSlots() {
+    // Átmeneti effekt az idősávokhoz
+    slotsContainer.style.opacity = '0';
+    slotsContainer.style.transform = 'translateY(8px)';
+    slotsContainer.style.transition = 'none';
+
     slotsContainer.innerHTML = '';
 
     if (!bookingState.date) {
       selectedDayLabel.textContent = 'Válasszon egy napot';
       slotsContainer.innerHTML = '<p class="time-placeholder">Kérjük, először kattintson egy napra a naptárban!</p>';
+      
+      requestAnimationFrame(() => {
+        slotsContainer.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
+        slotsContainer.style.opacity = '1';
+        slotsContainer.style.transform = 'translateY(0)';
+      });
       return;
     }
 
@@ -1061,6 +1111,12 @@ function initBookingSystem() {
       label.appendChild(input);
       label.appendChild(inner);
       slotsContainer.appendChild(label);
+    });
+
+    requestAnimationFrame(() => {
+      slotsContainer.style.transition = 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      slotsContainer.style.opacity = '1';
+      slotsContainer.style.transform = 'translateY(0)';
     });
   }
 

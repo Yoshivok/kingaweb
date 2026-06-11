@@ -1363,6 +1363,7 @@ a {
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scroll flash during slide transitions */
 }
 
 .dialog-close-btn {
@@ -1434,7 +1435,36 @@ a {
 
 .booking-step-panel.active {
   display: block;
-  animation: fade-in 0.3s ease-out;
+}
+
+.booking-step-panel.active.slide-forward {
+  animation: slide-in-forward 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.booking-step-panel.active.slide-backward {
+  animation: slide-in-backward 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-in-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slide-in-backward {
+  from {
+    opacity: 0;
+    transform: translate3d(-24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .step-panel-title {
@@ -1453,6 +1483,7 @@ a {
 
 .booking-option-card {
   cursor: pointer;
+  display: block;
 }
 
 .booking-option-card input {
@@ -1467,13 +1498,24 @@ a {
   height: 100%;
   display: flex;
   flex-direction: column;
-  transition: all var(--transition-normal);
+  transition: border-color var(--transition-normal), background-color var(--transition-normal), transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.booking-option-card:hover .option-card-content {
+  border-color: var(--color-accent);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 25px rgba(184, 151, 107, 0.08);
 }
 
 .booking-option-card input:checked+.option-card-content {
   border-color: var(--color-accent);
   background-color: var(--color-accent-light);
-  box-shadow: 0 4px 15px rgba(184, 151, 107, 0.1);
+  box-shadow: 0 10px 25px rgba(184, 151, 107, 0.16);
+  transform: translateY(-3px) scale(1.01);
+}
+
+.booking-option-card:active .option-card-content {
+  transform: translateY(-1px) scale(0.99);
 }
 
 .option-title {
@@ -1583,18 +1625,25 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-normal);
+  transition: background-color var(--transition-normal), color var(--transition-normal), transform 0.15s ease, box-shadow var(--transition-normal);
 }
 
 .calendar-day-btn:hover:not(:disabled) {
   background-color: var(--color-accent-light);
   color: var(--color-accent);
+  transform: scale(1.08);
+}
+
+.calendar-day-btn:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 .calendar-day-btn.selected {
   background-color: var(--color-accent) !important;
   color: #ffffff !important;
   font-weight: 700;
+  box-shadow: 0 4px 10px rgba(184, 151, 107, 0.35);
+  transform: scale(1.05);
 }
 
 .calendar-day-btn:disabled {
@@ -1657,14 +1706,23 @@ a {
   text-align: center;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: all var(--transition-normal);
+  transition: border-color var(--transition-normal), background-color var(--transition-normal), color var(--transition-normal), transform 0.15s ease, box-shadow var(--transition-normal);
   background-color: var(--color-bg-primary);
+}
+
+.time-slot-label:hover .time-slot-inner {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(184, 151, 107, 0.08);
 }
 
 .time-slot-label input:checked+.time-slot-inner {
   background-color: var(--color-text-primary);
   color: #ffffff;
   border-color: var(--color-text-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(28, 35, 33, 0.15);
 }
 
 .time-slot-label input:disabled+.time-slot-inner {
@@ -1673,6 +1731,26 @@ a {
   border-color: var(--color-bg-primary);
   cursor: not-allowed;
   text-decoration: line-through;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.time-slot-label input:disabled + .time-slot-inner:hover,
+.time-slot-label:hover input:disabled + .time-slot-inner {
+  border-color: var(--color-bg-primary) !important;
+  color: rgba(36, 28, 24, 0.15) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.time-slot-label input:disabled:active + .time-slot-inner,
+.time-slot-label:active input:disabled + .time-slot-inner {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.time-slot-label:active .time-slot-inner {
+  transform: translateY(0);
 }
 
 /* Személyes adatok űrlapja */
