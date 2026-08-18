@@ -1,0 +1,14 @@
+{
+  "port": 8000,
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "sajat.cim@gmail.com",
+    "pass": "ide-jon-a-16-karakteres-app-jelszo"
+  },
+  "from": "sajat.cim@gmail.com",
+  "fromName": "Salvia Gyógymasszázs",
+  "to": "ide-jon-a-masszor-cime@example.com",
+  "phoneRaw": "+36301234567",
+  "timeZone": "Europe/Budapest"
+}

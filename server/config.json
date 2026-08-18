@@ -1,0 +1,21 @@
+{
+  "port": 8000,
+
+  "//": "TESZT beállítás. A jelszó helye üresen áll — töltse ki a Gmail app-jelszóval.",
+
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "",
+    "pass": ""
+  },
+
+  "from": "",
+  "fromName": "Salvia Gyógymasszázs",
+
+  "//to": "Ide érkezik a masszőr értesítése. A weboldalon sehol nem jelenik meg.",
+  "to": "kgmomed@gmail.com",
+
+  "phoneRaw": "+36205017453",
+  "timeZone": "Europe/Budapest"
+}

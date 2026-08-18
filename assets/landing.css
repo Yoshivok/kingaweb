@@ -1,0 +1,908 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MANULA-OPTIC MED. — összekötő (választó) oldal stíluslapja
+   A két testvéroldal közös rendszerére épül: meleg espresso alap, lenvászon
+   krém, égetett terrakotta és homokarany, Playfair Display + Outfit.
+   A bal fél zsályazöld fénybe (Salvia), a jobb terrakottába (Lumina) hajlik.
+   ─────────────────────────────────────────────────────────────────────────
+   1.  Design tokenek
+   2.  Alapok és a háromsávos keret (stage / track / panel)
+   3.  A választó háttérrétegei
+   4.  Díszek: áramvonalak, lencsegyűrűk, sugárkoszorú
+   5.  Fénypászma a két fél között
+   6.  A két választható fél
+   7.  Középső logómedál
+   8.  Súgó a lap alján
+   9.  Visszatérő fül
+   10. Váltás közbeni effektek
+   11. Belépő animáció
+   12. Reszponzív finomítás
+   13. Csökkentett mozgás
+   14. Önszabályozás gyengébb gépre
+   ─────────────────────────────────────────────────────────────────────────
+   TELJESÍTMÉNY: a mozgó rétegek szándékosan csak `transform`-ot és
+   `opacity`-t animálnak — ezeket a compositor intézi, újrarajzolás nélkül.
+   Kerülendő itt: `filter: blur()` animált elemen, `scale()` színátmenetes
+   felületen, és SVG-n BELÜLI transform-animáció (az egész SVG-t újrarajzolja).
+   Mért hatás: 8,6 → 60 kép/mp. Lásd a 3. és 4. blokk megjegyzéseit.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. DESIGN TOKENEK ─────────────────────────────────────────────────── */
+:root {
+  /* Alapszínek — azonosak a két weboldaléval */
+  --ink:        #1c1511;   /* meleg espresso — mindkét oldal sötét szekciói */
+  --ink-deep:   #120c09;
+  --ink-soft:   #29201a;
+  --cream:      #fdf6f0;   /* a logó saját háttérszíne */
+  --linen:      #faf8f5;   /* a két oldal alap háttere */
+  --on-dark:    #f2ebe4;
+  --on-dim:     #bfae9f;
+
+  /* Kiemelések */
+  --terra:      #d67b4b;   /* égetett terrakotta — Lumina Optika */
+  --terra-deep: #be6538;
+  --gold:       #c9a96e;   /* homokarany — közös kötőelem */
+  --gold-soft:  #e2cda2;
+  --sage:       #d67b4b;   /* zsályazöld helyett terrakotta — Salvia Gyógymasszázs */
+  --sage-light: #d67b4b;
+
+  /* Tipográfia */
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body:    "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Mozgás */
+  --ease-slide: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-slide:  1.05s;
+
+  --medallion: clamp(190px, 21vw, 310px);
+}
+
+/* ── 2. ALAPOK ÉS A HÁROMSÁVOS KERET ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;              /* a keret sosem görget — az iframe-ek igen */
+  background: var(--ink);
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--on-dark);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+img { max-width: 100%; display: block; }
+
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 200;
+  padding: 0.6rem 1rem; border-radius: 8px;
+  background: var(--cream); color: var(--ink);
+  font-size: 0.9rem; text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 0.25s var(--ease-out);
+}
+.skip-link:focus { transform: translateY(0); }
+
+:focus-visible {
+  outline: 2px solid var(--gold-soft);
+  outline-offset: 4px;
+}
+
+/* A vízszintes sáv: [masszázs] [választó] [optika] */
+.stage {
+  position: fixed; inset: 0;
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  width: 300%; height: 100%;
+  transform: translate3d(-33.3333%, 0, 0);   /* alaphelyzet: a választó */
+  transition: transform var(--dur-slide) var(--ease-slide);
+}
+
+body[data-view="masszazs"] .track { transform: translate3d(0, 0, 0); }
+body[data-view="chooser"]  .track { transform: translate3d(-33.3333%, 0, 0); }
+body[data-view="optika"]   .track { transform: translate3d(-66.6667%, 0, 0); }
+
+/* Mélységérzet: a választó gyorsabban úszik ki, mint a sáv.
+   A kiúszás korábban `filter: blur(7px)`-szel is járt — ez a lap fejlécében
+   is tiltott minta. Egy egész képernyős blur be- és kikapcsolása külön
+   rajzfelület (render surface) létrehozását és eldobását kényszeríti ki a
+   böngészőre, épp abban a pillanatban, amikor a weboldal hero-ja belép a
+   képbe: gyengébb/integrált GPU-n ez egy-két fekete képkockaként villan be.
+   A mélységérzetet a transform + opacity önmagában is megadja, azt pedig a
+   kompozitor újrarajzolás nélkül intézi. */
+.panel--chooser .chooser {
+  transition: transform var(--dur-slide) var(--ease-slide),
+              opacity var(--dur-slide) var(--ease-slide);
+}
+body[data-view="masszazs"] .chooser { transform: translateX(14%) scale(1.09); opacity: 0; }
+body[data-view="optika"]   .chooser { transform: translateX(-14%) scale(1.09); opacity: 0; }
+
+/* Mélylinkre azonnal ugrunk, animáció nélkül */
+body.no-anim .track,
+body.no-anim .chooser { transition: none !important; }
+
+.panel {
+  flex: 0 0 33.3333%;
+  width: 33.3333%; height: 100%;
+  position: relative;
+}
+
+.panel[data-panel="masszazs"],
+.panel[data-panel="optika"] {
+  background: var(--linen);
+}
+
+.panel__frame {
+  width: 100%; height: 100%;
+  border: 0; display: block;
+  position: relative;
+  z-index: 1;
+  background: transparent;   /* amíg üres, átlátszik a panel töltésjelzője */
+}
+
+/* Csúszás közben az iframe ne fogjon el eseményt */
+body.is-moving .panel__frame { pointer-events: none; }
+
+/* TELJESÍTMÉNY — a képen kívüli panel „leparkol”.
+   Enélkül a rejtett választó a weboldalak böngészése közben végig futtatta az
+   animációit: a masszázs panelen mérve MAGASABB volt a terhelés, mint magán a
+   választón. A parkolás csak a csúszás végén kapcsol be, hogy az átmenetet ne
+   vágja el, és a következő váltás indulásakor azonnal lekerül. A `visibility`
+   nem üríti ki az iframe-et — a weboldal betöltve marad, csak nem rajzolódik.
+
+   FONTOS: az alábbi szabályok a KERETRE vonatkoznak; az iframe-en BELÜLI
+   dokumentumba nem érnek el. A weboldalak leállítását a landing.js
+   `tellFrame()` üzenete intézi (`html.is-frame-idle` a másik oldalon). */
+.panel.is-parked { visibility: hidden; }
+.panel.is-parked *,
+body:not([data-view="chooser"]) .chooser * { animation-play-state: paused; }
+
+/* Töltésjelző: a weboldal saját háttérszíne + finom gyűrű, amíg megérkezik */
+.panel.is-pending { background: var(--linen); }
+.panel.is-pending::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 44px; height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  border: 2px solid rgba(214, 123, 75, 0.22);
+  border-top-color: var(--terra);
+  animation: spin 0.9s linear infinite;
+  z-index: 0;
+}
+
+/* ── 3. A VÁLASZTÓ HÁTTÉRRÉTEGEI ───────────────────────────────────────── */
+.chooser {
+  position: relative;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") repeat,
+    radial-gradient(46% 46% at 11% 42%,  rgba(214, 123, 75, 0.37), rgba(214, 123, 75, 0) 70%),
+    radial-gradient(46% 46% at 89% 38%,  rgba(214, 123, 75, 0.33), rgba(214, 123, 75, 0) 70%),
+    radial-gradient(46% 34% at 50% 104%, rgba(201, 169, 110, 0.23), rgba(201, 169, 110, 0) 72%),
+    radial-gradient(120% 90% at 50% 8%,  rgba(41, 32, 26, 0.9), rgba(41, 32, 26, 0) 60%),
+    linear-gradient(160deg, var(--ink-deep) 0%, var(--ink) 45%, #221812 100%);
+  isolation: isolate;
+
+  /* Az egér helyzete −0.5 … 0.5 tartományban; a rétegek ebből mozognak. */
+  --px: 0;
+  --py: 0;
+}
+
+/* Rétegenként más mélység — a medál mozog a legtöbbet, a díszek kevesebbet */
+.orn--left  { transform: translate3d(calc(var(--px) * -13px), calc(var(--py) * -10px), 0); }
+.orn--right { transform: translate3d(calc(var(--px) *  13px), calc(var(--py) *  10px), 0); }
+
+.particles {
+  position: absolute; inset: 0;
+  /* A <canvas> helyettesített elem, saját belső mérettel (alapból 300×150).
+     Az `inset: 0` önmagában NEM feszíti ki — explicit méret kell hozzá,
+     különben a réteg a bal felső sarokban marad. */
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── 4. DÍSZEK ─────────────────────────────────────────────────────────── */
+.orn {
+  position: absolute; top: 0; bottom: 0;
+  width: 50%;
+  z-index: 1;
+  pointer-events: none;
+}
+.orn--left  { left: 0; }
+.orn--right { right: 0; }
+
+/* Bal: áramló vonalak — a fascia- és kezelésvonalak nyelvén */
+.orn__flow path {
+  fill: none;
+  stroke: var(--sage-light);
+  stroke-width: 1.1;
+  opacity: 0.3;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  transition: stroke-dashoffset 2.6s var(--ease-out), opacity 0.9s ease;
+}
+.orn__flow path:nth-child(2) { stroke: var(--gold);  transition-delay: 0.18s; }
+.orn__flow path:nth-child(3) { stroke: var(--sage-light); transition-delay: 0.34s; }
+.orn__flow path:nth-child(4) { stroke: var(--gold-soft); transition-delay: 0.5s; }
+
+body:not(.is-booting) .orn__flow path { stroke-dashoffset: 0; }
+
+/* Nyomáspontok a vonalakon */
+.orn__points circle {
+  fill: var(--gold-soft);
+  opacity: 0.5;
+  animation: pulse-point 4.5s ease-in-out infinite;
+}
+.orn__points circle:nth-child(2) { animation-delay: 0.9s; }
+.orn__points circle:nth-child(3) { animation-delay: 1.8s; }
+.orn__points circle:nth-child(4) { animation-delay: 2.7s; }
+.orn__points circle:nth-child(5) { animation-delay: 3.6s; }
+@keyframes pulse-point {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.85; }
+}
+
+/* Jobb: lencsegyűrűk */
+.orn__rings circle {
+  fill: none;
+  stroke: var(--terra);
+  stroke-width: 1;
+  opacity: 0.24;
+}
+.orn__rings circle:nth-child(2) { stroke: var(--gold); }
+.orn__rings circle:nth-child(3) { opacity: 0.18; }
+.orn__rings circle:nth-child(4) { stroke: var(--gold); opacity: 0.12; }
+
+/* Lencse-ellipszisek: a logó szemformájának visszhangja.
+   Saját SVG-elem, hogy a forgatás a compositoré legyen, ne rajzolás. */
+.orn--lens {
+  right: 4%;
+  top: 50%;
+  left: auto;
+  width: min(40vw, 460px);
+  height: min(40vw, 460px);
+  margin-top: calc(min(40vw, 460px) / -2);
+  will-change: transform;
+}
+/* Alapesetben a vászon rajzolja ezeket (lásd landing.js): külön compositor-
+   rétegként ez volt a legdrágább elem — két áttetsző felületet kellett
+   képkockánként a már amúgy is újrarajzolt vászonra keverni. A vásznon
+   ellenben két ellipszis megrajzolása gyakorlatilag ingyen van.
+   Ha a vászon nem fut (csökkentett mozgás vagy gyenge gép), ez az SVG lép
+   a helyére — a motívum tehát mindig látszik, csak nem mindig forog. */
+.orn--lens-a { animation: spin 52s linear infinite; }
+.orn--lens-b { animation: spin 78s linear infinite reverse; }
+body.canvas-lens .orn--lens,
+body.canvas-lens .seam__scan { display: none; }
+body.canvas-lens.is-lowfx .orn--lens { display: block; animation: none; }
+.orn--lens ellipse {
+  fill: none;
+  stroke: var(--gold-soft);
+  stroke-width: 1.6;
+  opacity: 0.16;
+}
+
+/* Sugárkoszorú — a logó szem fölötti sugarainak folytatása */
+.orn--rays {
+  right: -18%;
+  top: 50%;
+  width: min(78vw, 900px);
+  height: min(78vw, 900px);
+  margin-top: calc(min(78vw, 900px) / -2);
+  will-change: transform;
+  background: repeating-conic-gradient(from 0deg,
+              var(--terra) 0deg 0.32deg, rgba(214, 123, 75, 0) 0.32deg 5deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 30%, #000 34% 47%, transparent 52%);
+          mask: radial-gradient(circle closest-side, transparent 0 30%, #000 34% 47%, transparent 52%);
+  opacity: 0.16;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 5. FÉNYPÁSZMA A KÉT FÉL KÖZÖTT ────────────────────────────────────── */
+.seam {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 2px;
+  z-index: 2;
+  transform: translateX(-50%) perspective(1000px) rotateY(0deg);
+  transition: transform 0.9s var(--ease-out);
+  pointer-events: none;
+}
+
+.seam__line {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+              rgba(226, 205, 162, 0) 0%,
+              rgba(226, 205, 162, 0.42) 16%,
+              rgba(226, 205, 162, 0.85) 50%,
+              rgba(226, 205, 162, 0.42) 84%,
+              rgba(226, 205, 162, 0) 100%);
+  box-shadow: 0 0 26px rgba(226, 205, 162, 0.45);
+  transform-origin: 50% 0;
+  transition: box-shadow 0.7s ease;
+}
+
+.seam__scan {
+  position: absolute;
+  left: -5px; top: 0; width: 12px; height: 22%;
+  background: linear-gradient(180deg,
+              rgba(253, 246, 240, 0) 0%,
+              rgba(253, 246, 240, 0.45) 34%,
+              var(--cream) 50%,
+              rgba(253, 246, 240, 0.45) 66%,
+              rgba(253, 246, 240, 0) 100%);
+  opacity: 0.75;
+  will-change: transform, opacity;
+  animation: scan 7s ease-in-out infinite;
+}
+@keyframes scan {
+  0%   { transform: translateY(-120%); opacity: 0; }
+  12%  { opacity: 0.8; }
+  88%  { opacity: 0.8; }
+  100% { transform: translateY(470%);  opacity: 0; }
+}
+
+body[data-hover="masszazs"] .seam { transform: translateX(-50%) perspective(1000px) rotateY(15deg); }
+body[data-hover="optika"]   .seam { transform: translateX(-50%) perspective(1000px) rotateY(-15deg); }
+body[data-hover="masszazs"] .seam__line { box-shadow: 0 0 34px rgba(214, 123, 75, 0.5); }
+body[data-hover="optika"]   .seam__line { box-shadow: 0 0 34px rgba(214, 123, 75, 0.5); }
+
+/* ── 6. A KÉT VÁLASZTHATÓ FÉL ──────────────────────────────────────────── */
+.halves {
+  position: absolute; inset: 0;
+  display: flex;
+  z-index: 3;
+}
+
+.half {
+  position: relative;
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  /* Csak `opacity` — lásd a halkulás szabályát lejjebb. A `filter` itt
+     szándékosan nincs az átmenetben. */
+  transition: opacity 0.7s var(--ease-out);
+}
+
+.half__wash {
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-out);
+  pointer-events: none;
+}
+.half--massage .half__wash {
+  background: radial-gradient(115% 95% at 6% 50%, rgba(214, 123, 75, 0.42), rgba(214, 123, 75, 0) 64%);
+}
+.half--optics .half__wash {
+  background: radial-gradient(115% 95% at 94% 50%, rgba(214, 123, 75, 0.4), rgba(214, 123, 75, 0) 64%);
+}
+.half:hover .half__wash,
+.half:focus-visible .half__wash { opacity: 1; }
+
+/* A nem választott fél halkul.
+   Korábban `filter: saturate(0.45)` is járt hozzá, 0,7 mp-es átmenettel. Egy
+   FÉL KÉPERNYŐNYI elemen animált `filter` ugyanaz a hazárd, amit a lap
+   fejléce tilt: a böngészőnek külön rajzfelületet kell nyitnia, azt
+   képkockánként újraraszterizálnia, majd az átmenet végén eldobnia — és ez
+   minden egyes egérmozdulatra megismétlődik, miközben a részecskevászon is
+   fut. Gyengébb GPU-n itt villan fekete a lap. Az `opacity` egyedül is
+   megadja a halkulást, azt pedig a kompozitor újrarajzolás nélkül intézi. */
+body[data-hover="masszazs"] .half--optics,
+body[data-hover="optika"]   .half--massage { opacity: 0.32; }
+
+.half__inner {
+  display: flex;
+  flex-direction: column;
+  max-width: 31ch;
+  position: relative;
+  transition: transform 0.8s var(--ease-out);
+}
+.half--massage .half__inner {
+  margin-right: auto;
+  padding-left: clamp(1.5rem, 7vw, 6.5rem);
+  text-align: left;
+  align-items: flex-start;
+}
+.half--optics .half__inner {
+  margin-left: auto;
+  padding-right: clamp(1.5rem, 7vw, 6.5rem);
+  text-align: right;
+  align-items: flex-end;
+}
+.half--massage:hover .half__inner { transform: translateX(-10px); }
+.half--optics:hover  .half__inner { transform: translateX(10px); }
+
+.half__eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+.half__eyebrow::before {
+  content: "";
+  width: clamp(18px, 3vw, 42px); height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+  transition: width 0.7s var(--ease-out);
+}
+.half--optics .half__eyebrow { flex-direction: row-reverse; }
+.half:hover .half__eyebrow::before { width: clamp(34px, 5vw, 74px); }
+
+.half__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.7rem, 6.2vw, 5.4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  margin-top: 0.7rem;
+  color: var(--cream);
+  transition: color 0.6s ease, text-shadow 0.6s ease;
+}
+.half--massage:hover .half__title {
+  color: #fdf1e8;
+  text-shadow: 0 0 46px rgba(214, 123, 75, 0.55);
+}
+.half--optics:hover .half__title {
+  color: #fdf1e8;
+  text-shadow: 0 0 46px rgba(214, 123, 75, 0.55);
+}
+
+.half__brand {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(0.98rem, 1.5vw, 1.22rem);
+  color: var(--gold-soft);
+  margin-top: 0.5rem;
+  opacity: 0.9;
+}
+
+.half__desc {
+  font-size: clamp(0.9rem, 1.05vw, 1rem);
+  color: var(--on-dim);
+  margin-top: 1.05rem;
+  line-height: 1.62;
+}
+
+.half__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.9rem;
+  padding: 0.72rem 1.5rem;
+  border: 1px solid rgba(226, 205, 162, 0.34);
+  border-radius: 999px;
+  font-size: 0.87rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream);
+  background: rgba(253, 246, 240, 0.04);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.5s ease, background 0.5s ease, transform 0.5s var(--ease-out);
+}
+.half__cta::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, rgba(253, 246, 240, 0) 20%, rgba(253, 246, 240, 0.22) 50%, rgba(253, 246, 240, 0) 80%);
+  transform: translateX(-130%);
+  transition: transform 0.85s var(--ease-out);
+}
+.half:hover .half__cta::before { transform: translateX(130%); }
+.half--massage:hover .half__cta { border-color: rgba(214, 123, 75, 0.8); background: rgba(214, 123, 75, 0.18); }
+.half--optics:hover  .half__cta { border-color: rgba(214, 123, 75, 0.8);   background: rgba(214, 123, 75, 0.18); }
+
+.half__cta-arrow {
+  display: inline-flex;
+  width: 20px; height: 20px;
+  transition: transform 0.5s var(--ease-out);
+}
+.half__cta-arrow svg { width: 100%; height: 100%; }
+.half--massage:hover .half__cta-arrow { transform: translateX(-5px); }
+.half--optics:hover  .half__cta-arrow { transform: translateX(5px); }
+
+/* ── 7. KÖZÉPSŐ LOGÓMEDÁL ──────────────────────────────────────────────── */
+.medallion {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--medallion);
+  aspect-ratio: 1;
+  z-index: 4;
+  pointer-events: none;
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0);
+  transition: transform 0.9s var(--ease-out), opacity 0.6s ease;
+}
+body[data-hover="masszazs"] .medallion {
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0)
+             rotate(-3.2deg) scale(1.035);
+}
+body[data-hover="optika"] .medallion {
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0)
+             rotate(3.2deg) scale(1.035);
+}
+
+.medallion__halo {
+  position: absolute; inset: -62%;
+  background: radial-gradient(circle closest-side,
+              rgba(226, 205, 162, 0.32), rgba(214, 123, 75, 0.14) 46%, rgba(214, 123, 75, 0) 72%);
+  will-change: opacity;
+  animation: halo 7.5s ease-in-out infinite;
+}
+@keyframes halo {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
+}
+
+/* Sugaras osztásgyűrű — a logó sugarainak folytatása */
+.medallion__ticks {
+  position: absolute; inset: -14%;
+  background: repeating-conic-gradient(from 0deg,
+              var(--gold) 0deg 0.5deg, rgba(201, 169, 110, 0) 0.5deg 7.5deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 83%, #000 84% 92%, transparent 93%);
+          mask: radial-gradient(circle closest-side, transparent 0 83%, #000 84% 92%, transparent 93%);
+  opacity: 0.5;
+}
+
+/* Forgó fényív — az objektív rekeszének mozgása.
+   A színátmenet végei szándékosan rgba(...,0) és nem `transparent`: utóbbi
+   az áttetsző FEKETÉN át keveredne, és szürke-barna foltot húzna a medálra. */
+.medallion__arc {
+  position: absolute; inset: -6.5%;
+  background: conic-gradient(from 0deg,
+              rgba(226, 205, 162, 0)    0deg,
+              rgba(226, 205, 162, 0)    258deg,
+              rgba(214, 123, 75, 0.45)  302deg,
+              rgba(250, 238, 214, 1)    334deg,
+              rgba(250, 238, 214, 0.9)  346deg,
+              rgba(226, 205, 162, 0)    357deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 94%, #000 95% 97.6%, transparent 98.6%);
+          mask: radial-gradient(circle closest-side, transparent 0 94%, #000 95% 97.6%, transparent 98.6%);
+  will-change: transform;
+  animation: spin 20s linear infinite;
+}
+
+.medallion__disc {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--cream);
+  display: grid;
+  place-items: center;
+  /* Belső fény szándékosan nincs: a nagy sugarú, halvány inset-árnyék
+     8 biten koncentrikus sávokra esik szét a krém korongon. */
+  box-shadow:
+    0 34px 90px -22px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(226, 205, 162, 0.4);
+}
+.medallion__disc img {
+  width: 76%;
+  height: auto;
+  transform: translateY(1.5%);
+}
+
+/* Rekeszzáródás váltáskor */
+.medallion__iris {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0 var(--ink);
+  transition: box-shadow 0.6s cubic-bezier(0.7, 0, 0.3, 1);
+}
+body.is-leaving .medallion__iris { box-shadow: inset 0 0 0 260px var(--ink); }
+
+/* ── 8. SÚGÓ ───────────────────────────────────────────────────────────── */
+.hint {
+  position: absolute;
+  left: 50%; bottom: clamp(1.4rem, 4vh, 2.6rem);
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 0.7rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--on-dim);
+  opacity: 0.72;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.hint span { position: relative; }
+.hint span::before,
+.hint span::after {
+  content: "";
+  position: absolute; top: 50%;
+  width: 26px; height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+.hint span::before { right: calc(100% + 14px); animation: nudge-l 3.2s ease-in-out infinite; }
+.hint span::after  { left:  calc(100% + 14px); animation: nudge-r 3.2s ease-in-out infinite; }
+@keyframes nudge-l { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-7px); } }
+@keyframes nudge-r { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(7px); } }
+
+body[data-hover] .hint { opacity: 0; }
+
+/* ── 9. VISSZATÉRŐ FÜL ─────────────────────────────────────────────────── */
+.returntab {
+  position: fixed;
+  top: 50%;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(226, 205, 162, 0.4);
+  border-radius: 999px;
+  background: rgba(28, 21, 17, 0.82);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.75);
+  transition: opacity 0.5s ease, transform 0.6s var(--ease-out),
+              background 0.4s ease, border-color 0.4s ease;
+}
+.returntab[hidden] { display: none; }
+
+.returntab__arrow { display: inline-flex; width: 18px; height: 18px; flex: 0 0 auto; }
+.returntab__arrow svg { width: 100%; height: 100%; }
+
+.returntab__label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width 0.6s var(--ease-out), opacity 0.4s ease;
+}
+.returntab:hover .returntab__label,
+.returntab:focus-visible .returntab__label { max-width: 10rem; opacity: 1; }
+.returntab:hover { background: rgba(28, 21, 17, 0.95); border-color: var(--gold); }
+
+/* A fül mindig a választó felé mutat */
+body[data-view="masszazs"] .returntab {
+  right: 16px; left: auto;
+  flex-direction: row-reverse;
+  transform: translateY(-50%);
+}
+body[data-view="optika"] .returntab {
+  left: 16px; right: auto;
+  transform: translateY(-50%);
+}
+body[data-view="optika"] .returntab__arrow { transform: scaleX(-1); }
+body[data-view="masszazs"] .returntab:hover { transform: translateY(-50%) translateX(-4px); }
+body[data-view="optika"]   .returntab:hover { transform: translateY(-50%) translateX(4px); }
+
+/* Váltás alatt elrejtjük */
+body.is-moving .returntab { opacity: 0; pointer-events: none; }
+
+/* Csak a hero fölött látszik: amint a beágyazott weboldalon lejjebb
+   görgetnek, a fül elhalványul és kattinthatatlanná válik.
+   Az osztályt a landing.js teszi a body-ra (lásd syncReturntab). */
+body.is-frame-scrolled .returntab {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+
+/* ── 10. VÁLTÁS KÖZBENI EFFEKTEK ───────────────────────────────────────── */
+.sweep {
+  position: fixed; inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg,
+              rgba(253, 246, 240, 0) 0%,
+              rgba(253, 246, 240, 0.1) 38%,
+              rgba(226, 205, 162, 0.26) 50%,
+              rgba(253, 246, 240, 0.1) 62%,
+              rgba(253, 246, 240, 0) 100%);
+}
+body.is-moving[data-dir="left"]  .sweep { animation: sweep-left  var(--dur-slide) var(--ease-slide); }
+body.is-moving[data-dir="right"] .sweep { animation: sweep-right var(--dur-slide) var(--ease-slide); }
+@keyframes sweep-left {
+  0%   { opacity: 0; transform: translateX(60%); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-100%); }
+}
+@keyframes sweep-right {
+  0%   { opacity: 0; transform: translateX(-60%); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+
+/* ── 11. BELÉPŐ ANIMÁCIÓ ───────────────────────────────────────────────── */
+.medallion,
+.half__eyebrow, .half__title, .half__brand, .half__desc, .half__cta,
+.hint, .seam__line {
+  /* `filter` szándékosan nincs a listán: itt egyetlen elem sem szűr, és ha
+     valaki később mégis beállítaná, az átmenet észrevétlenül drágává tenné. */
+  transition-property: opacity, transform, color, text-shadow, box-shadow,
+                       border-color, background, max-width;
+}
+
+.is-booting .medallion   { opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+.is-booting .seam__line  { transform: scaleY(0); }
+.is-booting .half__eyebrow,
+.is-booting .half__title,
+.is-booting .half__brand,
+.is-booting .half__desc,
+.is-booting .half__cta,
+.is-booting .hint        { opacity: 0; transform: translateY(22px); }
+.is-booting .half__wash,
+.is-booting .seam__scan,
+.is-booting .particles,
+.is-booting .orn         { opacity: 0; }
+
+/* A belépő állapotból kifelé tartó időzítés */
+body:not(.is-booting) .seam__line { transition: transform 1s var(--ease-out) 0.05s, box-shadow 0.7s ease; }
+body:not(.is-booting) .medallion  { transition: transform 1.15s var(--ease-out) 0.35s, opacity 0.9s ease 0.35s; }
+body:not(.is-booting) .particles,
+body:not(.is-booting) .orn        { transition: opacity 1.6s ease 0.6s; }
+body:not(.is-booting) .seam__scan { transition: opacity 1s ease 0.9s; }
+
+body:not(.is-booting) .half__eyebrow { transition: opacity 0.9s var(--ease-out) 0.55s, transform 0.9s var(--ease-out) 0.55s; }
+body:not(.is-booting) .half__title   { transition: opacity 0.9s var(--ease-out) 0.68s, transform 0.9s var(--ease-out) 0.68s,
+                                                   color 0.6s ease, text-shadow 0.6s ease; }
+body:not(.is-booting) .half__brand   { transition: opacity 0.9s var(--ease-out) 0.78s, transform 0.9s var(--ease-out) 0.78s; }
+body:not(.is-booting) .half__desc    { transition: opacity 0.9s var(--ease-out) 0.86s, transform 0.9s var(--ease-out) 0.86s; }
+body:not(.is-booting) .half__cta     { transition: opacity 0.9s var(--ease-out) 0.94s, transform 0.9s var(--ease-out) 0.94s,
+                                                   border-color 0.5s ease, background 0.5s ease; }
+body:not(.is-booting) .hint          { transition: opacity 1s ease 1.25s, transform 1s var(--ease-out) 1.25s; }
+
+/* A belépő animáció lefutott: innentől rövid, mozgékony átmenetek élnek,
+   hogy a parallax és a hover azonnal reagáljon. Ezért kell a 11. blokk után. */
+body.is-live .medallion  { transition: transform 0.55s var(--ease-out), opacity 0.5s ease; }
+body.is-live .orn--left,
+body.is-live .orn--right { transition: transform 0.6s var(--ease-out), opacity 1.6s ease; }
+/* A súgó a belépéskor késleltetve úszik be, de hoverre azonnal tűnjön el */
+body.is-live .hint       { transition: opacity 0.35s ease; }
+
+/* ── 12. RESZPONZÍV FINOMÍTÁS ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  :root { --medallion: clamp(132px, 32vw, 196px); }
+
+  .halves { flex-direction: column; }
+
+  .half { flex: 1 1 50%; }
+  .half--massage { align-items: flex-start; }
+  .half--optics  { align-items: flex-end; }
+
+  .half__inner,
+  .half--massage .half__inner,
+  .half--optics .half__inner {
+    margin: 0 auto;
+    padding: clamp(1.4rem, 4.5vh, 2.6rem) 1.5rem 0;
+    text-align: center;
+    align-items: center;
+    max-width: 34ch;
+  }
+  .half--optics .half__inner { padding: 0 1.5rem clamp(1.4rem, 4.5vh, 2.6rem); }
+
+  .half--massage:hover .half__inner,
+  .half--optics:hover  .half__inner { transform: none; }
+
+  .half--massage .half__wash { background: radial-gradient(100% 95% at 50% 4%, rgba(214, 123, 75, 0.4), rgba(214, 123, 75, 0) 66%); }
+  .half--optics  .half__wash { background: radial-gradient(100% 95% at 50% 96%, rgba(214, 123, 75, 0.38), rgba(214, 123, 75, 0) 66%); }
+
+  .half__title { font-size: clamp(2.2rem, 10vw, 3.4rem); }
+  .half__desc  { display: none; }
+  .half__cta   { margin-top: 1.2rem; padding: 0.62rem 1.25rem; }
+  .half--optics .half__eyebrow { flex-direction: row; }
+
+  /* Vízszintes fénypászma */
+  .seam {
+    left: 0; right: 0; top: 50%; bottom: auto;
+    width: auto; height: 2px;
+    transform: translateY(-50%) perspective(1000px) rotateX(0deg);
+  }
+  .seam__line {
+    background: linear-gradient(90deg,
+                rgba(226, 205, 162, 0) 0%, rgba(226, 205, 162, 0.42) 16%,
+                rgba(226, 205, 162, 0.85) 50%,
+                rgba(226, 205, 162, 0.42) 84%, rgba(226, 205, 162, 0) 100%);
+  }
+  .seam__scan {
+    left: 0; top: -5px;
+    width: 22%; height: 12px;
+    background: linear-gradient(90deg,
+                rgba(253, 246, 240, 0) 0%,
+                rgba(253, 246, 240, 0.45) 34%,
+                var(--cream) 50%,
+                rgba(253, 246, 240, 0.45) 66%,
+                rgba(253, 246, 240, 0) 100%);
+    animation: scan-h 7s ease-in-out infinite;
+  }
+  @keyframes scan-h {
+    0%   { transform: translateX(-120%); opacity: 0; }
+    12%  { opacity: 0.8; }
+    88%  { opacity: 0.8; }
+    100% { transform: translateX(470%);  opacity: 0; }
+  }
+  body[data-hover="masszazs"] .seam { transform: translateY(-50%) perspective(1000px) rotateX(-12deg); }
+  body[data-hover="optika"]   .seam { transform: translateY(-50%) perspective(1000px) rotateX(12deg); }
+  .is-booting .seam__line { transform: scaleX(0); }
+
+  /* A díszek a saját felükre húzódnak */
+  .orn { width: 100%; }
+  .orn--left  { bottom: 50%; top: 0; }
+  .orn--right { top: 50%; bottom: 0; }
+  .orn--rays  { right: -30%; top: 78%; width: 120vw; }
+
+  .hint { display: none; }
+}
+
+/* Fekvő telefon / alacsony ablak */
+@media (max-height: 560px) and (max-width: 900px) {
+  :root { --medallion: clamp(96px, 20vh, 132px); }
+  .half__title { font-size: clamp(1.7rem, 7vh, 2.4rem); }
+  .half__brand { font-size: 0.85rem; }
+  .half__cta   { margin-top: 0.8rem; }
+}
+
+/* Nagyon alacsony ablak: a választó belül görgethető marad */
+@media (max-height: 420px) {
+  .panel--chooser { overflow-y: auto; }
+}
+
+/* ── 13. CSÖKKENTETT MOZGÁS ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .track { transition: none; }
+  body[data-view="masszazs"] .chooser,
+  body[data-view="optika"]   .chooser { transform: none; filter: none; }
+  .particles { display: none; }
+  .seam__scan { display: none; }
+  .is-booting .medallion,
+  .is-booting .half__eyebrow, .is-booting .half__title, .is-booting .half__brand,
+  .is-booting .half__desc, .is-booting .half__cta, .is-booting .hint,
+  .is-booting .particles, .is-booting .orn, .is-booting .half__wash {
+    opacity: 1;
+    transform: none;
+  }
+  .is-booting .medallion { transform: translate(-50%, -50%); }
+  .is-booting .seam__line { transform: none; }
+  .orn__flow path { stroke-dashoffset: 0; }
+}
+
+/* ── 14. ÖNSZABÁLYOZÁS GYENGÉBB GÉPRE ──────────────────────────────────────
+   Ha a landing.js mért képkockaideje alapján a gép nem bírja, ez a kapcsoló
+   megállítja a mozgó rétegeket. A kompozíció, a színek és az elrendezés
+   változatlanok maradnak — csak a mozgás áll meg. */
+body.is-lowfx .orn--lens,
+body.is-lowfx .medallion__arc,
+body.is-lowfx .medallion__halo,
+body.is-lowfx .orn__points circle,
+body.is-lowfx .seam__scan { animation: none; }
+body.is-lowfx .seam__scan { display: none; }
+body.is-lowfx .particles  { display: none; }

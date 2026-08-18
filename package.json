@@ -1,14 +1,14 @@
 {
-  "name": "lumina-optika",
+  "name": "manula-optic-med",
   "version": "1.0.0",
-  "description": "Lumina Optika prémium weboldal",
+  "description": "Manula-Optic Med. — a Salvia Gyógymasszázs és a Lumina Optika weboldala egy domain alatt, közös választóoldallal",
+  "private": true,
   "scripts": {
-    "dev": "npx http-server -p 3000 -c-1"
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
   },
-  "keywords": [
-    "optika",
-    "premium"
-  ],
-  "author": "Lumina Optika",
-  "license": "ISC"
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
 }
