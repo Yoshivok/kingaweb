@@ -2791,6 +2791,41 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   .form-result__summary div { grid-template-columns: 1fr; gap: 0.15rem; }
 }
 
+/* Anatómia szekció fejléc 2 oszlopos elrendezése kiegészítő megjegyzéssel */
+.anatomy-head {
+  max-width: 100%;
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  grid-template-columns: 1fr;
+  align-items: end;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+@media (min-width: 900px) {
+  .anatomy-head {
+    grid-template-columns: 1.35fr 0.85fr;
+  }
+}
+.anatomy-head__main {
+  max-width: 720px;
+}
+.anatomy-head__note {
+  background: rgba(201, 169, 110, 0.08);
+  border: 1px solid rgba(201, 169, 110, 0.28);
+  border-left: 3px solid var(--color-gold);
+  border-radius: var(--r-md);
+  padding: 1.1rem 1.3rem;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+.anatomy-head__note p {
+  margin: 0;
+}
+.anatomy-head__note strong {
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

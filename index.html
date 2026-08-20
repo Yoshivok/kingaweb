@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="hu">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manula-Optic Med. — Masszázsterápia és Optika</title>
-<meta name="description" content="Masszázsterápia és optika egy helyen. Válasszon: Salvia Gyógymasszázs — manuálterápia és gyógymasszázs szakmai alapokon, vagy Lumina Optika — prémium látásvizsgálat és szemüvegszalon.">
-<meta name="theme-color" content="#1c1511">
 
-<!-- ═══════════════════════════════════════════════════════════════════════
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manula-Optic Med. — Masszázsterápia és Optika</title>
+  <meta name="description"
+    content="Masszázsterápia és optika egy helyen. Válasszon: Salvia Gyógymasszázs — gyógymasszázs és rehabilitáció szakmai alapokon, vagy Lumina Optika — prémium látásvizsgálat és szemüvegszalon.">
+  <meta name="theme-color" content="#1c1511">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
      MANULA-OPTIC MED. — összekötő (választó) oldal
      ─────────────────────────────────────────────────────────────────────
      Ez a dokumentum egyben a „keret”, amely három panelt tart egy vízszintes
@@ -17,23 +19,24 @@
      A két oldal önmagában is elérhető: /masszazs/ és /optika/
      ═══════════════════════════════════════════════════════════════════════ -->
 
-<link rel="canonical" href="https://www.manulaopticmed.hu/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="hu_HU">
-<meta property="og:site_name" content="Manula-Optic Med.">
-<meta property="og:title" content="Manula-Optic Med. — Masszázsterápia és Optika">
-<meta property="og:description" content="Két szolgáltatás, egy helyen. Válassza a gyógymasszázst vagy az optikát.">
-<meta property="og:image" content="assets/main_logo.jpg">
+  <link rel="canonical" href="https://www.manulaopticmed.hu/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="hu_HU">
+  <meta property="og:site_name" content="Manula-Optic Med.">
+  <meta property="og:title" content="Manula-Optic Med. — Masszázsterápia és Optika">
+  <meta property="og:description" content="Két szolgáltatás, egy helyen. Válassza a gyógymasszázst vagy az optikát.">
+  <meta property="og:image" content="assets/main_logo.jpg">
 
-<link rel="icon" href="assets/favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="assets/favicon.png">
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400&family=Outfit:wght@300..600&display=swap">
-<link rel="stylesheet" href="assets/landing.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400&family=Outfit:wght@300..600&display=swap">
+  <link rel="stylesheet" href="assets/landing.css">
 
-<script type="application/ld+json">
+  <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -60,161 +63,157 @@
 
 <body data-view="chooser" class="is-booting">
 
-<a class="skip-link" href="#valaszto">Ugrás a választóhoz</a>
+  <a class="skip-link" href="#valaszto">Ugrás a választóhoz</a>
 
-<div class="stage">
-  <div class="track" id="track">
+  <div class="stage">
+    <div class="track" id="track">
 
-    <!-- ── BAL PANEL: MASSZÁZS ─────────────────────────────────────────── -->
-    <section class="panel" data-panel="masszazs" aria-label="Salvia Gyógymasszázs">
-      <iframe class="panel__frame" id="frame-masszazs"
-              data-src="masszazs/index.html"
-              title="Salvia Gyógymasszázs — teljes weboldal"
-              tabindex="-1"></iframe>
-    </section>
+      <!-- ── BAL PANEL: MASSZÁZS ─────────────────────────────────────────── -->
+      <section class="panel" data-panel="masszazs" aria-label="Salvia Gyógymasszázs">
+        <iframe class="panel__frame" id="frame-masszazs" data-src="masszazs/index.html"
+          title="Salvia Gyógymasszázs — teljes weboldal" tabindex="-1"></iframe>
+      </section>
 
-    <!-- ── KÖZÉPSŐ PANEL: A VÁLASZTÓ ───────────────────────────────────── -->
-    <main class="panel panel--chooser" id="valaszto" data-panel="chooser">
-      <div class="chooser">
+      <!-- ── KÖZÉPSŐ PANEL: A VÁLASZTÓ ───────────────────────────────────── -->
+      <main class="panel panel--chooser" id="valaszto" data-panel="chooser">
+        <div class="chooser">
 
-        <!-- Háttérrétegek -->
-        <!-- A fényfoltok és a szemcse a .chooser saját hátterében ülnek,
+          <!-- Háttérrétegek -->
+          <!-- A fényfoltok és a szemcse a .chooser saját hátterében ülnek,
              külön elem nélkül. Egy képernyőnyi, MOZGÓ áttetsző réteget a
              böngészőnek képkockánként újra kell kevernie a háttérre — ez
              önmagában 26 kép/mp-et vitt el egy alig észrevehető sodródásért.
              Állóként egyszer rajzolódik meg, és utána ingyen van. -->
 
-        <canvas class="particles" id="particles" aria-hidden="true"></canvas>
+          <canvas class="particles" id="particles" aria-hidden="true"></canvas>
 
-        <!-- Bal oldali dísz: áramló, testet követő vonalak + nyomáspontok -->
-        <svg class="orn orn--left" viewBox="0 0 620 900" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
-          <g class="orn__flow">
-            <path d="M-60,60 C140,180 60,330 210,430 S380,590 300,760 S180,880 340,980"/>
-            <path d="M-40,220 C160,330 90,470 250,560 S420,700 340,880"/>
-            <path d="M40,-40 C230,110 150,250 300,350 S470,500 420,690"/>
-            <path d="M-80,420 C110,500 60,640 200,720 S330,840 260,960"/>
-          </g>
-          <g class="orn__points">
-            <circle cx="210" cy="430" r="5"/>
-            <circle cx="300" cy="350" r="4"/>
-            <circle cx="250" cy="560" r="4.5"/>
-            <circle cx="340" cy="880" r="4"/>
-            <circle cx="200" cy="720" r="4"/>
-          </g>
-        </svg>
+          <!-- Bal oldali dísz: áramló, testet követő vonalak + nyomáspontok -->
+          <svg class="orn orn--left" viewBox="0 0 620 900" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
+            <g class="orn__flow">
+              <path d="M-60,60 C140,180 60,330 210,430 S380,590 300,760 S180,880 340,980" />
+              <path d="M-40,220 C160,330 90,470 250,560 S420,700 340,880" />
+              <path d="M40,-40 C230,110 150,250 300,350 S470,500 420,690" />
+              <path d="M-80,420 C110,500 60,640 200,720 S330,840 260,960" />
+            </g>
+            <g class="orn__points">
+              <circle cx="210" cy="430" r="5" />
+              <circle cx="300" cy="350" r="4" />
+              <circle cx="250" cy="560" r="4.5" />
+              <circle cx="340" cy="880" r="4" />
+              <circle cx="200" cy="720" r="4" />
+            </g>
+          </svg>
 
-        <!-- Jobb oldali dísz: lencsegyűrűk + sugárkoszorú (a logó motívuma) -->
-        <svg class="orn orn--right" viewBox="0 0 620 900" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
-          <g class="orn__rings">
-            <circle cx="430" cy="450" r="120"/>
-            <circle cx="430" cy="450" r="185"/>
-            <circle cx="430" cy="450" r="262"/>
-            <circle cx="430" cy="450" r="350"/>
-          </g>
-        </svg>
-        <!-- A forgó lencsemotívum: két külön SVG, hogy eltérő sebességgel és
+          <!-- Jobb oldali dísz: lencsegyűrűk + sugárkoszorú (a logó motívuma) -->
+          <svg class="orn orn--right" viewBox="0 0 620 900" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+            <g class="orn__rings">
+              <circle cx="430" cy="450" r="120" />
+              <circle cx="430" cy="450" r="185" />
+              <circle cx="430" cy="450" r="262" />
+              <circle cx="430" cy="450" r="350" />
+            </g>
+          </svg>
+          <!-- A forgó lencsemotívum: két külön SVG, hogy eltérő sebességgel és
              ellentétes irányba foroghassanak. Az elem EGÉSZÉT forgatjuk, nem
              a belsejét — így a rajzolat egyszer raszterizálódik, utána már
              csak a kész képet forgatja a compositor. -->
-        <svg class="orn orn--lens orn--lens-a" viewBox="0 0 400 400" aria-hidden="true">
-          <ellipse cx="200" cy="200" rx="190" ry="89"/>
-        </svg>
-        <svg class="orn orn--lens orn--lens-b" viewBox="0 0 400 400" aria-hidden="true">
-          <ellipse cx="200" cy="200" rx="89" ry="190"/>
-        </svg>
-        <span class="orn orn--rays" aria-hidden="true"></span>
+          <svg class="orn orn--lens orn--lens-a" viewBox="0 0 400 400" aria-hidden="true">
+            <ellipse cx="200" cy="200" rx="190" ry="89" />
+          </svg>
+          <svg class="orn orn--lens orn--lens-b" viewBox="0 0 400 400" aria-hidden="true">
+            <ellipse cx="200" cy="200" rx="89" ry="190" />
+          </svg>
+          <span class="orn orn--rays" aria-hidden="true"></span>
 
-        <!-- A két oldalt elválasztó fénypászma -->
-        <div class="seam" aria-hidden="true">
-          <span class="seam__line"></span>
-          <span class="seam__scan"></span>
-        </div>
+          <!-- A két oldalt elválasztó fénypászma -->
+          <div class="seam" aria-hidden="true">
+            <span class="seam__line"></span>
+            <span class="seam__scan"></span>
+          </div>
 
-        <!-- Választható felek -->
-        <div class="halves">
+          <!-- Választható felek -->
+          <div class="halves">
 
-          <a class="half half--massage" href="masszazs/index.html" data-target="masszazs"
-             aria-label="Belépés a Salvia Gyógymasszázs oldalára">
-            <span class="half__wash" aria-hidden="true"></span>
-            <span class="half__inner">
-              <span class="half__eyebrow">Gyógyító érintés</span>
-              <span class="half__title">Masszázs</span>
-              <span class="half__brand">Salvia Gyógymasszázs</span>
-              <span class="half__desc">Gyógymasszázs, nyirokdrenázs és manuálterápia — szakmai, gyógyászati alapokon.</span>
-              <span class="half__cta">
-                <span class="half__cta-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M20 12H4M4 12l6-6M4 12l6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span class="half__cta-label">Belépés</span>
-              </span>
-            </span>
-          </a>
-
-          <a class="half half--optics" href="optika/index.html" data-target="optika"
-             aria-label="Belépés a Lumina Optika oldalára">
-            <span class="half__wash" aria-hidden="true"></span>
-            <span class="half__inner">
-              <span class="half__eyebrow">Tiszta látás</span>
-              <span class="half__title">Optika</span>
-              <span class="half__brand">Lumina Optika</span>
-              <span class="half__desc">Látásvizsgálat, dizájner keretek és személyre szabott lencsék prémium szalonban.</span>
-              <span class="half__cta">
-                <span class="half__cta-label">Belépés</span>
-                <span class="half__cta-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M4 12h16M20 12l-6-6M20 12l-6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
+            <a class="half half--massage" href="masszazs/index.html" data-target="masszazs"
+              aria-label="Belépés a Gyógymasszázs és Rehabilitáció oldalára">
+              <span class="half__wash" aria-hidden="true"></span>
+              <span class="half__inner">
+                <span class="half__title">Gyógymasszázs</span>
+                <span class="half__brand">Rehabilitáció</span>
+                <span class="half__desc">Svédmasszázs, nyirokdrenázs és sportmasszázs — szakmai, gyógyászati
+                  alapokon.</span>
+                <span class="half__cta">
+                  <span class="half__cta-arrow" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M20 12H4M4 12l6-6M4 12l6 6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="half__cta-label">Belépés</span>
                 </span>
               </span>
+            </a>
+
+            <a class="half half--optics" href="optika/index.html" data-target="optika"
+              aria-label="Belépés az Optika és Látásvizsgálat oldalára">
+              <span class="half__wash" aria-hidden="true"></span>
+              <span class="half__inner">
+                <span class="half__title">Optika</span>
+                <span class="half__brand">Látásvizsgálat</span>
+                <span class="half__desc">Szemüvegjavítás, dizájner keretek és személyre szabott lencsék prémium
+                  szalonban.</span>
+                <span class="half__cta">
+                  <span class="half__cta-label">Belépés</span>
+                  <span class="half__cta-arrow" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M4 12h16M20 12l-6-6M20 12l-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+              </span>
+            </a>
+
+          </div>
+
+          <!-- Középen a logó -->
+          <div class="medallion" aria-hidden="true">
+            <span class="medallion__halo"></span>
+            <span class="medallion__ticks"></span>
+            <span class="medallion__arc"></span>
+            <span class="medallion__disc">
+              <img src="assets/main_logo.webp" width="760" height="618"
+                alt="Manula-Optic Med. — masszázsterápia és optika">
+              <span class="medallion__iris"></span>
             </span>
-          </a>
+          </div>
+
+          <p class="hint"><span>Válasszon szolgáltatást</span></p>
 
         </div>
+      </main>
 
-        <!-- Középen a logó -->
-        <div class="medallion" aria-hidden="true">
-          <span class="medallion__halo"></span>
-          <span class="medallion__ticks"></span>
-          <span class="medallion__arc"></span>
-          <span class="medallion__disc">
-            <img src="assets/main_logo.webp" width="760" height="618"
-                 alt="Manula-Optic Med. — masszázsterápia és optika">
-            <span class="medallion__iris"></span>
-          </span>
-        </div>
+      <!-- ── JOBB PANEL: OPTIKA ──────────────────────────────────────────── -->
+      <section class="panel" data-panel="optika" aria-label="Lumina Optika">
+        <iframe class="panel__frame" id="frame-optika" data-src="optika/index.html"
+          title="Lumina Optika — teljes weboldal" tabindex="-1"></iframe>
+      </section>
 
-        <p class="hint"><span>Válasszon szolgáltatást</span></p>
-
-      </div>
-    </main>
-
-    <!-- ── JOBB PANEL: OPTIKA ──────────────────────────────────────────── -->
-    <section class="panel" data-panel="optika" aria-label="Lumina Optika">
-      <iframe class="panel__frame" id="frame-optika"
-              data-src="optika/index.html"
-              title="Lumina Optika — teljes weboldal"
-              tabindex="-1"></iframe>
-    </section>
-
+    </div>
   </div>
-</div>
 
-<!-- Visszatérés a választóhoz: mindig a választó felé mutat -->
-<button class="returntab" id="returntab" type="button" hidden
-        aria-label="Vissza a szolgáltatásválasztóhoz">
-  <span class="returntab__arrow" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M4 12h16M20 12l-6-6M20 12l-6 6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </span>
-  <span class="returntab__label">Választó</span>
-</button>
+  <!-- Visszatérés a választóhoz: mindig a választó felé mutat -->
+  <button class="returntab" id="returntab" type="button" hidden aria-label="Vissza a szolgáltatásválasztóhoz">
+    <span class="returntab__arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M4 12h16M20 12l-6-6M20 12l-6 6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+    <span class="returntab__label">Választó</span>
+  </button>
 
-<!-- Irányított fénysöprés a váltás alatt -->
-<div class="sweep" id="sweep" aria-hidden="true"></div>
+  <!-- Irányított fénysöprés a váltás alatt -->
+  <div class="sweep" id="sweep" aria-hidden="true"></div>
 
-<script src="assets/landing.js"></script>
+  <script src="assets/landing.js"></script>
 </body>
+
 </html>
