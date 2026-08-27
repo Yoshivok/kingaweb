@@ -96,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initProduct3DTilt();
     initVisionSimulator();
     initEyeAnatomy();
+    initColorBlindnessTest();
     initServiceDetails();
     initBookingSystem();
     initScrollAnimationsFallback();
@@ -880,7 +881,7 @@ function initVisionSimulator() {
 
   // Lencse ki/bekapcsolása
   lensToggle.addEventListener('change', () => {
-    const isChecked = lensToggle.checked;
+const isChecked = lensToggle.checked;
 
     if (isChecked) {
       imgContainer.style.setProperty('--lens-size', '100px');
@@ -898,1246 +899,957 @@ function initVisionSimulator() {
 }
 
 /* ==========================================================================
-   5/b. Interaktív 3D Szemanatómia
-   --------------------------------------------------------------------------
-   A modellt saját, könyvtár nélküli 3D motor rajzolja 2D vászonra. A szem
-   képletei forgástestek, ezért mindegyik egy (r, z) profilból születik, amit
-   a Z tengely (a látótengely) körül körbeforgatunk. A gömbből egy 90°-os
-   éket kihagyunk — így a szem belseje is látszik —, a vágásfelületeket pedig
-   lapos fedőlapok zárják le. A helyes takaráshoz elég a festő-algoritmus
-   (mélység szerinti rajzolási sorrend) és a hátlapok eldobása: nem kell
-   WebGL, és nem kell külső könyvtárat betölteni sem.
-
-   A szemgolyó sugara a modellben 1 egység (a valóságban kb. 12 mm).
+   5. Interaktív Szemanatómia (Képes Anatómiai Illusztráció & Diagnosztika)
    ========================================================================== */
 
-/*
- * A szem részeinek orvosi magyarázata. Ez a tömb adja a választógombok
- * sorrendjét is: elölről hátrafelé haladunk végig a szemgolyón.
- *
- * id        — ez köti össze a leírást a 3D modell felületeivel (buildEyeMeshes)
- * interior  — csak metszetben látszik, ezért kiválasztáskor kinyitjuk az éket
- * view      — ajánlott kameraállás, ha a látogató a gombbal választja ki
- */
-const EYE_PARTS = [
-  {
+const EYE_PARTS = {
+  cornea: {
     id: 'cornea',
     name: 'Szaruhártya',
     latin: 'Cornea',
     badge: 'Elülső fénytörő ablak',
-    swatch: '#cfe4ec',
+    swatch: '#9bc2d4',
     intro: 'A szemgolyó elülső felszínén ülő, teljesen átlátszó, érmentes „óraüveg”. Öt rétegből épül fel, és mivel egyetlen ér sem futhat benne (az rontaná az átlátszóságát), tápanyagait kívülről a könnyfilmből, belülről a csarnokvízből kapja.',
     functions: [
       'A szem legerősebb fénytörő eleme: a teljes törőerő mintegy kétharmadát, kb. 40–43 dioptriát adja.',
       'Mechanikai és fertőzés elleni védőpajzs a szem belseje számára.',
-      'A test legsűrűbben beidegzett szövete — ezért fáj már egy hajszálnyi karcolás is.'
+      'A test legsűrűbben beidegzett szövete — ezért fáj már egy hajszálnyi porszemcse vagy karcolás is.'
     ],
-    disorders: 'Ha görbülete nem szabályosan gömbszerű, hanem tojásdad, szemtengelyferdülés (asztigmia) alakul ki. Sérülése vagy gyulladása (keratitis) heves fájdalommal, könnyezéssel és fényérzékenységgel jár, hegesedése pedig maradandó homályt hagyhat. Alakja és görbülete dönti el azt is, milyen kontaktlencse illeszthető a szemre.',
-    exam: 'Réslámpás vizsgálat és szaruhártya-görbület mérése (keratometria)',
-    interior: false,
-    view: { yaw: -42, pitch: 16 }
+    disorders: 'Ha görbülete nem szabályosan gömbszerű, hanem tojásdad, szemtengelyferdülés (asztigmia) alakul ki. Sérülése vagy gyulladása (keratitis) heves fájdalommal, könnyezéssel és fényérzékenységgel jár, hegesedése pedig maradandó homályt hagyhat. Alakja és görbülete határozza meg azt is, milyen típusú kontaktlencse illeszthető kényelmesen és biztonságosan.',
+    exam: 'Réslámpás biomikroszkópia és szaruhártya-görbület digitális mérése (keratometria / topográfia)'
   },
-  {
+  conjunctiva: {
+    id: 'conjunctiva',
+    name: 'Kötőhártya & Könnyfilm',
+    latin: 'Tunica conjunctiva & Apparatus lacrimalis',
+    badge: 'Védő- és nedvesítő réteg',
+    swatch: '#e6988d',
+    intro: 'Vékony, átlátszó, erekkel átszőtt nyálkahártya, amely a szemhéjak belső felszínét és az ínhártya elülső részét borítja. A felszínén eloszló mikroszkopikus háromrétegű könnyfilm folyamatosan nedvesen tartja, táplálja és tisztítja a szaruhártyát.',
+    functions: [
+      'Megvédi a szemet a kórokozóktól, porszemcséktől és a kiszáradástól.',
+      'A pislogás során sima, súrlódásmentes csúszófelületet biztosít a szemhéjaknak.',
+      'Az optikai képalkotáshoz elengedhetetlen, tükörsima fénytörő felületet képez a szaruhártyán.'
+    ],
+    disorders: 'Gyakori problémája a szárazszem-szindróma (égő, szúró érzés, homályosodó látás monitoros munka közben) és a kötőhártya-gyulladás (vörös szem, fokozott váladékozás). Célzott műkönny-terápiával és szemhéjhigiéniával kiválóan stabilizálható.',
+    exam: 'Könnyfilm-felszakadási idő (TBUT) mérése, fluoreszcein festés és réslámpás vizsgálat'
+  },
+  aqueous: {
     id: 'aqueous',
     name: 'Csarnokvíz',
     latin: 'Humor aquosus',
     badge: 'Elülső és hátsó csarnok',
-    swatch: '#dbeef4',
-    intro: 'A szaruhártya és a szemlencse közötti teret kitöltő, víztiszta folyadék. A sugártest termeli, a szem körkörös csarnokzugán át pedig folyamatosan elszívódik — ez az állandó ki-be áramlás tartja egyensúlyban a szem belsejét.',
+    swatch: '#a0d2db',
+    intro: 'A szaruhártya és a szemlencse közötti tereket kitöltő, kristálytiszta folyadék. A sugártest termeli folyamatosan, a szem körkörös csarnokzugán (trabekuláris hálózat) át pedig felszívódik — ez az állandó mikrokeringés tartja egyensúlyban a szem belső környezetét.',
     functions: [
-      'Táplálja az érmentes szaruhártyát és szemlencsét, és elszállítja az anyagcseretermékeket.',
-      'Fenntartja a szem belnyomását (normálértéke kb. 10–21 Hgmm), ami a szemgolyó feszes, gömbölyű alakjához kell.',
-      'Fénytörő közegként a szaruhártya és a lencse közötti optikai utat is biztosítja.'
+      'Táplálja az érmentes szaruhártyát és a szemlencsét, elszállítva a sejtanyagcsere végtermékeit.',
+      'Fenntartja a szem belnyomását (normálértéke kb. 10–21 Hgmm), ami a szemgolyó feszes gömb alakjához szükséges.',
+      'Átlátszó fénytörő közegként optikai utat biztosít a beeső fény számára.'
     ],
-    disorders: 'Ha a folyadék elfolyása akadályozottá válik, a szem belnyomása megemelkedik: ez a zöldhályog (glaukóma). Alattomos betegség, mert évekig teljesen tünetmentesen sorvasztja a látóideget, és az elveszett látótér már nem hozható vissza. Ezért része minden alapos vizsgálatnak a szemnyomás mérése.',
-    exam: 'Szemnyomásmérés (tonometria), csarnokmélység megítélése réslámpával',
-    interior: true,
-    view: { yaw: -46, pitch: 20 }
+    disorders: 'Ha a folyadék elfolyása akadályozottá válik, a szem belnyomása megemelkedik: ez a zöldhályog (glaukóma). Alattomos betegség, mert sokáig teljesen tünetmentesen sorvasztja a látóideg rostjait, és az elveszett látótér már nem pótolható. Ezért elengedhetetlen a rendszeres szemnyomásmérés.',
+    exam: 'Szemnyomásmérés (non-contact és applanációs tonometria), csarnokzug ellenőrzése'
   },
-  {
+  iris: {
     id: 'iris',
     name: 'Szivárványhártya',
     latin: 'Iris',
     badge: 'A szem színes rekesze',
-    swatch: '#b06c3a',
-    intro: 'A szaruhártya mögött álló, izmokat tartalmazó színes lemez, amely a szem közepén nyílást hagy szabadon. Pigmenttartalma határozza meg a szem színét: kevés festék esetén kék, sok festék esetén barna a szem — a mintázata pedig, akárcsak az ujjlenyomat, mindenkinél egyedi.',
+    swatch: '#4b7f94',
+    intro: 'A szaruhártya mögött elhelyezkedő, finom izomrostokat tartalmazó színes lemez, amely a szem közepén szabályozható nyílást (a pupillát) hagy szabadon. Pigmenttartalma határozza meg a szem színét (a kevés festék kék, a sok barna), mintázata pedig egyedi, mint az ujjlenyomat.',
     functions: [
-      'Két izma — a záró- és a tágítóizom — akaratlanul, a fényviszonyokhoz igazodva állítja a pupilla méretét.',
-      'Fényképezőgép rekeszeként szabályozza a szemfenékre jutó fény mennyiségét.',
-      'Elzárja a fény útját a pupillán kívül, így csak a lencse optikai középpontján át engedi be a képet.'
+      'Két izma (a záró- és a tágítóizom) akaratlan reflexszel, a környező fényviszonyokhoz igazodva állítja a pupilla átmérőjét.',
+      'Fényképezőgép blendéjeként szabályozza a retina felé jutó fény mennyiségét.',
+      'Megakadályozza a szórt fény bejutását, így a kép a lencse optimális törőzónáján halad át.'
     ],
-    disorders: 'Gyulladása (iritis, uveitis) mély szemfájdalommal, vörös szemmel és erős fényérzékenységgel jár, és sürgős kezelést igényel. Színének, mintázatának vagy a pupillareakciónak a kétoldali eltérése belgyógyászati és neurológiai kivizsgálást tehet szükségessé.',
-    exam: 'Réslámpás vizsgálat, pupillareakció és csarnokzug ellenőrzése',
-    interior: false,
-    view: { yaw: -40, pitch: 16 }
+    disorders: 'Gyulladása (iritis / anterior uveitis) tompa szemfájdalommal, vörös szemmel és erős fényérzékenységgel jár, azonnali szakorvosi kezelést igényel. A két szem eltérő színe (heterochromia) vagy pupillareakciója neurológiai és belgyógyászati kivizsgálást tehet indokolttá.',
+    exam: 'Réslámpás vizsgálat nagy nagyítással, direkt és konszenzuális pupillareakció ellenőrzése'
   },
-  {
+  pupil: {
     id: 'pupil',
     name: 'Pupilla',
     latin: 'Pupilla',
     badge: 'A fény bemenete',
     swatch: '#1d1512',
-    intro: 'A pupilla nem önálló szerv, hanem a szivárványhártya közepén lévő nyílás. Azért látszik feketének, mert a rajta beeső fény a szem belsejében szinte teljesen elnyelődik, és alig verődik vissza belőle.',
+    intro: 'A pupilla nem különálló szövet, hanem a szivárványhártya közepén lévő kerek nyílás. Azért látszik mélyfeketének, mert a rajta áthaladó fény a sötét szemfenéken szinte teljesen elnyelődik, és alig verődik vissza.',
     functions: [
-      'Átmérője 2 és 8 mm között változik, így nagyjából tizenhatszoros különbséget képes áthidalni a beeső fénymennyiségben.',
-      'Szűkülése közelre nézéskor megnöveli a mélységélességet, ezzel élesebbé teszi a közeli képet.',
-      'Fényre adott válasza mindkét szemen egyszerre jelentkezik, ezért a vizsgálata fontos idegrendszeri információt ad.'
+      'Átmérője 2 és 8 mm között dinamikusan változik, így mintegy tizenhatszoros különbséget tud kompenzálni a megvilágításban.',
+      'Szűkülése közelre nézéskor növeli a mélységélességet, elősegítve a fókuszálást.',
+      'Fényre adott válasza idegrendszeri pályákon fut végig, így működése általános neurológiai állapotjelző.'
     ],
-    disorders: 'A két oldal eltérő pupillamérete (anisocoria), a lassú vagy hiányzó fényreakció mindig kivizsgálandó. Sötétben, tág pupillánál a szem szélső területein átjutó fény is részt vesz a képalkotásban: ilyenkor a meglévő látáshibák és a szórt fény hatása felerősödik — pontosan ezt szemlélteti a fenti Látásszimulátor éjszakai beállítása is.',
-    exam: 'Pupillareakció vizsgálata, pupillaátmérő mérése sötétben és világosban',
-    interior: false,
-    view: { yaw: -38, pitch: 14 }
+    disorders: 'A két szem eltérő pupillamérete (anisocoria), a renyhe fényreakció kivizsgálást igényel. Éjszaka vagy sötétben a pupilla kitágul, így a szem optikai szélei is részt vesznek a képalkotásban: ez felerősíti az éjszakai szürkületi homályt, a szellemképeket és a fényudvarokat.',
+    exam: 'Digitális pupillometria, szürkületi látás- és fényérzékenység vizsgálat'
   },
-  {
+  lens: {
     id: 'lens',
     name: 'Szemlencse',
     latin: 'Lens crystallina',
     badge: 'Az állítható fókusz',
-    swatch: '#efe0bd',
-    intro: 'Rugalmas, átlátszó, kétdomború lencse a szivárványhártya mögött, amelyet vékony függesztőrostok (zonulák) tartanak a helyén, mint egy trambulint a rugói. Egész életünkben növekszik, és közben fokozatosan veszít a rugalmasságából.',
+    swatch: '#ebd9b2',
+    intro: 'Rugalmas, tökéletesen átlátszó, kétdomború lencse a szivárványhártya mögött. Finom függesztőrostok (zonulák) tartják a helyén körben, mint egy trambulint a rugói. Életünk során folyamatosan új rétegek rakódnak rá, miközben lassanként veszít a rugalmasságából.',
     functions: [
-      'Az alkalmazkodás (akkomodáció) szerve: alakváltoztatásával kb. 15–20 dioptriányi finomhangolást ad a szaruhártya rögzített törőerejéhez.',
-      'Közelre nézéskor gömbölyűbbé válik, távolra nézéskor ellaposodik — így élesedik ki a kép különböző távolságokon.',
-      'Elnyeli a szembe jutó ultraibolya sugárzás jelentős részét, védve ezzel az ideghártyát.'
+      'Az alkalmazkodás (akkomodáció) szerve: domborulatának változtatásával kb. 15–20 dioptriányi dinamikus finomhangolást ad.',
+      'Közelre tekintéskor gömbölyűbbé válik (erősebb törőerő), távolra nézve ellaposodik.',
+      'Kiszűri a szembe érkező káros ultraibolya sugárzás jelentős részét, védve az érzékeny ideghártyát.'
     ],
-    disorders: '40–45 éves kor körül rugalmassága annyira lecsökken, hogy a közeli élesre állítás nehézzé válik: ez az öregszeműség (presbyopia), amit olvasó- vagy multifokális szemüveggel korrigálunk. Ha maga a lencseállomány homályosodik el, szürkehályogról (cataracta) beszélünk — fokozatosan fakuló, ködös látást okoz, és ma már rutinműtéttel, műlencse beültetésével gyógyítható.',
-    exam: 'Réslámpás vizsgálat tágított pupillával, szürkehályog-szűrés',
-    interior: true,
-    view: { yaw: -52, pitch: 24 }
+    disorders: '40–45 éves kor körül rugalmassága annyira csökken, hogy az olvasási távolságra fókuszálás nehézzé válik: ez az öregszeműség (presbyopia), amit olvasó- vagy multifokális lencsével korrigálunk. Ha a lencse anyaga elhomályosodik, szürkehályogról (cataracta) beszélünk, amely rutinműtéttel (műlencse beültetésével) gyógyítható.',
+    exam: 'Réslámpás átvilágítás tágított pupillában, szürkehályog- és akkomodáció-szűrés'
   },
-  {
+  ciliary: {
     id: 'ciliary',
     name: 'Sugártest',
     latin: 'Corpus ciliare',
-    badge: 'Motor és folyadékforrás',
+    badge: 'Fókuszmotor és folyadékforrás',
     swatch: '#a85e37',
-    intro: 'Gyűrű alakú, izmos és mirigyes képlet a szivárványhártya tövénél, körben a szemgolyó falán. Ehhez rögzülnek a szemlencse függesztőrostjai, és a felszínén futó nyúlványai termelik a csarnokvizet.',
+    intro: 'Gyűrű alakú, simaizomból és mirigyes nyúlványokból álló képlet a szivárványhártya tövénél, a szemgolyó belső falán. Ehhez kapcsolódnak a szemlencsét rögzítő függesztőrostok, és felszíne termeli a tápláló csarnokvizet.',
     functions: [
-      'Sugárizmának összehúzódása ellazítja a függesztőrostokat, ekkor a lencse gömbölyűbbé válik: így állítunk élesre közelre.',
-      'Elernyedésekor a rostok megfeszülnek, a lencse ellaposodik — ez a távolra nézés nyugalmi állapota.',
-      'Nyúlványai folyamatosan termelik a csarnokvizet, amely az egész elülső szemszakaszt táplálja.'
+      'Sugárizmának összehúzódása ellazítja a függesztőrostokat, így a lencse kidomborodik a közeli éleslátáshoz.',
+      'Elernyedésekor a lencse ellaposodik a nyugalmi távoli látáshoz.',
+      'Nyúlványai termelik az elülső szemszakaszt tápláló csarnokvizet.'
     ],
-    disorders: 'Tartós közeli munka mellett görcsös állapotba kerülhet (akkomodációs görcs): ilyenkor a képernyő elől felnézve percekig homályos a távoli kép, és gyakori a homloktáji fejfájás. Gyulladása a szem belnyomásának ingadozásához vezethet.',
-    exam: 'Akkomodáció- és konvergenciavizsgálat, közeli látásélesség mérése',
-    interior: true,
-    view: { yaw: -58, pitch: 26 }
+    disorders: 'Hosszan tartó közeli munka és képernyőhasználat esetén izomgörcs (akkomodációs spazmus) léphet fel: ilyenkor felpillantva percekig homályos a távol, és szem környéki vagy homloktáji fejfájás jelentkezik.',
+    exam: 'Akkomodációs tartomány és konvergencia vizsgálata próbakerettel és foropterrel'
   },
-  {
+  vitreous: {
     id: 'vitreous',
     name: 'Üvegtest',
     latin: 'Corpus vitreum',
-    badge: 'A szem belső kitöltése',
-    swatch: '#dfeaec',
-    intro: 'A szemgolyó térfogatának mintegy négyötödét kitöltő, kocsonyás állomány a szemlencse és az ideghártya között. Csaknem teljes egészében víz, amelyet finom kollagénrost-háló és hialuronsav tart össze. Nem termelődik újra: ami egyszer elfolyósodott benne, az úgy is marad.',
+    badge: 'A szem belső tere',
+    swatch: '#d2e3e8',
+    intro: 'A szemgolyó térfogatának mintegy 80%-át kitevő, átlátszó, kocsonyás gél a lencse és az ideghártya között. 99%-ban víz, amelyet finom kollagénrostok és hialuronsav hálózata tart feszes formában.',
     functions: [
-      'Megtartja a szemgolyó gömbölyű alakját és a belső nyomást.',
-      'Torzításmentesen továbbítja a fényt a lencsétől az ideghártyáig.',
-      'Belülről kipárnázza és a helyén tartja az ideghártyát.'
+      'Kitölti a szemgolyó belsejét, fenntartva a gömb alakot és a belső mechanikai stabilitást.',
+      'Optikailag tiszta közeget biztosít a fény törésmentes továbbításához a retináig.',
+      'Belülről finoman rásimítja és a helyén tartja a mögötte fekvő ideghártyát.'
     ],
-    disorders: 'Az évek során részben elfolyósodik, a rostok pedig apró csomókba állnak össze: ezek vetnek árnyékot a retinára, így jelennek meg a látótérben „szálldosó legyek” (mouches volantes). Ez önmagában ártalmatlan. Ha viszont hirtelen sok új úszkáló folt, villanások vagy sötét „függöny” jelenik meg, az ideghártya leválásának gyanúja miatt azonnali szemészeti vizsgálat szükséges.',
-    exam: 'Szemfenéki vizsgálat, az üvegtest átvilágítása réslámpával',
-    interior: true,
-    view: { yaw: -60, pitch: 28 }
+    disorders: 'A kor előrehaladtával részben elfolyósodik, a rostok pedig apró csomókba állhatnak össze: ezek árnyékot vetnek a retinára, amit a látótérben úszkáló „legyekként” (mouches volantes) érzékelünk. Ha hirtelen sok új úszkáló folt, villanások vagy sötét kieső mező jelenik meg, az retina-szakadás gyanúja miatt azonnali szemészeti ellátást igényel.',
+    exam: 'Szemfenéki átvilágítás réslámpával és Volk-lencsével'
   },
-  {
+  sclera: {
     id: 'sclera',
     name: 'Ínhártya',
     latin: 'Sclera',
-    badge: 'A szem külső váza',
-    swatch: '#f2ece3',
-    intro: 'A „szem fehérje”: erős, rostos külső burok, amely a szemgolyó felszínének mintegy öt hatodát borítja, elöl pedig átmenet nélkül folytatódik az átlátszó szaruhártyában. Kívülről vékony, nyálkahártyaszerű kötőhártya (conjunctiva) fedi.',
+    badge: 'A szem szilárd váza',
+    swatch: '#eae3d8',
+    intro: 'A köznyelvben „szemfehérje”: vastag, rendkívül ellenálló, tömött rostos külső burok, amely a szemgolyó felszínének öt hatodát borítja. Elöl zökkenőmentesen folytatódik a kristálytiszta szaruhártyában.',
     functions: [
-      'Megtartja a szemgolyó alakját és a belnyomását, mint egy teniszlabda burka.',
-      'Védi a belső, sérülékeny szerkezeteket a mechanikai hatásoktól.',
-      'A hat szemmozgató izom tapadási felülete — innen mozdul el a tekintet minden irányba.'
+      'Megtartja a szemgolyó alakját és ellenáll a belső nyomásnak, mint egy védőburok.',
+      'Megóvja a sérülékeny belső képleteket a külső mechanikai behatásoktól.',
+      'Erre tapadnak a szemet mozgató külső szemizmok, lehetővé téve a precíz szemmozgásokat.'
     ],
-    disorders: 'Gyulladása (scleritis) mély, tompa, éjszaka is ébresztő fájdalommal jár, és gyakran társul reumatológiai betegséghez. A felszínét borító kötőhártya gyulladása (conjunctivitis) vörös szemet, égő érzést és váladékozást okoz. Egyenletes sárgás elszíneződése belgyógyászati eltérésre (pl. epeúti okra) hívhatja fel a figyelmet.',
-    exam: 'Külső szemvizsgálat, a kötőhártya és az érrajzolat áttekintése réslámpával',
-    interior: false,
-    view: { yaw: -22, pitch: 10 }
+    disorders: 'Gyulladása (episcleritis, scleritis) heves, tompa, éjszaka is sajgó fájdalommal és vörösséggel jár, gyakran autoimmun kórképekhez társulva. Kóros sárgás elszíneződése máj- és epeúti eltérések korai jele lehet.',
+    exam: 'Külső megtekintés és réslámpás rétegvizsgálat természetes és diffúz fényben'
   },
-  {
+  choroid: {
     id: 'choroid',
     name: 'Érhártya',
     latin: 'Choroidea',
-    badge: 'A középső, tápláló réteg',
-    swatch: '#8c3d27',
-    intro: 'Az ínhártya és az ideghártya között elhelyezkedő, sűrű érhálózattal és sötét festékanyaggal átszőtt középső réteg. A test egyik legerősebben átáramlott szövete: területéhez képest ide jut a legtöbb vér az egész szervezetben.',
+    badge: 'A tápláló középső réteg',
+    swatch: '#7e3824',
+    intro: 'Az ínhártya és az ideghártya között fekvő, rendkívül sűrű érhálózattal és sötét pigmentsejtekkel teli réteg. Testünk egyik legnagyobb vérátáramlású szövete.',
     functions: [
-      'Vérrel és tápanyaggal látja el az ideghártya külső, fényérzékelő rétegeit.',
-      'Elvezeti a fényelnyelés során keletkező hőt, így hűti a szemfenéket.',
-      'Sötét festékanyaga elnyeli a szórt fényt, ezzel jelentősen növeli a kép kontrasztját — enélkül minden fényes felület elmosódna.'
+      'Oxigénnel és tápanyagokkal látja el az ideghártya külső rétegeit és a fényérzékelő sejteket.',
+      'Elvezeti a látás során keletkező hőt, hűtve a szemfenék kényes képleteit.',
+      'Sötét melanintartalma elnyeli a felesleges fényt, megakadályozva a belső reflexiókat és növelve a képkontrasztot.'
     ],
-    disorders: 'Keringési zavara és az itt zajló lerakódás áll az időskori sárgafolt-degeneráció (AMD) hátterében. Gyulladása (chorioiditis) foltos látáskieséssel járhat, magas vérnyomás mellett pedig jellegzetes szemfenéki elváltozások alakulhatnak ki benne.',
-    exam: 'Szemfenéki (fundus) vizsgálat, digitális szemfenékfotó',
-    interior: true,
-    view: { yaw: -66, pitch: 30 }
+    disorders: 'Keringési zavarai és az itt felhalmozódó anyagcseretermékek központi szerepet játszanak az időskori makuladegenerációban (AMD). Gyulladása (chorioiditis) foltos látótérkiesést okozhat.',
+    exam: 'Digitális szemfenékfotózás (fundus kamera) és rétegvizsgálat'
   },
-  {
+  retina: {
     id: 'retina',
     name: 'Ideghártya',
     latin: 'Retina',
-    badge: 'A fényérzékelő réteg',
-    swatch: '#d6845f',
-    intro: 'A szem belső felszínét bélelő, tíz rétegből álló idegszövet — valójában az agy kihelyezett darabja. Mintegy 120 millió pálcikát és 6 millió csapot tartalmaz, amelyek a beeső fényt idegi jellé alakítják.',
+    badge: 'A fényérzékelő receptorháló',
+    swatch: '#cf7b56',
+    intro: 'A szemgolyó hátsó belső falát borító, tíz mikroszkopikus rétegből álló magasan differenciált idegszövet. Kb. 120 millió pálcikát és 6 millió csapot tartalmaz, amelyek a fény fotonjait elektromos idegimpulzusokká alakítják át.',
     functions: [
-      'A csapok a nappali, éles és színes látásért felelnek, és főként a sárgafoltban tömörülnek.',
-      'A pálcikák a szürkületi látást, a mozgás és a látótér széli eseményeinek észlelését biztosítják.',
-      'A feldolgozott jelet az idegrostok a látóidegen keresztül továbbítják az agy látókérgébe.'
+      'A csapok a nappali, éles, részletgazdag és színes látásért felelnek, sűrűn tömörülve a sárgafoltban.',
+      'A pálcikák a szürkületi és éjszakai látást, valamint a perifériás mozgásérzékelést biztosítják.',
+      'Összetett idegsejt-hálózata már a szemben elkezdi a képi kontrasztok és mozgások előfeldolgozását.'
     ],
-    disorders: 'A cukorbetegség és a magas vérnyomás gyakran itt okozza az első kimutatható károsodást (diabeteses retinopathia), ezért a szemfenék vizsgálata az egész szervezetről árulkodik. Az ideghártya leválása fájdalmatlan, de sürgősségi állapot: villanások, hirtelen megszaporodó úszkáló foltok vagy a látótér szélén megjelenő sötét „függöny” jelezheti.',
-    exam: 'Szemfenéki vizsgálat, digitális fundusfotó, szükség esetén rétegvizsgálat (OCT)',
-    interior: true,
-    view: { yaw: -62, pitch: 30 }
+    disorders: 'Magas vérnyomás és cukorbetegség esetén a finom kapillárisok károsodnak (retinopathia), vérzéseket és ödémát okozva. Az ideghártya-leválás (ablatio retinae) fájdalmatlan sürgősségi kórkép, amelyet villanások és sötét függönyszerű látótérkiesés jelez.',
+    exam: 'Pupillatágításos szemfenékvizsgálat, digitális nagy felbontású fundusfotó és OCT'
   },
-  {
+  macula: {
     id: 'macula',
     name: 'Sárgafolt',
     latin: 'Macula lutea & fovea centralis',
-    badge: 'Az éleslátás helye',
-    swatch: '#a8552e',
-    intro: 'Az ideghártya hátsó pólusán elhelyezkedő, néhány milliméteres, sárgás árnyalatú terület, közepén a csapokkal zsúfolt apró gödröcskével (fovea centralis). Itt a legsűrűbb a fényérzékelő sejtek elhelyezkedése az egész szemben.',
+    badge: 'Az éleslátás központja',
+    swatch: '#a1502b',
+    intro: 'Az ideghártya hátsó pólusán található, alig néhány milliméteres, lutein és zeaxantin festékanyagban gazdag terület. Közepén (fovea centralis) található a fényérzékelő csapok legsűrűbb koncentrációja az egész szervezetben.',
     functions: [
-      'Ez adja a látás éles, színes, részletgazdag középpontját: az olvasás, az arcfelismerés és a vezetés mind innen származik.',
-      'Sárgás festékanyaga szűri a kék fényt, ezzel védi a legérzékenyebb sejteket.',
-      'A látótér többi része ehhez képest jóval durvább felbontású — csak tájékozódásra és mozgásészlelésre elegendő.'
+      'Biztosítja a látótér tűéles, maximális felbontású fókuszpontját: az olvasás, arcok felismerése és a vezetés mind innen ered.',
+      'Sárgás pigmentjei természetes szűrőként elnyelik a káros nagy energiájú kék fényt, védve a fotoreceptorokat.',
+      'A teljes látómező többi része ehhez képest alacsonyabb felbontású, tájékozódást segítő periféria.'
     ],
-    disorders: 'Az időskori sárgafolt-degeneráció (AMD) esetén a kép közepe torzul, majd fokozatosan kiesik: az egyenes vonalak hullámosnak látszanak, az arcok közepe „elmosódik”, miközben a széli látás sokáig megmarad. Egyszerű Amsler-ráccsal otthon is szűrhető, ezért 50 év felett érdemes rendszeresen ellenőrizni.',
-    exam: 'Amsler-teszt, célzott makulavizsgálat és szemfenékfotó',
-    interior: true,
-    view: { yaw: -64, pitch: 32 }
+    disorders: 'Időskori sárgafolt-degeneráció (AMD) esetén a látótér közepe homályossá válik, a kontúrok és egyenes vonalak hullámzanak (metamorphopsia). Korai stádiumban Amsler-hálóval otthon is gyorsan ellenőrizhető.',
+    exam: 'Amsler-rácsos látásteszt, fókuszált makulavizsgálat és optikai koherencia tomográfia'
+  },
+  optic: {
+    id: 'optic',
+    name: 'Látóideg',
+    latin: 'Discus nervi optici & nervus opticus',
+    badge: 'A látóidegfő és a fő adatkábel',
+    swatch: '#e8dbca',
+    intro: 'Az a terület a szemfenéken, ahol a retina mintegy 1,2 millió idegrostja egyetlen kötegbe szedődik össze, és a szemgolyót elhagyva az agy látókérge felé veszi az irányt. Mivel itt nincsenek fotoreceptorok, ez a látótér természetes élettani vakfoltja.',
+    functions: [
+      'A szemben keletkezett teljes képi információt másodpercenként gigabites sebességgel továbbítja az agyba.',
+      'Itt lépnek be és ki a szemfenék fő erei (artéria és véna centralis retinae).',
+      'Színe, formája, szélei és bemélyedése (excavatio) alapvető orvosi diagnosztikai támpontot nyújt.'
+    ],
+    disorders: 'A megemelkedett szemnyomás (glaukóma) lassanként elsorvasztja az idegrostokat, visszafordíthatatlan látótérszűkületet okozva. A látóideg gyulladása (neuritis optica) gyors látásromlással és szemmozgáskori fájdalommal hívja fel magára a figyelmet.',
+    exam: 'Szemfenéki papillavizsgálat, látótérvizsgálat (perimetria) és szemnyomásmérés'
+  }
+};
+
+const EYE_HOTSPOTS = [
+  // ── BAL FELSŐ SAROK (Top-Left) ──────────────────────────
+  {
+    id: 'cornea',
+    target: { x: 120, y: 460 },
+    label: { x: 95, y: 45 },
+    side: 'left',
+    svgPath: 'M 195 45 L 85 45 L 85 460 L 120 460'
+  },
+  {
+    id: 'ciliary',
+    target: { x: 290, y: 310 },
+    label: { x: 25, y: 130 },
+    side: 'left',
+    svgPath: 'M 145 130 L 220 130 L 290 310'
+  },
+  {
+    id: 'aqueous',
+    target: { x: 175, y: 430 },
+    label: { x: 25, y: 215 },
+    side: 'left',
+    svgPath: 'M 150 215 L 205 215 L 175 430'
+  },
+
+  // ── BAL ALSÓ SAROK (Bottom-Left) ────────────────────────
+  {
+    id: 'iris',
+    target: { x: 215, y: 395 },
+    label: { x: 25, y: 755 },
+    side: 'left',
+    svgPath: 'M 185 755 L 220 755 L 215 395'
+  },
+  {
+    id: 'pupil',
+    target: { x: 245, y: 495 },
+    label: { x: 25, y: 840 },
+    side: 'left',
+    svgPath: 'M 130 840 L 245 840 L 245 495'
+  },
+  {
+    id: 'lens',
+    target: { x: 335, y: 485 },
+    label: { x: 105, y: 925 },
+    side: 'left',
+    svgPath: 'M 240 925 L 335 925 L 335 485'
+  },
+
+  // ── JOBB FELSŐ SAROK (Top-Right) ────────────────────────
+  {
+    id: 'sclera',
+    target: { x: 530, y: 125 },
+    label: { x: 895, y: 45 },
+    side: 'right',
+    svgPath: 'M 785 45 L 530 45 L 530 125'
+  },
+  {
+    id: 'choroid',
+    target: { x: 620, y: 220 },
+    label: { x: 975, y: 130 },
+    side: 'right',
+    svgPath: 'M 870 130 L 710 130 L 620 220'
+  },
+  {
+    id: 'retina',
+    target: { x: 685, y: 300 },
+    label: { x: 975, y: 215 },
+    side: 'right',
+    svgPath: 'M 855 215 L 760 215 L 685 300'
+  },
+
+  // ── JOBB ALSÓ SAROK (Bottom-Right) ──────────────────────
+  {
+    id: 'macula',
+    target: { x: 720, y: 505 },
+    label: { x: 975, y: 755 },
+    side: 'right',
+    svgPath: 'M 870 755 L 780 755 L 720 505'
+  },
+  {
+    id: 'vitreous',
+    target: { x: 500, y: 520 },
+    label: { x: 975, y: 840 },
+    side: 'right',
+    svgPath: 'M 865 840 L 650 840 L 500 520'
   },
   {
     id: 'optic',
-    name: 'Látóidegfő és látóideg',
-    latin: 'Discus nervi optici & nervus opticus',
-    badge: 'A vakfolt és a kábel',
-    swatch: '#f1e6d5',
-    intro: 'Az a pont, ahol az ideghártya mintegy 1,2 millió idegrostja összeszedődik, és a szemgolyót elhagyva látóideggé áll össze. Itt nincsenek fényérzékelő sejtek, ezért ez a terület a fiziológiás vakfolt — amit azért nem érzékelünk, mert az agy a hiányzó részt kitölti.',
-    functions: [
-      'Az összes képi információt továbbítja a szemből az agy látókérgébe.',
-      'Ugyanitt lép be a szembe és ki a szemből a szemfenék fő artériája és vénája.',
-      'A látóidegfő állapota — színe, kimélyülése, széleinek élessége — a szemvizsgálat egyik legárulkodóbb lelete.'
-    ],
-    disorders: 'A zöldhályog (glaukóma) éppen itt sorvasztja el fokozatosan az idegrostokat, észrevétlenül szűkítve a látóteret; ezért mérünk szemnyomást és értékeljük rendszeresen a látóidegfőt. A látóideg gyulladása (neuritis) néhány nap alatt kialakuló látásvesztéssel és szemmozgatáskor jelentkező fájdalommal jár, duzzadt látóidegfő pedig koponyaűri nyomásfokozódásra utalhat.',
-    exam: 'Látóidegfő értékelése szemfenéki vizsgálattal, látótérvizsgálat, szemnyomásmérés',
-    interior: false,
-    view: { yaw: 104, pitch: 12 }
+    target: { x: 840, y: 640 },
+    label: { x: 885, y: 925 },
+    side: 'right',
+    svgPath: 'M 765 925 L 840 925 L 840 640'
   }
 ];
 
-/* --------------------------------------------------------------------------
-   A szemgolyó geometriája
-   --------------------------------------------------------------------------
-   Minden képlet egy (r, z) profil, amit a Z tengely körül forgatunk meg.
-   A profilokat az óramutató járásával megegyezően járjuk körbe (r jobbra,
-   z felfelé) — ez adja a kifelé néző normálisokat. Ha valamelyik profil
-   mégis fordítva készült, a felület-terület előjele alapján magától
-   megfordul, a fedőlapok pedig indextérkép szerint követik a fordítást.
-   -------------------------------------------------------------------------- */
-function buildEyeMeshes(seg) {
-  const D = Math.PI / 180;
-  const cut = { from: 0, to: Math.round(seg / 4) };   // a kihagyott 90°-os ék
-
-  // Gömbív pontjai: (R·sinθ, zc + jel·R·cosθ)
-  function arc(radius, fromDeg, toDeg, steps, zc, zSign) {
-    const pts = [];
-    const z0 = zc || 0;
-    const sg = (zSign === undefined) ? 1 : zSign;
-    for (let i = 0; i <= steps; i++) {
-      const t = (fromDeg + (toDeg - fromDeg) * (i / steps)) * D;
-      pts.push([radius * Math.sin(t), z0 + sg * radius * Math.cos(t)]);
-    }
-    return pts;
-  }
-
-  // Héj: külső felszín + visszafelé fordított belső felszín, majd zárás
-  function shell(outer, inner) {
-    const prof = outer.concat(inner.slice().reverse());
-    prof.push([outer[0][0], outer[0][1]]);
-    return prof;
-  }
-
-  const CORNEA_Z = 0.4426;   // a szaruhártya gömbjének középpontja a látótengelyen
-
-  // --- Ínhártya (a fehér külső burok, elöl a limbusnál végződik) ---
-  const scleraOut = arc(1.000, 29.2, 180, 16);
-  const scleraIn = arc(0.960, 31.0, 180, 16);
-
-  // --- Érhártya és ideghártya: egymásba ágyazott vékony héjak ---
-  const choroidOut = arc(0.953, 31, 180, 9);
-  const choroidIn = arc(0.930, 33, 180, 9);
-  const retinaOut = arc(0.922, 39, 180, 9);
-  const retinaIn = arc(0.888, 41, 180, 9);
-
-  // --- Szaruhártya: erősebben görbülő, kidomborodó sapka ---
-  const corneaOut = arc(0.650, 0, 48.5, 7, CORNEA_Z);
-  const corneaIn = arc(0.605, 0, 53.6, 7, CORNEA_Z);
-
-  // --- Szivárványhártya: enyhén kúpos gyűrű a pupilla körül ---
-  const irisFront = [[0.170, 0.716], [0.288, 0.732], [0.440, 0.757]];
-  const irisBack = [[0.170, 0.688], [0.288, 0.704], [0.440, 0.729]];
-
-  // --- Pupilla: a szivárványhártya nyílásában látszó sötét korong ---
-  const pupilProfile = [[0, 0.706], [0.178, 0.706], [0.178, 0.692], [0, 0.692]];
-
-  // --- Szemlencse: elöl laposabb, hátul erősebben domború ---
-  const lensFront = arc(0.70, 0, 32.4, 5, -0.046, 1);
-  const lensBack = arc(0.45, 56.4, 0, 5, 0.794, -1);
-  const lensProfile = lensFront.concat(lensBack.slice(1));
-
-  // --- Sugártest: gyűrű a szemgolyó falán, a szivárványhártya töve mögött ---
-  const ciliaryOut = arc(0.884, 28, 44, 3);
-  const ciliaryIn = arc(0.812, 29, 43, 3);
-
-  // --- Üvegtest: a lencse hátsó felszínétől a szemfenékig ---
-  const vitreousProfile = arc(0.45, 0, 56.4, 3, 0.794, -1)
-    .concat([[0.505, 0.600]])
-    .concat(arc(0.872, 46, 180, 4));
-
-  // --- Csarnokvíz: a szaruhártya belső felszíne és a lencse/írisz között ---
-  const aqueousProfile = arc(0.605, 0, 53.6, 3, CORNEA_Z)
-    .concat([[0.440, 0.757], [0.288, 0.732], [0.170, 0.716]])
-    .concat(arc(0.70, 14.05, 0, 1, -0.046, 1));
-
-  // --- Látóideg és látóidegfő: a hátsó pólustól 15°-kal oldalra lép ki ---
-  const nerveProfile = [[0, 0.86], [0.155, 0.88], [0.275, 1.05], [0.245, 1.60], [0, 1.60]];
-  const discProfile = arc(0.883, 0, 7.5, 2).concat([[0.1153, 0.898], [0, 0.898]]);
-
-  // --- Sárgafolt és a közepén a gödröcske (fovea) ---
-  const maculaProfile = arc(0.883, 0, 9, 2).concat([[0.1381, 0.896], [0, 0.896]]);
-  const foveaProfile = arc(0.880, 0, 3.6, 1).concat([[0.0553, 0.893], [0, 0.893]]);
-
-  /* Helyi koordinátarendszer egy tetszőleges irányhoz: a helyi +Z tengely
-     az adott irányba mutat, a másik két tengelyt hozzá igazítjuk. */
-  function frameFor(dx, dy, dz) {
-    const l = Math.hypot(dx, dy, dz);
-    const ez = [dx / l, dy / l, dz / l];
-    // Segédtengely, ami biztosan nem párhuzamos ez-zel
-    const up = (Math.abs(ez[1]) > 0.9) ? [1, 0, 0] : [0, 1, 0];
-    let ex = [
-      up[1] * ez[2] - up[2] * ez[1],
-      up[2] * ez[0] - up[0] * ez[2],
-      up[0] * ez[1] - up[1] * ez[0]
-    ];
-    const el = Math.hypot(ex[0], ex[1], ex[2]);
-    ex = [ex[0] / el, ex[1] / el, ex[2] / el];
-    const ey = [
-      ez[1] * ex[2] - ez[2] * ex[1],
-      ez[2] * ex[0] - ez[0] * ex[2],
-      ez[0] * ex[1] - ez[1] * ex[0]
-    ];
-    return [ex, ey, ez];
-  }
-
-  // A látóideg kilépési iránya: 15°-kal a hátsó pólustól, az ék felől nézve túloldalt
-  const nerveDir = [
-    Math.sin(15 * D) * Math.cos(225 * D),
-    Math.sin(15 * D) * Math.sin(225 * D),
-    -Math.cos(15 * D)
-  ];
-  const nerveFrame = frameFor(nerveDir[0], nerveDir[1], nerveDir[2]);
-
-  /* A sárgafolt pontosan a hátsó póluson ül, ezért a helyi rendszerét
-     egyszerű Z-tükrözéssel adjuk meg: így a helyi szög és a modellbeli szög
-     egymás ellentettje, és az ék kivágása pontosan átfordítható rá. */
-  const maculaFrame = [[1, 0, 0], [0, -1, 0], [0, 0, -1]];
-  const maculaSeg = 12;
-  const maculaCut = { from: Math.round(maculaSeg * 0.75), to: maculaSeg };
-
-  return [
-    {
-      part: 'sclera', profile: shell(scleraOut, scleraIn), cap: { mode: 'strip', n: scleraOut.length },
-      seg: seg, cut: cut, color: [247, 241, 233], alpha: 1, spec: 0.30, shin: 30, bias: 0.012, hidden: 'inner'
-    },
-    {
-      part: 'choroid', profile: shell(choroidOut, choroidIn), cap: { mode: 'strip', n: choroidOut.length },
-      seg: seg, cut: cut, color: [140, 61, 39], alpha: 1, spec: 0.14, shin: 16, bias: 0.005, hidden: 'all'
-    },
-    {
-      part: 'retina', profile: shell(retinaOut, retinaIn), cap: { mode: 'strip', n: retinaOut.length },
-      seg: seg, cut: cut, color: [214, 132, 95], alpha: 1, spec: 0.16, shin: 18, hidden: 'outer'
-    },
-    {
-      part: 'ciliary', profile: shell(ciliaryOut, ciliaryIn), cap: { mode: 'strip', n: ciliaryOut.length },
-      seg: seg, cut: cut, color: [168, 94, 55], alpha: 1, spec: 0.20, shin: 20
-    },
-    {
-      part: 'vitreous', profile: vitreousProfile, cap: { mode: 'fan', center: [0, -0.10] },
-      seg: seg, cut: cut, color: [221, 233, 236], alpha: 0.17, spec: 0.10, shin: 22
-    },
-    {
-      part: 'iris', profile: shell(irisFront, irisBack), cap: { mode: 'strip', n: irisFront.length },
-      seg: seg, cut: cut, color: [134, 72, 33], alpha: 1, spec: 0.26, shin: 22
-    },
-    {
-      part: 'pupil', profile: pupilProfile, cap: { mode: 'fan', center: [0.089, 0.699] },
-      seg: seg, cut: cut, color: [22, 15, 13], alpha: 1, spec: 0.06, shin: 40
-    },
-    {
-      part: 'lens', profile: lensProfile, cap: { mode: 'fan', center: [0, 0.52] },
-      seg: seg, cut: cut, color: [236, 216, 176], alpha: 0.60, spec: 0.42, shin: 40
-    },
-    {
-      part: 'aqueous', profile: aqueousProfile, cap: { mode: 'fan', center: [0.10, 0.86] },
-      seg: seg, cut: cut, color: [216, 236, 243], alpha: 0.12, spec: 0.16, shin: 26
-    },
-    {
-      part: 'cornea', profile: shell(corneaOut, corneaIn), cap: { mode: 'strip', n: corneaOut.length },
-      seg: seg, cut: cut, color: [203, 226, 236], alpha: 0.22, spec: 0.90, shin: 60
-    },
-    {
-      part: 'optic', profile: nerveProfile, cap: null, frame: nerveFrame,
-      seg: 16, cut: null, color: [238, 224, 205], alpha: 1, spec: 0.20, shin: 20
-    },
-    {
-      part: 'optic', profile: discProfile, cap: null, frame: nerveFrame,
-      seg: 16, cut: null, color: [246, 234, 214], alpha: 1, spec: 0.16, shin: 18
-    },
-    {
-      part: 'macula', profile: maculaProfile, cap: null, frame: maculaFrame,
-      seg: maculaSeg, cut: maculaCut, color: [173, 90, 47], alpha: 1, spec: 0.14, shin: 16
-    },
-    {
-      part: 'macula', profile: foveaProfile, cap: null, frame: maculaFrame,
-      seg: maculaSeg, cut: maculaCut, color: [138, 64, 33], alpha: 1, spec: 0.12, shin: 16
-    }
-  ];
-}
-
-/* Egy forgástest felépítése a leírásából: csúcsok, lapok, vágásfedelek. */
-function buildEyeMesh(spec, partIndexOf) {
-  const prof = spec.profile.slice();
-
-  // Körüljárási irány ellenőrzése — a kifelé néző normálisokhoz óramutató
-  // szerinti sorrend kell. Fordítás esetén az indextérkép követi a cserét.
-  let area = 0;
-  for (let i = 0; i < prof.length; i++) {
-    const a = prof[i], b = prof[(i + 1) % prof.length];
-    area += a[0] * b[1] - b[0] * a[1];
-  }
-  const rows = prof.length;
-  const flipped = area > 0;
-  if (flipped) prof.reverse();
-  const map = (i) => (flipped ? rows - 1 - i : i);
-
-  const seg = spec.seg;
-  const ringCount = seg + 1;
-  const fanExtra = (spec.cap && spec.cap.mode === 'fan') ? 2 : 0;
-  const vertCount = ringCount * rows + fanExtra;
-  const verts = new Float64Array(vertCount * 3);
-
-  const fr = spec.frame;
-  function place(vi, x, y, z) {
-    if (fr) {
-      verts[vi] = fr[0][0] * x + fr[1][0] * y + fr[2][0] * z;
-      verts[vi + 1] = fr[0][1] * x + fr[1][1] * y + fr[2][1] * z;
-      verts[vi + 2] = fr[0][2] * x + fr[1][2] * y + fr[2][2] * z;
-    } else {
-      verts[vi] = x; verts[vi + 1] = y; verts[vi + 2] = z;
-    }
-  }
-
-  for (let s = 0; s < ringCount; s++) {
-    const ang = (s / seg) * Math.PI * 2;
-    const ca = Math.cos(ang), sa = Math.sin(ang);
-    for (let p = 0; p < rows; p++) {
-      const r = prof[p][0], z = prof[p][1];
-      place((s * rows + p) * 3, r * ca, r * sa, z);
-    }
-  }
-
-  /* A profil érintőjéből számolt valódi felületi normálisok. Ezekkel a
-     megvilágítás akkor is folytonos marad, ha a felület csak néhány lapból
-     áll — így nem esik szét látható sokszögekre a gömbfelület. A körüljárás
-     óramutató szerinti, ezért a kifelé mutató normális (-dz, dr). */
-  const closed = Math.abs(prof[0][0] - prof[rows - 1][0]) < 1e-9
-    && Math.abs(prof[0][1] - prof[rows - 1][1]) < 1e-9;
-  const pn = [];
-  for (let p = 0; p < rows; p++) {
-    let a = p - 1, b = p + 1;
-    if (a < 0) a = closed ? rows - 2 : 0;
-    if (b > rows - 1) b = closed ? 1 : rows - 1;
-    const tr = prof[b][0] - prof[a][0];
-    const tz = prof[b][1] - prof[a][1];
-    const l = Math.hypot(tr, tz) || 1;
-    pn.push([-tz / l, tr / l]);
-  }
-
-  /* Rejtett felületek elhagyása. Egy héj profilja külső ív + visszafelé
-     fordított belső ív, így a sávok első fele a külső, második fele a belső
-     felszín. A fal rétegeinél az egyik oldal sosem látszik (az ínhártya belső
-     felszínét eltakarja az ideghártya, az ideghártya külső felszínét pedig az
-     ínhártya), az érhártyából pedig csak a metszlapon lévő csík látszik.
-     Ezeket meg sem rajzoljuk: ez a lapok harmadát megspórolja. */
-  const hideStrip = new Array(rows - 1).fill(false);
-  if (spec.hidden && spec.cap && spec.cap.mode === 'strip') {
-    const n = spec.cap.n;
-    const mark = (from, to) => {
-      for (let i = from; i <= to && i < rows - 1; i++) hideStrip[i] = true;
-    };
-    if (spec.hidden === 'inner') mark(n, 2 * n - 2);
-    else if (spec.hidden === 'outer') mark(0, n - 2);
-    else if (spec.hidden === 'all') mark(0, rows - 2);
-  }
-  if (flipped) hideStrip.reverse();
-
-  const quads = [];
-  const segOf = [];
-  const norms = [];
-  for (let s = 0; s < seg; s++) {
-    const mid = ((s + 0.5) / seg) * Math.PI * 2;
-    const cm = Math.cos(mid), sm = Math.sin(mid);
-    for (let p = 0; p < rows - 1; p++) {
-      if (hideStrip[p]) continue;
-      const i0 = s * rows + p;
-      quads.push(i0, i0 + 1, (s + 1) * rows + p + 1, (s + 1) * rows + p);
-      segOf.push(s);
-      // A lap közepére eső felületi normális a két profilnormális átlaga
-      let nr = (pn[p][0] + pn[p + 1][0]) * 0.5;
-      let nz = (pn[p][1] + pn[p + 1][1]) * 0.5;
-      const nl = Math.hypot(nr, nz) || 1;
-      nr /= nl; nz /= nl;
-      let nx = nr * cm, ny = nr * sm, nzz = nz;
-      if (fr) {
-        const x = nx, y = ny, z = nzz;
-        nx = fr[0][0] * x + fr[1][0] * y + fr[2][0] * z;
-        ny = fr[0][1] * x + fr[1][1] * y + fr[2][1] * z;
-        nzz = fr[0][2] * x + fr[1][2] * y + fr[2][2] * z;
-      }
-      norms.push(nx, ny, nzz);
-    }
-  }
-
-  /* Vágásfedelek. A megmaradó anyag a [cut.to, cut.from + 360°] tartományban
-     van, ezért a cut.from oldalán kifelé a növekvő szög felé, a cut.to
-     oldalán a csökkenő szög felé néz a fedőlap. A tényleges körüljárást
-     lapon ként ellenőrizzük, és ha kell, megfordítjuk. */
-  if (spec.cap && spec.cut) {
-    const cap = spec.cap;
-    let fanVert = ringCount * rows;
-
-    [[spec.cut.from, 1], [spec.cut.to, -1]].forEach(([ring, sign]) => {
-      const ang = (ring / seg) * Math.PI * 2;
-      let wx = -Math.sin(ang) * sign, wy = Math.cos(ang) * sign, wz = 0;
-      if (fr) {
-        const x = wx, y = wy, z = wz;
-        wx = fr[0][0] * x + fr[1][0] * y + fr[2][0] * z;
-        wy = fr[0][1] * x + fr[1][1] * y + fr[2][1] * z;
-        wz = fr[0][2] * x + fr[1][2] * y + fr[2][2] * z;
-      }
-      const base = (ring % ringCount) * rows;
-
-      const faces = [];
-      if (cap.mode === 'strip') {
-        const n = cap.n;
-        for (let i = 0; i < n - 1; i++) {
-          faces.push([
-            base + map(i), base + map(i + 1),
-            base + map(2 * n - 2 - i), base + map(2 * n - 1 - i)
-          ]);
-        }
-      } else {
-        const cvi = fanVert++;
-        const ca2 = Math.cos(ang), sa2 = Math.sin(ang);
-        place(cvi * 3, cap.center[0] * ca2, cap.center[0] * sa2, cap.center[1]);
-        for (let i = 0; i < rows - 1; i++) {
-          faces.push([cvi, base + i, base + i + 1, base + i + 1]);
-        }
-      }
-
-      faces.forEach((f) => {
-        // Körüljárás igazítása a kívánt normálishoz
-        const a = f[0] * 3, b = f[1] * 3, c = f[2] * 3, d = f[3] * 3;
-        const p1x = verts[c] - verts[a], p1y = verts[c + 1] - verts[a + 1], p1z = verts[c + 2] - verts[a + 2];
-        const p2x = verts[d] - verts[b], p2y = verts[d + 1] - verts[b + 1], p2z = verts[d + 2] - verts[b + 2];
-        const nx = p1y * p2z - p1z * p2y;
-        const ny = p1z * p2x - p1x * p2z;
-        const nz = p1x * p2y - p1y * p2x;
-        if (nx * wx + ny * wy + nz * wz < 0) {
-          quads.push(f[3], f[2], f[1], f[0]);
-        } else {
-          quads.push(f[0], f[1], f[2], f[3]);
-        }
-        segOf.push(-1);   // -1 = fedőlap: csak metszet módban rajzoljuk
-        norms.push(wx, wy, wz);   // a fedőlap sík, a normálisa a vágás iránya
-      });
-    });
-  }
-
-  return {
-    partIndex: partIndexOf(spec.part),
-    verts: verts,
-    view: new Float64Array(vertCount * 3),
-    screen: new Float64Array(vertCount * 2),
-    faces: new Int32Array(quads),
-    faceSeg: new Int32Array(segOf),
-    faceNorm: new Float64Array(norms),
-    cutFrom: spec.cut ? spec.cut.from : -1,
-    cutTo: spec.cut ? spec.cut.to : -1,
-    color: spec.color,
-    alpha: spec.alpha,
-    spec: spec.spec,
-    shin: spec.shin,
-    bias: spec.bias || 0,
-    // Fix méretű tömb: a ritkán kitöltött, növekvő tömböt a motor szótárrá
-    // alakítaná, és lassulna a keresés. 4 állapot × 64 árnyalat × 16 csillanás.
-    cache: new Array(4096)
-  };
-}
+const EYE_ICONS = {
+  what: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 8v5M10 5.5v.5"/></svg>',
+  role: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M16.5 10c0 3.6-2.9 6.5-6.5 6.5S3.5 13.6 3.5 10 6.4 3.5 10 3.5s6.5 2.9 6.5 6.5z"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2"/></svg>',
+  risk: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 18.2 16.5H1.8L10 2.5z"/><path d="M10 8v4M10 14v.5"/></svg>',
+  exam: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><path d="M10 1.5v2.5M10 16v2.5M1.5 10H4M16 10h2.5"/></svg>'
+};
 
 function initEyeAnatomy() {
-  const canvas = document.getElementById('eye-canvas');
-  const viewport = document.getElementById('eye-viewport');
+  const imgEl = document.getElementById('eye-img');
+  const svgEl = document.getElementById('eye-svg');
+  const hotspotsLayer = document.getElementById('eye-hotspots-layer');
   const pillsBox = document.getElementById('eye-pills');
   const badgeEl = document.getElementById('eye-badge');
   const titleEl = document.getElementById('eye-title');
   const latinEl = document.getElementById('eye-latin');
   const bodyEl = document.getElementById('eye-body');
-  const markerEl = document.getElementById('eye-marker');
-  const tipEl = document.getElementById('eye-tooltip');
-  const cutBtn = document.getElementById('eye-cut-btn');
-  const spinBtn = document.getElementById('eye-spin-btn');
   const resetBtn = document.getElementById('eye-reset-btn');
-  if (!canvas || !viewport || !pillsBox || !bodyEl) return;
 
-  const ctx = canvas.getContext && canvas.getContext('2d');
-  if (!ctx) {
-    viewport.classList.add('is-unsupported');
-    return;
-  }
+  if (!svgEl || !hotspotsLayer || !pillsBox || !bodyEl) return;
 
-  const PART_INDEX = {};
-  EYE_PARTS.forEach((p, i) => { PART_INDEX[p.id] = i; });
-  const partIndexOf = (id) => (id in PART_INDEX ? PART_INDEX[id] : 0);
+  let selectedPartId = null;
 
-  /* ---- Modell felépítése ------------------------------------------------ */
-  // Kisebb kijelzőn ritkább a felosztás: kevesebb lapot kell kitölteni.
-  const SEG = window.matchMedia('(max-width: 700px)').matches ? 28 : 44;
-  const meshes = buildEyeMeshes(SEG).map((spec) => buildEyeMesh(spec, partIndexOf));
-
-  let totalFaces = 0;
-  meshes.forEach((m) => { totalFaces += m.faceSeg.length; });
-
-  const fMesh = new Int32Array(totalFaces);
-  const fQuad = new Int32Array(totalFaces);
-  const fDepth = new Float64Array(totalFaces);
-  const fShade = new Float32Array(totalFaces);
-  const fSpec = new Float32Array(totalFaces);
-  const fOrder = new Uint32Array(totalFaces);
-  let faceCount = 0;
-
-  /* ---- Nézet állapota --------------------------------------------------- */
-  const DEFAULT_VIEW = { yaw: -32, pitch: 16 };
-  const DEG = Math.PI / 180;
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  let yaw = DEFAULT_VIEW.yaw * DEG;
-  let pitch = DEFAULT_VIEW.pitch * DEG;
-  let targetYaw = yaw, targetPitch = pitch;
-  let tweening = false;
-  let spinPhase = 0;
-  let spinOn = !reduceMotion;
-  let cutOn = true;
-  let selected = null;
-  let hovered = null;
-
-  let cssW = 0, cssH = 0, dpr = 1;
-  let maxDpr = 1.5;             // a modell sima árnyalású, ennél többre nincs szükség
-  let dirty = true;
-  let running = false;
-  let rafId = 0;
-  let inView = false;
-  let lastTime = 0;
-  let interacting = false;   // igaz, amíg a látogató húzza a modellt
-
-  // Fényirány a nézeti térben rögzítve: forgatás közben sem „vándorol” a fény
-  const LX = -0.40, LY = 0.52, LZ = 0.75;
-  const HL = Math.hypot(LX, LY, LZ + 1);
-  const HX = LX / HL, HY = LY / HL, HZ = (LZ + 1) / HL;   // felező vektor a csillanáshoz
-  const ACCENT = [214, 123, 75];
-  const MUTED = [156, 148, 141];   // a tompított képletek felé kevert semleges szín
-
-  function shadeColor(mesh, shadeBucket, specBucket, hot) {
-    const key = hot * 1024 + shadeBucket * 16 + specBucket;
-    const cached = mesh.cache[key];
-    if (cached) return cached;
-
-    // 0 = alap, 1 = egér alatt, 2 = kiválasztva, 3 = tompítva (más van kiválasztva)
-    const base = mesh.color;
-    const toward = hot === 3 ? MUTED : ACCENT;
-    const mix = hot === 2 ? 0.44 : (hot === 1 ? 0.22 : (hot === 3 ? 0.42 : 0));
-    const lift = hot === 2 ? 1.22 : (hot === 1 ? 1.10 : (hot === 3 ? 0.80 : 1));
-    const shade = (shadeBucket + 0.5) / 64 * 1.6 * lift;
-    const sp = (specBucket + 0.5) / 16 * mesh.spec * (hot === 3 ? 0.5 : 1);
-
-    const out = [];
-    for (let i = 0; i < 3; i++) {
-      const c = base[i] * (1 - mix) + toward[i] * mix;
-      out[i] = Math.max(0, Math.min(255, Math.round(c * shade + 255 * sp)));
-    }
-    const str = 'rgb(' + out[0] + ',' + out[1] + ',' + out[2] + ')';
-    mesh.cache[key] = str;
-    return str;
-  }
-
-  /* ---- Méretezés -------------------------------------------------------- */
-  function resize(force) {
-    const rect = viewport.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) return;
-    const nextDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-    const w = Math.round(rect.width), h = Math.round(rect.height);
-    if (!force && w === cssW && h === cssH && nextDpr === dpr) return;
-    cssW = w; cssH = h; dpr = nextDpr;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    dirty = true;
-  }
-
-  /* ---- Rajzolás --------------------------------------------------------- */
-  const CAM = 5.6;
-
-  function render() {
-    if (!cssW || !cssH) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    const ox = cssW / 2;
-    const oy = cssH / 2;
-    const scale = Math.min(cssW, cssH) * 0.345;
-
-    const useYaw = yaw + (spinOn ? Math.sin(spinPhase) * 0.26 : 0);
-    const cy = Math.cos(useYaw), sy = Math.sin(useYaw);
-    const cp = Math.cos(pitch), sp = Math.sin(pitch);
-
-    /* A fény a nézeti térben áll, a felületi normálisokat viszont modelltérben
-       tároljuk. Olcsóbb a fényt visszaforgatni modelltérbe egyszer, mint
-       laponként előreforgatni a normálisokat. */
-    const lz1 = -sp * LY + cp * LZ;
-    const lmx = cy * LX - sy * lz1;
-    const lmy = cp * LY + sp * LZ;
-    const lmz = sy * LX + cy * lz1;
-    const hz1 = -sp * HY + cp * HZ;
-    const hmx = cy * HX - sy * hz1;
-    const hmy = cp * HY + sp * HZ;
-    const hmz = sy * HX + cy * hz1;
-
-    faceCount = 0;
-    let markX = 0, markY = 0, markN = 0;
-
-    for (let mi = 0; mi < meshes.length; mi++) {
-      const mesh = meshes[mi];
-      const v = mesh.verts, tv = mesh.view, sc = mesh.screen;
-
-      for (let i = 0, j = 0, n = v.length; i < n; i += 3, j += 2) {
-        const x = v[i], y = v[i + 1], z = v[i + 2];
-        const x1 = x * cy + z * sy;
-        const z1 = z * cy - x * sy;
-        const y2 = y * cp - z1 * sp;
-        const z2 = y * sp + z1 * cp;
-        tv[i] = x1; tv[i + 1] = y2; tv[i + 2] = z2;
-        const pp = CAM / (CAM - z2) * scale;
-        sc[j] = ox + x1 * pp;
-        sc[j + 1] = oy - y2 * pp;
-      }
-
-      const f = mesh.faces, fs = mesh.faceSeg;
-      const cFrom = mesh.cutFrom, cTo = mesh.cutTo;
-      const isSel = selected !== null && mesh.partIndex === selected;
-
-      for (let q = 0, nq = fs.length; q < nq; q++) {
-        const s = fs[q];
-        if (s < 0) {
-          if (!cutOn) continue;                       // fedőlap csak metszetben
-        } else if (cutOn && cFrom >= 0 && s >= cFrom && s < cTo) {
-          continue;                                   // a kihagyott ék lapjai
-        }
-
-        const k = q * 4;
-        const a = f[k] * 3, b = f[k + 1] * 3, c = f[k + 2] * 3, d = f[k + 3] * 3;
-        const p1x = tv[c] - tv[a], p1y = tv[c + 1] - tv[a + 1], p1z = tv[c + 2] - tv[a + 2];
-        const p2x = tv[d] - tv[b], p2y = tv[d + 1] - tv[b + 1], p2z = tv[d + 2] - tv[b + 2];
-        let nx = p1y * p2z - p1z * p2y;
-        let ny = p1z * p2x - p1x * p2z;
-        let nz = p1x * p2y - p1y * p2x;
-        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (nl < 1e-9) continue;
-        nx /= nl; ny /= nl; nz /= nl;
-
-        const ccx = (tv[a] + tv[b] + tv[c] + tv[d]) * 0.25;
-        const ccy = (tv[a + 1] + tv[b + 1] + tv[c + 1] + tv[d + 1]) * 0.25;
-        const ccz = (tv[a + 2] + tv[b + 2] + tv[c + 2] + tv[d + 2]) * 0.25;
-
-        // Hátlapok eldobása a lap tényleges (sík) normálisa alapján
-        if (nx * -ccx + ny * -ccy + nz * (CAM - ccz) <= 0) continue;
-
-        // Megvilágításhoz viszont a sima felületi normálist használjuk
-        const fn = mesh.faceNorm;
-        const sx = fn[q * 3], sy2 = fn[q * 3 + 1], sz = fn[q * 3 + 2];
-        const lam = sx * lmx + sy2 * lmy + sz * lmz;
-        const diff = lam > 0 ? lam : 0;
-        const hdot = sx * hmx + sy2 * hmy + sz * hmz;
-        const glint = hdot > 0 ? Math.pow(hdot, mesh.shin) : 0;
-
-        fMesh[faceCount] = mi;
-        fQuad[faceCount] = q;
-        fDepth[faceCount] = ccz + mesh.bias;
-        fShade[faceCount] = 0.54 + 0.60 * diff;
-        fSpec[faceCount] = glint;
-        fOrder[faceCount] = faceCount;
-        faceCount++;
-
-        if (isSel) {
-          markX += (sc[f[k] * 2] + sc[f[k + 2] * 2]) * 0.5;
-          markY += (sc[f[k] * 2 + 1] + sc[f[k + 2] * 2 + 1]) * 0.5;
-          markN++;
-        }
-      }
-    }
-
-    const order = fOrder.subarray(0, faceCount);
-    order.sort((a, b) => fDepth[a] - fDepth[b]);
-
-    let curAlpha = -1;
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 0.9;
-
-    for (let i = 0; i < faceCount; i++) {
-      const fi = order[i];
-      const mesh = meshes[fMesh[fi]];
-      const sc = mesh.screen;
-      const k = fQuad[fi] * 4;
-      const a = mesh.faces[k], b = mesh.faces[k + 1], c = mesh.faces[k + 2], d = mesh.faces[k + 3];
-
-      if (mesh.alpha !== curAlpha) {
-        curAlpha = mesh.alpha;
-        ctx.globalAlpha = curAlpha;
-      }
-
-      const hot = (selected !== null && mesh.partIndex === selected) ? 2
-        : ((hovered !== null && mesh.partIndex === hovered) ? 1
-          : (selected !== null ? 3 : 0));
-      let sb = (fShade[fi] / 1.6 * 64) | 0;
-      if (sb < 0) sb = 0; else if (sb > 63) sb = 63;
-      let pb = (fSpec[fi] * 16) | 0;
-      if (pb < 0) pb = 0; else if (pb > 15) pb = 15;
-      const col = shadeColor(mesh, sb, pb, hot);
-
-      let ax = sc[a * 2], ay = sc[a * 2 + 1];
-      let bx = sc[b * 2], by = sc[b * 2 + 1];
-      let cx2 = sc[c * 2], cy2 = sc[c * 2 + 1];
-      let dx2 = sc[d * 2], dy2 = sc[d * 2 + 1];
-
-      /* A szomszédos lapok közé az élsimítás hajszálvékony rést hagy. Régebben
-         egy azonos színű körvonal takarta el, de az megduplázta a rajzolási
-         hívások számát. Helyette a lapot a saját súlypontjából kifelé tágítjuk
-         egy képpont töredékével — ez néhány szorzás, nem újabb raszterezés. */
-      if (curAlpha > 0.95) {
-        const mx = (ax + bx + cx2 + dx2) * 0.25;
-        const my = (ay + by + cy2 + dy2) * 0.25;
-        const spread = (Math.abs(ax - mx) + Math.abs(ay - my)
-          + Math.abs(cx2 - mx) + Math.abs(cy2 - my)) * 0.5;
-        const g = 1 + 1.05 / (spread + 1.3);
-        ax = mx + (ax - mx) * g; ay = my + (ay - my) * g;
-        bx = mx + (bx - mx) * g; by = my + (by - my) * g;
-        cx2 = mx + (cx2 - mx) * g; cy2 = my + (cy2 - my) * g;
-        dx2 = mx + (dx2 - mx) * g; dy2 = my + (dy2 - my) * g;
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.lineTo(bx, by);
-      ctx.lineTo(cx2, cy2);
-      if (d !== c) ctx.lineTo(dx2, dy2);
-      ctx.closePath();
-      ctx.fillStyle = col;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    updateMarker(markN ? markX / markN : null, markN ? markY / markN : null);
-  }
-
-  function updateMarker(x, y) {
-    if (!markerEl) return;
-    if (selected === null || x === null) {
-      markerEl.hidden = true;
-      return;
-    }
-    markerEl.hidden = false;
-    markerEl.style.left = (x / cssW * 100) + '%';
-    markerEl.style.top = (y / cssH * 100) + '%';
-    markerEl.classList.toggle('is-right', x > cssW * 0.55);
-  }
-
-  /* ---- Animációs hurok ---------------------------------------------------
-     Három dolog tartja alacsonyan a terhelést:
-     1. képkockakorlát — a modell 30 kép/mp-mel is folyamatosnak látszik,
-        viszont fele annyi munkát ad a szálnak, mint a 60;
-     2. görgetés alatti szünet — görgetés közben a rajzolás versenyezne a
-        gördítéssel, és ettől akadt meg az egész oldal;
-     3. önszabályozás — ha egy gyengébb gépen mégis hosszúak a képkockák,
-        magától visszavesz a felbontásból, majd leállítja a forgatást.
-     -------------------------------------------------------------------- */
-  const FRAME_MS = 33;          // ~30 kép/mp
-  const SCROLL_PAUSE_MS = 180;
-  let scrollQuietAt = 0;
-  let lastDraw = 0;
-  let slowAvg = 0;
-  let slowSamples = 0;
-  let quality = 2;              // 2 = teljes, 1 = kisebb felbontás, 0 = forgatás nélkül
-
-  function shouldRun() {
-    return inView && isPageLive();
-  }
-
-  function frame(now) {
-    if (!shouldRun()) { running = false; rafId = 0; return; }
-    const dt = lastTime ? Math.min(64, now - lastTime) : 16;
-    lastTime = now;
-
-    let active = false;
-    if (spinOn) { spinPhase += dt * 0.00042; active = true; }
-    if (tweening) {
-      const ease = 1 - Math.pow(0.001, dt / 620);
-      yaw += (targetYaw - yaw) * ease;
-      pitch += (targetPitch - pitch) * ease;
-      if (Math.abs(targetYaw - yaw) < 0.002 && Math.abs(targetPitch - pitch) < 0.002) {
-        yaw = targetYaw; pitch = targetPitch; tweening = false;
-      }
-      active = true;
-    }
-
-    if (!active && !dirty) { running = false; rafId = 0; return; }
-
-    // Görgetés közben, illetve a képkockakorlát alatt csak várunk. Húzás
-    // közben viszont nincs korlát: ott a késleltetés azonnal érezhető lenne.
-    if (now < scrollQuietAt || (!interacting && now - lastDraw < FRAME_MS)) {
-      rafId = requestAnimationFrame(frame);
-      return;
-    }
-
-    dirty = false;
-    lastDraw = now;
-    const t0 = performance.now();
-    render();
-    const cost = performance.now() - t0;
-
-    // Gördülő átlag: egy-egy kiugró képkocka még nem ok a visszavételre
-    slowAvg = slowAvg ? slowAvg * 0.9 + cost * 0.1 : cost;
-    if (++slowSamples > 24 && slowAvg > 22 && quality > 0) {
-      quality--;
-      slowSamples = 0;
-      slowAvg = 0;
-      if (quality === 1) { maxDpr = 1; resize(true); }
-      else setSpin(false);
-    }
-
-    rafId = requestAnimationFrame(frame);
-  }
-
-  // Görgetés alatt nem rajzolunk: így nem akad meg az oldal gördítése
-  window.addEventListener('scroll', () => {
-    scrollQuietAt = (window.performance ? performance.now() : Date.now()) + SCROLL_PAUSE_MS;
-  }, { passive: true });
-
-  function requestRender() {
-    dirty = true;
-    if (running || !shouldRun()) return;
-    running = true;
-    lastTime = 0;
-    rafId = requestAnimationFrame(frame);
-  }
-
-  function stopLoop() {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0; running = false;
-  }
-
-  /* ---- Találatvizsgálat (melyik képletre mutat az egér) ------------------ */
-  function faceHit(fi, px, py) {
-    const mesh = meshes[fMesh[fi]];
-    const sc = mesh.screen;
-    const k = fQuad[fi] * 4;
-    const idx = [mesh.faces[k], mesh.faces[k + 1], mesh.faces[k + 2], mesh.faces[k + 3]];
-    const n = (idx[3] === idx[2]) ? 3 : 4;
-    let sign = 0;
-    for (let i = 0; i < n; i++) {
-      const a = idx[i] * 2, b = idx[(i + 1) % n] * 2;
-      const cross = (sc[b] - sc[a]) * (py - sc[a + 1]) - (sc[b + 1] - sc[a + 1]) * (px - sc[a]);
-      if (cross === 0) continue;
-      const s = cross > 0 ? 1 : -1;
-      if (sign === 0) sign = s;
-      else if (sign !== s) return false;
-    }
-    return true;
-  }
-
-  // A nagy, átlátszó kitöltő terek (csarnokvíz, üvegtest) csak akkor
-  // nyernek, ha semmi más nem esik a mutató alá; a szaruhártya pedig
-  // átengedi a mögötte lévő szivárványhártyát és pupillát.
-  const PICK_RANK = {
-    aqueous: 1, vitreous: 1, cornea: 3,
-    sclera: 3, choroid: 3, retina: 3, ciliary: 3,
-    iris: 4, pupil: 4, lens: 4, macula: 5, optic: 5
-  };
-
-  function pick(px, py) {
-    let best = -1, bestRank = -1;
-    for (let i = faceCount - 1; i >= 0; i--) {
-      const fi = fOrder[i];
-      const mesh = meshes[fMesh[fi]];
-      if (!faceHit(fi, px, py)) continue;
-      // A metszlapon az adott képlet keresztmetszete látszik, ezért ott ő a
-      // találat — különben a csarnokvíz sosem lenne kattintható, hiszen mindig
-      // van mögötte szilárd felület. Az üvegtest kimarad ebből: a metszete a
-      // teljes belső teret lefedné, és elvenné a jól látható ideghártyát.
-      const id = EYE_PARTS[mesh.partIndex].id;
-      const onCut = mesh.faceSeg[fQuad[fi]] < 0 && id !== 'vitreous';
-      const rank = (PICK_RANK[id] || 2) + (onCut ? 3 : 0);
-      if (rank > bestRank) { bestRank = rank; best = mesh.partIndex; }
-      if (mesh.alpha > 0.95) break;   // átlátszatlan lap mögé nem látunk
-    }
-    return best >= 0 ? best : null;
-  }
-
-  /* ---- Kártya és gombsor ------------------------------------------------ */
-  const ICONS = {
-    what: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5" stroke-linecap="round"/><circle cx="10" cy="6.2" r=".9" fill="currentColor" stroke="none"/></svg>',
-    role: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/></svg>',
-    risk: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.6 18.4 17H1.6L10 2.6z"/><path d="M10 8v3.4"/><circle cx="10" cy="14" r=".9" fill="currentColor" stroke="none"/></svg>',
-    exam: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="m13.5 13.5 4 4"/></svg>'
-  };
-
-  function renderCard(part) {
-    if (!part) {
-      badgeEl.textContent = 'Interaktív modell';
-      titleEl.textContent = 'Válasszon egy szemrészletet';
-      latinEl.textContent = 'Anatomia oculi humani';
-      bodyEl.innerHTML =
-        '<div class="eye-placeholder">' +
-        '<span class="eye-placeholder__icon">' + ICONS.role + '</span>' +
-        '<p class="eye-placeholder__text">Forgassa meg a modellt, majd kattintson a szem valamelyik képletére — vagy válasszon a fenti gombok közül. Minden részhez rövid orvosi magyarázat tartozik.</p>' +
-        '</div>';
+  function triggerCardAnimation() {
+    if (bodyEl) {
       bodyEl.classList.remove('is-animating');
+      void bodyEl.offsetWidth;
+      bodyEl.classList.add('is-animating');
+    }
+    const cardHeader = document.querySelector('.eye-card__header');
+    if (cardHeader) {
+      cardHeader.classList.remove('is-animating');
+      void cardHeader.offsetWidth;
+      cardHeader.classList.add('is-animating');
+    }
+  }
+
+  function renderPlaceholder() {
+    badgeEl.textContent = 'Interaktív szemanatómia';
+    titleEl.textContent = 'Válasszon egy szemrészletet';
+    latinEl.textContent = 'Anatomia oculi humani';
+
+    bodyEl.innerHTML =
+      '<div class="eye-placeholder">' +
+      '<span class="eye-placeholder__icon">' + EYE_ICONS.role + '</span>' +
+      '<p class="eye-placeholder__text">Kattintson az ábrán látható pulzáló pontokra, a feliratokra vagy a fenti gombokra a szem egyes részeinek megismeréséhez. Minden képlethez részletes orvosi és optometriai leírás tartozik.</p>' +
+      '</div>';
+  }
+
+  function renderCard(partId) {
+    const part = EYE_PARTS[partId];
+    if (!part) {
+      renderPlaceholder();
       return;
     }
 
     badgeEl.textContent = part.badge;
     titleEl.textContent = part.name;
     latinEl.textContent = part.latin;
+
     bodyEl.innerHTML =
       '<div class="eye-info-group">' +
-      '<p class="eye-info-label">' + ICONS.what + ' Mi ez?</p>' +
+      '<p class="eye-info-label">' + EYE_ICONS.what + ' Mi ez?</p>' +
       '<p class="eye-info-text">' + part.intro + '</p>' +
       '</div>' +
+
       '<div class="eye-info-group">' +
-      '<p class="eye-info-label">' + ICONS.role + ' Mi a feladata?</p>' +
-      '<ul class="eye-info-list">' + part.functions.map((t) => '<li>' + t + '</li>').join('') + '</ul>' +
+      '<p class="eye-info-label">' + EYE_ICONS.role + ' Mi a feladata?</p>' +
+      '<ul class="eye-info-list">' +
+      part.functions.map(f => '<li>' + f + '</li>').join('') +
+      '</ul>' +
       '</div>' +
+
       '<div class="eye-info-group">' +
-      '<p class="eye-info-label">' + ICONS.risk + ' Ha nem működik jól</p>' +
+      '<p class="eye-info-label">' + EYE_ICONS.risk + ' Ha nem működik jól / Elváltozások</p>' +
       '<p class="eye-info-text">' + part.disorders + '</p>' +
       '</div>' +
+
       '<div class="eye-info-group">' +
-      '<p class="eye-info-label">' + ICONS.exam + ' Így vizsgáljuk</p>' +
+      '<p class="eye-info-label">' + EYE_ICONS.exam + ' Így vizsgáljuk az Optikában</p>' +
       '<span class="eye-exam-chip">' + part.exam + '</span>' +
       '</div>';
 
-    bodyEl.classList.remove('is-animating');
-    void bodyEl.offsetWidth;
-    bodyEl.classList.add('is-animating');
+    triggerCardAnimation();
   }
 
-  function select(index, fromPill) {
-    selected = index;
-    const part = index === null ? null : EYE_PARTS[index];
+  function selectPart(partId, triggerScroll = false) {
+    selectedPartId = partId;
 
-    pillsBox.querySelectorAll('.eye-pill').forEach((btn) => {
-      const on = part && btn.getAttribute('data-part') === part.id;
-      btn.classList.toggle('is-active', !!on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    // Synchronize UI active states
+    svgEl.querySelectorAll('.leader-line').forEach(line => {
+      const active = line.getAttribute('data-part') === partId;
+      line.classList.toggle('is-active', active);
     });
 
-    if (markerEl) {
-      const label = markerEl.querySelector('.eye-marker-label');
-      if (label) label.textContent = part ? part.name : '';
-    }
+    svgEl.querySelectorAll('.leader-dot').forEach(dot => {
+      const active = dot.getAttribute('data-part') === partId;
+      dot.classList.toggle('is-active', active);
+    });
 
-    if (part) {
-      // A belső képletek csak nyitott metszetben látszanak
-      if (part.interior && !cutOn) setCut(true);
-      if (fromPill && part.view) {
-        targetYaw = part.view.yaw * DEG;
-        targetPitch = part.view.pitch * DEG;
-        tweening = true;
+    hotspotsLayer.querySelectorAll('.eye-pin').forEach(pin => {
+      const active = pin.getAttribute('data-part') === partId;
+      pin.classList.toggle('is-active', active);
+      pin.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    pillsBox.querySelectorAll('.eye-pill').forEach(pill => {
+      const active = pill.getAttribute('data-part') === partId;
+      pill.classList.toggle('is-active', active);
+      pill.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    if (partId) {
+      renderCard(partId);
+      if (triggerScroll && window.innerWidth < 960) {
+        const cardEl = document.getElementById('eye-card');
+        if (cardEl) {
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
+    } else {
+      renderPlaceholder();
     }
-
-    renderCard(part);
-    requestRender();
   }
 
-  function setCut(on) {
-    cutOn = on;
-    if (cutBtn) {
-      cutBtn.classList.toggle('is-active', on);
-      cutBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    }
-    requestRender();
-  }
+  function renderHotspotsAndPills() {
+    svgEl.innerHTML = '';
+    hotspotsLayer.innerHTML = '';
+    pillsBox.innerHTML = '';
 
-  function setSpin(on) {
-    spinOn = on;
-    if (spinBtn) {
-      spinBtn.classList.toggle('is-active', on);
-      spinBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    }
-    requestRender();
-  }
+    EYE_HOTSPOTS.forEach((item, idx) => {
+      const part = EYE_PARTS[item.id];
+      if (!part) return;
 
-  EYE_PARTS.forEach((part) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'eye-pill';
-    btn.setAttribute('data-part', part.id);
-    btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-selected', 'false');
-    btn.innerHTML = '<span class="eye-pill__swatch" style="background:' + part.swatch + '"></span>' + part.name;
-    btn.addEventListener('click', () => select(PART_INDEX[part.id], true));
-    btn.addEventListener('mouseenter', () => {
-      if (hovered !== PART_INDEX[part.id]) { hovered = PART_INDEX[part.id]; requestRender(); }
-    });
-    btn.addEventListener('mouseleave', () => {
-      if (hovered !== null) { hovered = null; requestRender(); }
-    });
-    pillsBox.appendChild(btn);
-  });
+      const animDelay = (idx * 40) + 'ms';
+      const isSelected = selectedPartId === item.id;
 
-  renderCard(null);
-
-  /* ---- Egér, érintés, billentyűzet -------------------------------------- */
-  let dragging = false, dragMoved = false, lastX = 0, lastY = 0;
-
-  canvas.addEventListener('pointerdown', (e) => {
-    dragging = true; dragMoved = false; interacting = true;
-    lastX = e.clientX; lastY = e.clientY;
-    if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
-  });
-
-  canvas.addEventListener('pointermove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-
-    if (dragging) {
-      const dx = e.clientX - lastX, dy = e.clientY - lastY;
-      if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
-      lastX = e.clientX; lastY = e.clientY;
-      yaw += dx * 0.0085;
-      pitch = Math.max(-1.15, Math.min(1.15, pitch + dy * 0.0075));
-      targetYaw = yaw; targetPitch = pitch; tweening = false;
-      if (tipEl) tipEl.hidden = true;
-      requestRender();
-      return;
-    }
-
-    if (e.pointerType === 'touch') return;
-    const hit = pick(px, py);
-    if (hit !== hovered) {
-      hovered = hit;
-      requestRender();
-    }
-    canvas.style.cursor = hit === null ? 'grab' : 'pointer';
-    if (tipEl) {
-      if (hit === null) {
-        tipEl.hidden = true;
-      } else {
-        tipEl.hidden = false;
-        tipEl.textContent = EYE_PARTS[hit].name;
-        tipEl.style.left = (px / cssW * 100) + '%';
-        tipEl.style.top = (py / cssH * 100) + '%';
-        tipEl.classList.toggle('is-right', px > cssW * 0.6);
+      // 1. Leader Line
+      let path = null;
+      if (item.svgPath) {
+        path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', item.svgPath);
+        path.setAttribute('class', 'leader-line' + (isSelected ? ' is-active' : ''));
+        path.setAttribute('data-part', item.id);
+        path.style.animationDelay = animDelay;
+        path.addEventListener('click', () => selectPart(item.id, true));
+        svgEl.appendChild(path);
       }
-    }
-  });
 
-  function endDrag(e) {
-    interacting = false;
-    if (!dragging) return;
-    dragging = false;
-    if (canvas.releasePointerCapture && e.pointerId !== undefined) {
-      try { canvas.releasePointerCapture(e.pointerId); } catch (err) { /* már elengedve */ }
+      // 2. Target Dot
+      let dot = null;
+      if (item.target) {
+        dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', item.target.x);
+        dot.setAttribute('cy', item.target.y);
+        dot.setAttribute('r', '6.5');
+        dot.setAttribute('class', 'leader-dot' + (isSelected ? ' is-active' : ''));
+        dot.setAttribute('data-part', item.id);
+        dot.style.animationDelay = animDelay;
+        dot.addEventListener('click', () => selectPart(item.id, true));
+        svgEl.appendChild(dot);
+      }
+
+      // 3. Callout Pin Button
+      if (item.label) {
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = 'eye-pin' + (item.side ? ' eye-pin--' + item.side : '') + (isSelected ? ' is-active' : '');
+        pin.style.left = (item.label.x / 1000 * 100) + '%';
+        pin.style.top = (item.label.y / 1000 * 100) + '%';
+        pin.style.animationDelay = animDelay;
+        pin.textContent = part.name;
+        pin.setAttribute('data-part', item.id);
+        pin.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+        // Hover synchronization
+        pin.addEventListener('mouseenter', () => {
+          if (path) path.classList.add('is-active');
+          if (dot) dot.classList.add('is-active');
+        });
+        pin.addEventListener('mouseleave', () => {
+          if (selectedPartId !== item.id) {
+            if (path) path.classList.remove('is-active');
+            if (dot) dot.classList.remove('is-active');
+          }
+        });
+
+        if (path) {
+          path.addEventListener('mouseenter', () => {
+            pin.classList.add('is-active');
+            if (dot) dot.classList.add('is-active');
+          });
+          path.addEventListener('mouseleave', () => {
+            if (selectedPartId !== item.id) {
+              pin.classList.remove('is-active');
+              if (dot) dot.classList.remove('is-active');
+            }
+          });
+        }
+
+        pin.addEventListener('click', () => selectPart(item.id, true));
+        hotspotsLayer.appendChild(pin);
+      }
+
+      // 4. Quick filter Pill Button
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'eye-pill' + (isSelected ? ' is-active' : '');
+      pill.setAttribute('data-part', item.id);
+      pill.setAttribute('role', 'tab');
+      pill.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      pill.style.animationDelay = (idx * 30) + 'ms';
+      pill.innerHTML = '<span class="eye-pill__swatch" style="background:' + part.swatch + '"></span>' + part.name;
+
+      pill.addEventListener('click', () => selectPart(item.id, true));
+      pillsBox.appendChild(pill);
+    });
+
+    if (selectedPartId) {
+      renderCard(selectedPartId);
+    } else {
+      renderPlaceholder();
     }
-    if (dragMoved) return;
-    const rect = canvas.getBoundingClientRect();
-    const hit = pick(e.clientX - rect.left, e.clientY - rect.top);
-    if (hit !== null) select(hit, false);
   }
 
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', () => { dragging = false; interacting = false; });
-
-  canvas.addEventListener('pointerleave', () => {
-    if (hovered !== null) { hovered = null; requestRender(); }
-    if (tipEl) tipEl.hidden = true;
-  });
-
-  canvas.addEventListener('keydown', (e) => {
-    const step = 0.12;
-    let used = true;
-    if (e.key === 'ArrowLeft') yaw -= step;
-    else if (e.key === 'ArrowRight') yaw += step;
-    else if (e.key === 'ArrowUp') pitch = Math.min(1.15, pitch + step);
-    else if (e.key === 'ArrowDown') pitch = Math.max(-1.15, pitch - step);
-    else used = false;
-    if (used) {
-      e.preventDefault();
-      targetYaw = yaw; targetPitch = pitch; tweening = false;
-      requestRender();
-    }
-  });
-
-  if (cutBtn) cutBtn.addEventListener('click', () => setCut(!cutOn));
-  if (spinBtn) spinBtn.addEventListener('click', () => setSpin(!spinOn));
+  // Reset button listener
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      targetYaw = DEFAULT_VIEW.yaw * DEG;
-      targetPitch = DEFAULT_VIEW.pitch * DEG;
-      tweening = true;
-      setCut(true);
-      select(null, false);
+      selectPart(null);
     });
   }
-  if (reduceMotion) setSpin(false);
 
-  /* ---- Láthatóság és életciklus ----------------------------------------- */
-  resize();
+  // Initial render
+  renderHotspotsAndPills();
+}
 
-  let resizeFrame = 0;
-  window.addEventListener('resize', () => {
-    if (resizeFrame) return;
-    resizeFrame = requestAnimationFrame(() => {
-      resizeFrame = 0;
-      resize();
-      requestRender();
+/* ==========================================================================
+   5.5. Interaktív Színlátás Teszt (Ishihara-módszer)
+   ========================================================================== */
+
+/* ==========================================================================
+   5.5. Interaktív Színlátás Teszt (Ishihara-módszer)
+   ========================================================================== */
+
+const COLORBLIND_PLATES_POOL = [
+  {
+    id: 'p12',
+    name: 'Kontroll tesztábra',
+    image: 'assets/ishihara/plate-12.webp',
+    correct: '12',
+    distractors: ['72', '18', '21', '13', '70', '15', '24'],
+    type: 'control',
+    clinical: 'Minden ember (ép színlátó és színtévesztő is) látja a 12-es számot.'
+  },
+  {
+    id: 'p74',
+    name: 'Vörös-zöld tesztábra',
+    image: 'assets/ishihara/plate-74.webp',
+    correct: '74',
+    deutanIllusion: '21',
+    distractors: ['21', '71', '47', '24', '77', '14'],
+    type: 'red-green',
+    clinical: 'Ép színlátással 74-es, vörös-zöld színtévesztéssel 21-es vagy nem kivehető.'
+  },
+  {
+    id: 'p35',
+    name: 'Vörös-zöld tesztábra',
+    image: 'assets/ishihara/plate-35.webp',
+    correct: '35',
+    deutanIllusion: '53',
+    distractors: ['53', '36', '85', '38', '95', '25'],
+    type: 'red-green',
+    clinical: 'Ép színlátással tisztán kivehető a 35-ös számjegy.'
+  },
+  {
+    id: 'p42',
+    name: 'Transzformációs tesztábra',
+    image: 'assets/ishihara/plate-42.webp',
+    correct: '42',
+    deutanIllusion: '2',
+    protanIllusion: '4',
+    distractors: ['24', '48', '12', '45', '72', '32'],
+    type: 'transformation',
+    clinical: 'Ép színlátással 42-es, színtévesztéssel leggyakrabban csak a 2-es vagy 4-es kivehető.'
+  },
+  {
+    id: 'p29',
+    name: 'Vörös-zöld tesztábra',
+    image: 'assets/ishihara/plate-29.webp',
+    correct: '29',
+    deutanIllusion: '70',
+    distractors: ['70', '28', '79', '20', '92', '26'],
+    type: 'red-green',
+    clinical: 'Ép színlátással 29-es, vörös-zöld színtévesztéssel 70-es vagy nem kivehető.'
+  },
+  {
+    id: 'p52',
+    name: 'Finom árnyalat tesztábra',
+    image: 'assets/ishihara/plate-52.webp',
+    correct: '52',
+    distractors: ['25', '62', '58', '32', '57', '82'],
+    type: 'fine-color',
+    clinical: 'Ép színlátással tisztán látható az 52-es számjegy.'
+  },
+  {
+    id: 'p4',
+    name: 'Finom kontraszt (HRR) tesztábra',
+    image: 'assets/ishihara/plate-4.webp',
+    correct: '4',
+    distractors: ['1', '7', '9', '6', '5', '8', '3'],
+    type: 'fine-contrast',
+    clinical: 'Szürke alapon halvány zöldes-türkiz 4-es számjegy a finom színkontraszt vizsgálatára.'
+  },
+  {
+    id: 'p16',
+    name: 'Vörös-zöld tesztábra',
+    image: 'assets/ishihara/plate-16.webp',
+    correct: '16',
+    distractors: ['18', '76', '10', '15', '61', '19'],
+    type: 'red-green',
+    clinical: 'Ép színlátással 16-os, színtévesztéssel nem kivehető.'
+  },
+  {
+    id: 'p73',
+    name: 'Kék-sárga (Tritan) tesztábra',
+    image: 'assets/ishihara/plate-73.webp',
+    correct: '73',
+    distractors: ['37', '78', '13', '79', '23', '75'],
+    type: 'tritan',
+    clinical: 'Sárgás-borostyán alapon indigókék/lila 73-as számjegy a ritkább kék-sárga (tritán) és finom színkontraszt vizsgálatára.'
+  },
+  {
+    id: 'p7',
+    name: 'Vörös-zöld eltűnő (vanishing) tesztábra',
+    image: 'assets/ishihara/plate-7.webp',
+    correct: '7',
+    distractors: ['1', '4', '2', '9', '8', '3'],
+    type: 'vanishing',
+    clinical: 'Ép színlátással tisztán 7-es; színtévesztéssel elmosódik a háttérben.'
+  }
+];
+
+function initColorBlindnessTest() {
+  const quizEl = document.getElementById('cb-quiz');
+  const resultEl = document.getElementById('cb-result');
+  const plateImg = document.getElementById('cb-plate-img');
+  const stepBadge = document.getElementById('cb-step-badge');
+  const plateName = document.getElementById('cb-plate-name');
+  const progressFill = document.getElementById('cb-progress-fill');
+  const optionsGrid = document.getElementById('cb-options-grid');
+
+  if (!quizEl || !resultEl || !plateImg || !optionsGrid) return;
+
+  let currentStep = 0;
+  let activePlates = [];
+  const userAnswers = [];
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function startQuiz() {
+    currentStep = 0;
+    userAnswers.length = 0;
+
+    // Az ÖSSZES (mind a 10) ábra teljesen véletlenszerű sorrendben jelenik meg minden tesztindításkor
+    activePlates = shuffle(COLORBLIND_PLATES_POOL);
+
+    quizEl.hidden = false;
+    resultEl.hidden = true;
+    loadStep(0);
+  }
+
+  function generateRandomOptions(plate) {
+    const correct = String(plate.correct);
+    const isSingleDigit = correct.length === 1;
+    const poolSet = new Set();
+
+    // 1. Speciális színtévesztő illúziók hozzáadása
+    if (plate.deutanIllusion && plate.deutanIllusion !== correct) {
+      poolSet.add(String(plate.deutanIllusion));
+    }
+    if (plate.protanIllusion && plate.protanIllusion !== correct) {
+      poolSet.add(String(plate.protanIllusion));
+    }
+
+    // 2. Beépített hiteles alternatívák hozzáadása
+    if (Array.isArray(plate.distractors)) {
+      plate.distractors.forEach(d => {
+        if (String(d) !== correct) poolSet.add(String(d));
+      });
+    }
+
+    // 3. Dinamikusan generált random számok hozzáadása a gazdag választékért
+    if (isSingleDigit) {
+      const singleDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      singleDigits.forEach(n => {
+        if (n !== correct) poolSet.add(n);
+      });
+    } else {
+      const num = parseInt(correct, 10);
+      // Fordított számjegyek (pl. 74 -> 47)
+      const reversed = correct.split('').reverse().join('');
+      if (reversed !== correct && reversed.length === 2 && !reversed.startsWith('0')) {
+        poolSet.add(reversed);
+      }
+      // Közeli és random 2-jegyű számok
+      [-10, -5, -2, -1, 1, 2, 5, 10].forEach(offset => {
+        const val = num + offset;
+        if (val >= 10 && val <= 99 && String(val) !== correct) {
+          poolSet.add(String(val));
+        }
+      });
+      while (poolSet.size < 12) {
+        const rnd = String(Math.floor(Math.random() * 89) + 10);
+        if (rnd !== correct) poolSet.add(rnd);
+      }
+    }
+
+    // Kiválasztunk 3 véletlenszerű egyedi tévesztő számot
+    const poolArray = shuffle(Array.from(poolSet));
+    const selectedDistractors = poolArray.slice(0, 3);
+
+    // Összekeverjük a 4 gombot (helyes válasz + 3 tévesztő) — így a helyes válasz pozíciója teljesen random!
+    return shuffle([correct, ...selectedDistractors]);
+  }
+
+  function loadStep(stepIndex) {
+    const item = activePlates[stepIndex];
+    if (!item) return;
+
+    // Progress UI
+    if (stepBadge) stepBadge.textContent = `${stepIndex + 1} / ${activePlates.length}. ábra`;
+    if (plateName) plateName.textContent = `${stepIndex + 1}. Tesztábra — ${item.name}`;
+    if (progressFill) {
+      const pct = ((stepIndex + 1) / activePlates.length) * 100;
+      progressFill.style.width = `${pct}%`;
+    }
+
+    // Plate image transition
+    plateImg.classList.add('is-transitioning');
+    setTimeout(() => {
+      plateImg.src = item.image;
+      plateImg.alt = `Ishihara tesztábra: ${item.name}`;
+      plateImg.onload = () => {
+        plateImg.classList.remove('is-transitioning');
+      };
+      setTimeout(() => plateImg.classList.remove('is-transitioning'), 100);
+    }, 150);
+
+    // Options buttons - minden alkalommal random számok és random pozíciók!
+    optionsGrid.innerHTML = '';
+    const currentOptions = generateRandomOptions(item);
+
+    currentOptions.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cb-btn';
+      btn.textContent = opt;
+      btn.setAttribute('aria-label', `Válasz: ${opt}`);
+      btn.addEventListener('click', () => handleAnswer(opt));
+      optionsGrid.appendChild(btn);
     });
-  });
 
-  const observer = new IntersectionObserver((entries) => {
-    inView = entries[0].isIntersecting;
-    if (inView) { resize(); requestRender(); } else stopLoop();
-  }, { threshold: 0.05 });
-  observer.observe(viewport);
+    // "Nem látok számot" option
+    const noneBtn = document.createElement('button');
+    noneBtn.type = 'button';
+    noneBtn.className = 'cb-btn cb-btn--none';
+    noneBtn.innerHTML = `
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-right:6px; flex-shrink:0;">
+        <circle cx="10" cy="10" r="7.5"/>
+        <line x1="4.5" y1="4.5" x2="15.5" y2="15.5"/>
+      </svg>
+      Nem látok számot / Nem kivehető
+    `;
+    noneBtn.addEventListener('click', () => handleAnswer('none'));
+    optionsGrid.appendChild(noneBtn);
+  }
 
-  document.addEventListener('visibilitychange', () => {
-    if (isPageLive()) requestRender(); else stopLoop();
-  });
-  frameMotion.hooks.push(() => {
-    if (isPageLive()) requestRender(); else stopLoop();
-  });
+  function handleAnswer(answer) {
+    userAnswers[currentStep] = answer;
+    currentStep++;
+
+    if (currentStep < activePlates.length) {
+      loadStep(currentStep);
+    } else {
+      showResults();
+    }
+  }
+
+  function showResults() {
+    quizEl.hidden = true;
+    resultEl.hidden = false;
+
+    let correctCount = 0;
+    let deutanPoints = 0;
+    let protanPoints = 0;
+    let noneCount = 0;
+
+    activePlates.forEach((plate, idx) => {
+      const ans = userAnswers[idx];
+      if (ans === plate.correct) {
+        correctCount++;
+      } else if (ans === 'none') {
+        noneCount++;
+      }
+
+      if (plate.deutanIllusion && ans === plate.deutanIllusion) {
+        deutanPoints += 2;
+      }
+      if (plate.protanIllusion && ans === plate.protanIllusion) {
+        protanPoints += 2;
+      }
+    });
+
+    const total = activePlates.length;
+
+    let resultBadgeClass = 'cb-result-badge--success';
+    let resultBadgeText = 'Ép színérzékelés';
+    let resultTitle = 'Normál Színlátás (Trichromát)';
+    let summaryText = `Kiváló eredmény! A teszt mind a ${total} ábráját (${correctCount} / ${total}) hibátlanul azonosította. Az Ön színérzékelése a vörös, zöld és kék spektrum teljes tartományában éles és kiegyensúlyozott.`;
+    let physiologyText = 'A retina mindhárom típusú csapsejtje (L-vörös, M-zöld, S-kék) egészségesen működik, a látóideg pontos spektrális jeleket továbbít az agy látókérgébe. Ez maximális biztonságot nyújt a gépjárművezetésben és a vizuális munkavégzésben.';
+    let adviceText = 'Az ép színlátás érték! Évente egy rutin optometriai és szemfenéki kontroll javasolt a retina és a látóidegfő tartós épségének megőrzésére.';
+
+    if (correctCount >= total - 1) {
+      // 9-10 helyes -> Normál
+    } else if (correctCount >= 6) {
+      // 6-8 helyes -> Enyhe eltérés
+      resultBadgeClass = 'cb-result-badge--warning';
+
+      if (deutanPoints > protanPoints) {
+        resultBadgeText = 'Deuteranomália gyanúja';
+        resultTitle = 'Zöldérzékenységi Eltérés (Deuteranomália)';
+        summaryText = `A teszten ${total}-ból ${correctCount} ábrát azonosított sikeresen. A válaszok mintázata a zöld-érzékeny receptorok (M-csapok) enyhe eltolódására utal.`;
+        physiologyText = 'A deuteranomália a leggyakoribb színtévesztési forma (a színtévesztők ~75%-a). Bizonyos zöld és vörös, illetve pasztell árnyalatok egymáshoz közelivé válhatnak.';
+      } else if (protanPoints > deutanPoints) {
+        resultBadgeText = 'Protanomália gyanúja';
+        resultTitle = 'Vörösérzékenységi Eltérés (Protanomália)';
+        summaryText = `A teszten ${total}-ból ${correctCount} ábrát azonosított sikeresen. A válaszok mintázata a vörös-érzékeny receptorok (L-csapok) érzékenységcsökkenésére utal.`;
+        physiologyText = 'Protanomália esetén a mélyvörös árnyalatok tompábbnak, sötétebbnek látszódhatnak, és a piros-barna-sárga színek összefolyhatnak.';
+      } else {
+        resultBadgeText = 'Enyhe színtévesztés gyanúja';
+        resultTitle = 'Vörös-Zöld Színérzékelési Eltérés';
+        summaryText = `A teszten ${total}-ból ${correctCount} ábrát ismert fel helyesen. Néhány ábránál tapasztalt bizonytalanság enyhe spektrális eltolódást (anomális trichromázia) valószínűsít.`;
+        physiologyText = 'A vörös-zöld színtévesztés genetikai adottság (férfiak ~8%-a, nők ~0.5%-a), amely bizonyos színpárok kontrasztját csökkenti.';
+      }
+
+      adviceText = 'Feltétlenül érdemes hozzánk fordulnia! Szakrendelésünkön műszeres anomaloszkóppal pontosan kimérjük az eltérést, és speciális spektrális korrekciós lencséket illesztünk, amelyek látványosan fokozzák a színek élénkségét.';
+    } else {
+      // <= 5 helyes -> Kifejezett színtévesztés
+      resultBadgeClass = 'cb-result-badge--alert';
+      resultBadgeText = 'Színtévesztés valószínű';
+      resultTitle = 'Kifejezett Vörös-Zöld Színtévesztés';
+      summaryText = `A ${total} ábrából ${correctCount} számjegyet sikerült azonosítani (${noneCount} esetben nem volt kivehető szám). Az eredmény kifejezettebb színlátási eltérést (dichromázia vagy erős anomália) jelez.`;
+      physiologyText = 'A vörös és zöld színek megkülönböztetése a mindennapokban (pl. jelzőlámpák, térképek, grafikonok, elektromos vezetékek színkódjai) nehézséget okozhat.';
+      adviceText = 'Javasoljuk optometriai szakvizsgálatunkat! Segítünk a pontos diagnózis felállításában (pl. jogosítványhoz), és egyénre szabott színszűrős szemüveglencsékkel segítünk a színkontraszt helyreállításában.';
+    }
+
+    resultEl.innerHTML = `
+      <div class="cb-result__header">
+        <span class="cb-result-badge ${resultBadgeClass}">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor">
+            <circle cx="10" cy="10" r="6"/>
+          </svg>
+          ${resultBadgeText}
+        </span>
+        <h3 class="cb-result__title">${resultTitle}</h3>
+        <p class="cb-result__score">Eredmény: <strong>${correctCount} / ${total}</strong> helyes felismerés</p>
+      </div>
+
+      <div class="cb-result__grid">
+        <div class="cb-result-box">
+          <span class="cb-result-box__label">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="10" cy="10" r="8"/>
+              <line x1="10" y1="9" x2="10" y2="14"/>
+              <circle cx="10" cy="6.2" r=".7" fill="currentColor" stroke="none"/>
+            </svg>
+            1. Eredmény értelmezése
+          </span>
+          <p class="cb-result-box__text">${summaryText}</p>
+        </div>
+
+        <div class="cb-result-box">
+          <span class="cb-result-box__label">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="10" cy="10" r="7"/>
+              <path d="M10 7v3l2 2"/>
+            </svg>
+            2. Élettani háttér & hatások
+          </span>
+          <p class="cb-result-box__text">${physiologyText}</p>
+        </div>
+
+        <div class="cb-result-box">
+          <span class="cb-result-box__label">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h12v12H4z"/>
+              <path d="M8 10l2 2 4-4"/>
+            </svg>
+            3. Érdemes hozzánk fordulni?
+          </span>
+          <p class="cb-result-box__text">${adviceText}</p>
+        </div>
+      </div>
+
+      <div class="cb-result__actions">
+        <button type="button" class="btn btn-primary" id="cb-booking-btn">
+          Időpontfoglalás Szemvizsgálatra
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10h12M11 5l5 5-5 5"/>
+          </svg>
+        </button>
+        <button type="button" class="cb-btn-retest" id="cb-retest-btn">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.4 10a6.6 6.6 0 1 0 1.93-4.67"/>
+            <path d="M3 3v3.6h3.6"/>
+          </svg>
+          Teszt újraindítása (Új véletlenszerű sorrenddel)
+        </button>
+      </div>
+    `;
+
+    // Booking button event
+    const bookBtn = document.getElementById('cb-booking-btn');
+    if (bookBtn) {
+      bookBtn.addEventListener('click', () => {
+        const bookingDialog = document.getElementById('booking-dialog');
+        if (bookingDialog && typeof bookingDialog.showModal === 'function') {
+          bookingDialog.showModal();
+          document.body.classList.add('dialog-open');
+        }
+      });
+    }
+
+    // Retest button event
+    const retestBtn = document.getElementById('cb-retest-btn');
+    if (retestBtn) {
+      retestBtn.addEventListener('click', () => {
+        startQuiz();
+      });
+    }
+
+    // Scroll slightly to top of card if needed
+    const cardEl = document.getElementById('cb-card');
+    if (cardEl && window.innerWidth < 960) {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  // Start initial quiz session with randomized ordering
+  startQuiz();
 }
 
 /* ==========================================================================

@@ -1735,11 +1735,43 @@
     renderAnatomyView();
   }
 
+  var COMPLAINT_BADGES = {
+    'kar-vall': 'Lehetséges panaszok a vállnál:',
+    'kar-felkar': 'Lehetséges panaszok a felkarnál:',
+    'kar-konyok': 'Lehetséges panaszok a könyöknél:',
+    'kar-alkar': 'Lehetséges panaszok az alkarnál és kézfejnél:',
+    'lab-comb': 'Lehetséges panaszok a combnál:',
+    'lab-terd': 'Lehetséges panaszok a térdnél:',
+    'lab-vadli': 'Lehetséges panaszok a lábszárnál (vádlinál):',
+    'lab-achilles': 'Lehetséges panaszok a bokánál és Achilles-ínnál:',
+    'hat-trapez': 'Lehetséges panaszok a váll- és nyakövnél:',
+    'hat-lapocka': 'Lehetséges panaszok a felső hátnál és lapockánál:',
+    'hat-lumbago': 'Lehetséges panaszok az alsó hátnál (deréknál):',
+    'hat-isiasz': 'Lehetséges panaszok az ágyéki szakasznál és ülőidegnél:',
+    'csipo-piriformis': 'Lehetséges panaszok a farizomnál:',
+    'csipo-iliopsoas': 'Lehetséges panaszok a medencénél és SI ízületnél:',
+    'csipo-izulet': 'Lehetséges panaszok a csípőízületnél:',
+    'nyak-izom': 'Lehetséges panaszok a nyaknál:',
+    'nyak-tarko': 'Lehetséges panaszok a tarkónál és koponyánál:',
+    'nyak-trapez': 'Lehetséges panaszok a váll- és nyakövnél:',
+    'fej-tenzios': 'Lehetséges panaszok a halántéknál és homloknál:',
+    'fej-ragoizom': 'Lehetséges panaszok az állkapocsnál:',
+    'torzs-mell': 'Lehetséges panaszok a mellkasnál:',
+    'torzs-borda': 'Lehetséges panaszok a bordakosárnál:',
+    'torzs-has': 'Lehetséges panaszok a hasfalnál és törzsnél:',
+    'torzs-ferde': 'Lehetséges panaszok az oldalsó törzsnél:',
+    'talp-achilles': 'Lehetséges panaszok az Achilles-ínnál:',
+    'talp-boka': 'Lehetséges panaszok a bokaízületnél:',
+    'talp-sarok': 'Lehetséges panaszok a saroknál és sarkantyúnál:',
+    'talp-fascia': 'Lehetséges panaszok a talpnál és boltozatnál:'
+  };
+
   function selectSubSpot(subItem) {
     anatomyState.selectedSubSpot = subItem;
 
     // Update Card UI
-    if (acRegionBadge) acRegionBadge.textContent = subItem.badge;
+    var badgeText = (subItem.key && COMPLAINT_BADGES[subItem.key]) ? COMPLAINT_BADGES[subItem.key] : ('Lehetséges panaszok a(z) ' + (subItem.badge || subItem.name) + ' helyen:');
+    if (acRegionBadge) acRegionBadge.textContent = badgeText;
     if (acTitle) acTitle.textContent = subItem.title;
     if (acLatin) acLatin.textContent = subItem.latin;
 
@@ -1770,7 +1802,7 @@
     anatomyState.currentRegionGroupKey = null;
     anatomyState.selectedSubSpot = null;
 
-    if (acRegionBadge) acRegionBadge.textContent = 'Interaktív felmérés';
+    if (acRegionBadge) acRegionBadge.textContent = 'Lehetséges panaszok az érintett területen:';
     if (acTitle) acTitle.textContent = 'Kattintson egy izomcsoportra';
     if (acLatin) acLatin.textContent = 'Anatomia musculorum';
     if (acBody) {
