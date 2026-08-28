@@ -24,6 +24,22 @@
    Kerülendő itt: `filter: blur()` animált elemen, `scale()` színátmenetes
    felületen, és SVG-n BELÜLI transform-animáció (az egész SVG-t újrarajzolja).
    Mért hatás: 8,6 → 60 kép/mp. Lásd a 3. és 4. blokk megjegyzéseit.
+   ─────────────────────────────────────────────────────────────────────────
+   HÁROM SZINT. Az alapértelmezett stíluslap a TAKARÉKOS változat: minden
+   szabály, ami képkockánként újrarajzolást kérne, ki van hagyva belőle. Erre
+   jön két kapcsoló, amit a landing.js tesz a <body>-ra:
+
+     body.fx-high   — csak erős gépen. Ide kerül minden olyan díszítés, ami
+                      szép, de rajzolással jár: a nyomáspontok lüktetése, a
+                      vonalak „megrajzolása” belépéskor, a cím fényudvara,
+                      a medál nagyítása, a pászma erősödő fénye, a fül üvege.
+     body.is-lowfx  — a padló: minden mozgás megáll, a vászon eltűnik.
+
+   A szintet a gép adottságai döntik el MÉG AZ ELSŐ KIRAJZOLÁS ELŐTT, hogy a
+   gyenge gép egyetlen képkockán se fizesse meg a drága rétegeket; a mért
+   képkockaidő ezután már csak lefelé módosíthat. Így ugyanaz a kompozíció,
+   ugyanazok a színek és arányok jelennek meg mindenhol — csak a rajzolással
+   járó extrák maradnak el ott, ahol nincs rájuk fedezet.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. DESIGN TOKENEK ─────────────────────────────────────────────────── */
@@ -157,6 +173,16 @@ body[data-view="optika"] .track {
 .panel--chooser .chooser {
   transition: transform var(--dur-slide) var(--ease-slide),
     opacity var(--dur-slide) var(--ease-slide);
+}
+
+/* A választó háttere drága raszter: szemcsetextúra + öt színátmenet egymáson.
+   A kiúszás `scale(1.09)`-cel jár, és skálázáskor a böngésző alapból ÚJRA
+   rajzolja a réteget az új méretben — pont a váltás első képkockáin, amikor a
+   sáv is csúszik. A `will-change` csak a csúszás idejére kéri el a saját
+   rajzfelületet: onnantól a kompozitor a kész textúrát nagyítja. Utána
+   levesszük, hogy ne foglaljon feleslegesen GPU-memóriát. */
+body.is-moving .chooser {
+  will-change: transform, opacity;
 }
 
 body[data-view="masszazs"] .chooser {
@@ -307,6 +333,16 @@ body:not([data-view="chooser"]) .chooser * {
   stroke: var(--sage-light);
   stroke-width: 1.1;
   opacity: 0.3;
+}
+
+/* A „megrajzolódó vonal” csak erős gépen.
+   A `stroke-dashoffset` nem kompozitor-tulajdonság: minden képkockán újra kell
+   szabdalni és raszterezni a görbét — és mivel ez az SVG a parallax miatt
+   `translate3d`-vel saját rajzfelületet kapott, a fél képernyőnyi (kb.
+   960×1080) textúra rajzolódik újra 2,6 másodpercen át, pont a belépő
+   animáció alatt. A vonalak enélkül is beúsznak: az `.orn` réteg `opacity`
+   átmenete (11. blokk) ugyanazt a lágy megjelenést adja, kompozitorból. */
+body.fx-high .orn__flow path {
   stroke-dasharray: 1400;
   stroke-dashoffset: 1400;
   transition: stroke-dashoffset 2.6s var(--ease-out), opacity 0.9s ease;
@@ -327,14 +363,21 @@ body:not([data-view="chooser"]) .chooser * {
   transition-delay: 0.5s;
 }
 
-body:not(.is-booting) .orn__flow path {
+body.fx-high:not(.is-booting) .orn__flow path {
   stroke-dashoffset: 0;
 }
 
-/* Nyomáspontok a vonalakon */
+/* Nyomáspontok a vonalakon.
+   A lüktetés is csak erős gépen: az SVG GYERMEKÉN animált `opacity`-t a
+   böngészők nem egységesen viszik a kompozitorra — ahol nem, ott az egész
+   dísz-SVG újrarajzolódik 60-szor másodpercenként, örökké. Az öt pont
+   állóban is ott van, ugyanazzal a fénnyel. */
 .orn__points circle {
   fill: var(--gold-soft);
   opacity: 0.5;
+}
+
+body.fx-high .orn__points circle {
   animation: pulse-point 4.5s ease-in-out infinite;
 }
 
@@ -396,6 +439,13 @@ body:not(.is-booting) .orn__flow path {
   width: min(40vw, 460px);
   height: min(40vw, 460px);
   margin-top: calc(min(40vw, 460px) / -2);
+}
+
+/* `will-change` csak akkor, amikor tényleg forog. Álló elemen a böngésző
+   ilyenkor is lefoglal neki egy külön GPU-textúrát — pár ilyen fölösleges
+   réteg épp azon a gépen fogyasztja el a videómemóriát, amelyiken kevés van,
+   és onnantól a kompozitor rajzfelületeket dobál (ez a fekete villanás). */
+body:not(.canvas-lens):not(.is-lowfx) .orn--lens {
   will-change: transform;
 }
 
@@ -430,14 +480,15 @@ body.canvas-lens.is-lowfx .orn--lens {
   opacity: 0.16;
 }
 
-/* Sugárkoszorú — a logó szem fölötti sugarainak folytatása */
+/* Sugárkoszorú — a logó szem fölötti sugarainak folytatása.
+   Álló elem: NINCS rajta `will-change`. Korábban volt, animáció nélkül — egy
+   900×900-as, maszkolt kúpos színátmenetet tartott feleslegesen a GPU-n. */
 .orn--rays {
   right: -18%;
   top: 50%;
   width: min(78vw, 900px);
   height: min(78vw, 900px);
   margin-top: calc(min(78vw, 900px) / -2);
-  will-change: transform;
   background: repeating-conic-gradient(from 0deg,
       var(--terra) 0deg 0.32deg, rgba(214, 123, 75, 0) 0.32deg 5deg);
   -webkit-mask: radial-gradient(circle closest-side, transparent 0 30%, #000 34% 47%, transparent 52%);
@@ -523,11 +574,14 @@ body[data-hover="optika"] .seam {
   transform: translateX(-50%) perspective(1000px) rotateY(-15deg);
 }
 
-body[data-hover="masszazs"] .seam__line {
-  box-shadow: 0 0 34px rgba(214, 123, 75, 0.5);
-}
-
-body[data-hover="optika"] .seam__line {
+/* A pászma erősödő fénye csak erős gépen.
+   Az animált `box-shadow` rajzolás, nem kompozíció: egy 2 képpont széles, de
+   TELJES magasságú elem 34 képpontos fényudvarral együtt rajzolódik újra
+   képkockánként, 0,7 másodpercen át — és ez minden egyes alkalommal lefut,
+   amikor az egér átlép a két fél között. A pászma enélkül is reagál: a
+   `.seam` dőlése (`rotateY`) tisztán kompozitor-munka. */
+body.fx-high[data-hover="masszazs"] .seam__line,
+body.fx-high[data-hover="optika"] .seam__line {
   box-shadow: 0 0 34px rgba(214, 123, 75, 0.5);
 }
 
@@ -656,13 +710,19 @@ body[data-hover="optika"] .half--massage {
   transition: color 0.6s ease, text-shadow 0.6s ease;
 }
 
-.half--massage:hover .half__title {
-  color: #fdf1e8;
-  text-shadow: 0 0 46px rgba(214, 123, 75, 0.55);
-}
-
+.half--massage:hover .half__title,
 .half--optics:hover .half__title {
   color: #fdf1e8;
+}
+
+/* A cím fényudvara csak erős gépen.
+   A 46 képpontos `text-shadow` a betűk elmosott másolatát jelenti: az egész
+   címsort (akár 4,1rem-es Playfair) újra kell raszterezni minden képkockán,
+   amíg az átmenet tart — miközben ugyanabban a pillanatban a fél fényfoltja
+   is beúszik és a részecskevászon is fut. A világosabb szín önmagában is
+   jelzi a kiválasztást. */
+body.fx-high .half--massage:hover .half__title,
+body.fx-high .half--optics:hover .half__title {
   text-shadow: 0 0 46px rgba(214, 123, 75, 0.55);
 }
 
@@ -695,9 +755,19 @@ body[data-hover="optika"] .half--massage {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cream);
-  background: rgba(253, 246, 240, 0.04);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* TELJESÍTMÉNY — itt szándékosan NINCS `backdrop-filter`, egyetlen szinten
+     sem. Ez a gomb a részecskevászon FÖLÖTT ül, az pedig minden képkockán
+     újrarajzol. A `backdrop-filter` ilyenkor nem egyszeri munka: a böngészőnek
+     képkockánként ki kell olvasnia a gomb mögötti kész képet, elmosnia (két
+     menetben) és visszakevernie — két gombra, folyamatosan, amíg a látogató a
+     választón van. Ráadásul a mögötte lévő teljes réteghalmazt külön
+     rajzfelületre kényszeríti. Mindezt egy sötét, halk háttér fölött, ahol az
+     elmosás gyakorlatilag nem is látszik. A tömörebb kitöltés és a felső
+     belső fénycsík ugyanazt az „üveg” hatást adja, rajzolás nélkül. */
+  background: linear-gradient(180deg,
+      rgba(253, 246, 240, 0.1),
+      rgba(253, 246, 240, 0.025));
+  box-shadow: inset 0 1px 0 rgba(253, 246, 240, 0.16);
   overflow: hidden;
   position: relative;
   transition: border-color 0.5s ease, background 0.5s ease, transform 0.5s var(--ease-out);
@@ -716,14 +786,15 @@ body[data-hover="optika"] .half--massage {
   transform: translateX(130%);
 }
 
-.half--massage:hover .half__cta {
-  border-color: rgba(214, 123, 75, 0.8);
-  background: rgba(214, 123, 75, 0.18);
-}
-
+/* Ugyanaz a színátmenet-forma, mint az alaphelyzetben: két azonos felépítésű
+   `linear-gradient` között a böngésző lágyan átvált — színátmenet és sima
+   szín között viszont ugrana. */
+.half--massage:hover .half__cta,
 .half--optics:hover .half__cta {
   border-color: rgba(214, 123, 75, 0.8);
-  background: rgba(214, 123, 75, 0.18);
+  background: linear-gradient(180deg,
+      rgba(214, 123, 75, 0.24),
+      rgba(214, 123, 75, 0.13));
 }
 
 .half__cta-arrow {
@@ -759,19 +830,42 @@ body[data-hover="optika"] .half--massage {
   transition: transform 0.9s var(--ease-out), opacity 0.6s ease;
 }
 
+/* A medál hoverre megdől. A NAGYÍTÁS viszont csak erős gépen: a medál
+   gyermekei kúpos színátmenetek maszkkal (osztásgyűrű, fényív), és skálázáskor
+   ezeket a böngésző újraraszterezi az új méretben — minden egyes alkalommal,
+   amikor az egér átlép a két fél között, tehát gyakorlatilag folyamatosan.
+   A forgatás ezzel szemben tiszta kompozitor-munka. */
 body[data-hover="masszazs"] .medallion {
-  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0) rotate(-3.2deg) scale(1.035);
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0) rotate(-3.2deg);
 }
 
 body[data-hover="optika"] .medallion {
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0) rotate(3.2deg);
+}
+
+body.fx-high[data-hover="masszazs"] .medallion {
+  transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0) rotate(-3.2deg) scale(1.035);
+}
+
+body.fx-high[data-hover="optika"] .medallion {
   transform: translate(-50%, -50%) translate3d(calc(var(--px) * 22px), calc(var(--py) * 18px), 0) rotate(3.2deg) scale(1.035);
 }
 
+/* A fényudvar lélegzése csak erős gépen. Az elem a medál 1,62-szerese
+   (nagy képernyőn kb. 1000×1000 képpont): állóként a háttér része, egyszer
+   rajzolódik meg — animálva viszont saját réteget kap, amit a kompozitornak
+   képkockánként a lap egészére kell kevernie. A halvány derengés állóban is
+   pontosan ugyanúgy néz ki, csak nem lüktet. */
 .medallion__halo {
   position: absolute;
   inset: -62%;
   background: radial-gradient(circle closest-side,
       rgba(226, 205, 162, 0.32), rgba(214, 123, 75, 0.14) 46%, rgba(214, 123, 75, 0) 72%);
+  opacity: 0.86;
+}
+
+body.fx-high .medallion__halo {
+  opacity: 1;
   will-change: opacity;
   animation: halo 7.5s ease-in-out infinite;
 }
@@ -932,9 +1026,12 @@ body[data-hover] .hint {
   padding: 0.85rem 1rem;
   border: 1px solid rgba(226, 205, 162, 0.4);
   border-radius: 999px;
-  background: rgba(28, 21, 17, 0.82);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  /* Alapból tömör háttér, `backdrop-filter` nélkül. A fül a BEÁGYAZOTT
+     weboldal fölött lebeg, annak a hero-ja pedig saját vászonanimációt futtat:
+     az elmosott háttérképet ilyenkor képkockánként újra kell számolni, és az
+     egész iframe külön rajzfelületre kerül. Az üveg csak erős gépen kapcsol
+     be — a majdnem tömör kitöltés ugyanolyan jól olvasható. */
+  background: rgba(24, 18, 14, 0.93);
   color: var(--cream);
   font-family: var(--font-body);
   font-size: 0.76rem;
@@ -944,6 +1041,12 @@ body[data-hover] .hint {
   box-shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.75);
   transition: opacity 0.5s ease, transform 0.6s var(--ease-out),
     background 0.4s ease, border-color 0.4s ease;
+}
+
+body.fx-high .returntab {
+  background: rgba(28, 21, 17, 0.82);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 .returntab[hidden] {
@@ -976,8 +1079,20 @@ body[data-hover] .hint {
   opacity: 1;
 }
 
-.returntab:hover {
-  background: rgba(28, 21, 17, 0.95);
+/* Érintőképernyőn nincs hover, így a felirat sosem bukkant elő: a fülből csak
+   egy nyíl látszott. Ott eleve kinyitva hagyjuk. */
+@media (hover: none) {
+  .returntab__label {
+    max-width: 10rem;
+    opacity: 1;
+  }
+}
+
+/* A `body.fx-high .returntab` fentebb ugyanennyire specifikus, ezért a hover
+   állapotot is a szinttel együtt kell megadni, különben az felülírná. */
+.returntab:hover,
+body.fx-high .returntab:hover {
+  background: rgba(28, 21, 17, 0.97);
   border-color: var(--gold);
 }
 
@@ -1440,9 +1555,11 @@ body.is-live .hint {
 }
 
 /* ── 14. ÖNSZABÁLYOZÁS GYENGÉBB GÉPRE ──────────────────────────────────────
-   Ha a landing.js mért képkockaideje alapján a gép nem bírja, ez a kapcsoló
-   megállítja a mozgó rétegeket. A kompozíció, a színek és az elrendezés
-   változatlanok maradnak — csak a mozgás áll meg. */
+   A padló. Ide akkor jutunk, ha a gép adottságai (magok, memória, felbontás)
+   eleve gyengék, VAGY a landing.js mért képkockaideje szerint nem bírja.
+   Minden mozgó réteg megáll; a kompozíció, a színek és az elrendezés
+   változatlanok maradnak. A `body.fx-high` extráit ez a szint sosem kapja meg,
+   mert a kettő kizárja egymást (lásd landing.js, applyTier). */
 body.is-lowfx .orn--lens,
 body.is-lowfx .medallion__arc,
 body.is-lowfx .medallion__halo,
@@ -1451,10 +1568,23 @@ body.is-lowfx .seam__scan {
   animation: none;
 }
 
+/* Álló elem alatt a `will-change` csak GPU-memóriát foglal. */
+body.is-lowfx .medallion__arc,
+body.is-lowfx .medallion__halo,
+body.is-lowfx .seam__scan {
+  will-change: auto;
+}
+
 body.is-lowfx .seam__scan {
   display: none;
 }
 
 body.is-lowfx .particles {
   display: none;
+}
+
+/* A csúszás közbeni rétegkérés is elmarad: ezen a szinten a kevés
+   videómemória a szűk keresztmetszet, nem a raszterezés. */
+body.is-lowfx.is-moving .chooser {
+  will-change: auto;
 }

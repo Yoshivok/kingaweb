@@ -22,6 +22,74 @@
   var current = 'chooser';
   var moveTimer = null;
 
+  /* ── TELJESÍTMÉNYSZINT ────────────────────────────────────────────────────
+     Három szint: 'high' | 'mid' | 'low'. A stíluslap alapból a TAKARÉKOS
+     változatot adja; a `fx-high` osztály kapcsolja rá a rajzolással járó
+     díszeket (lüktető pontok, megrajzolódó vonalak, fényudvarok, üveghatás),
+     az `is-lowfx` pedig megállít minden mozgást és leveszi a vásznat.
+
+     A szintet MÉG AZ ELSŐ KIRAJZOLÁS ELŐTT eldöntjük a gép bevallott
+     adottságaiból. A korábbi megoldás csak 3,8 mp után kezdett mérni — addigra
+     a belépő animáció, vagyis épp a leglátványosabb rész, már le is futott
+     akadozva. Így a gyenge gép egyetlen képkockán sem fizeti meg a drága
+     rétegeket.
+
+     A mérés ezután már csak LEFELÉ módosíthat. Felfelé lépni futás közben
+     zavaró lenne: a díszek a semmiből ugranának be.
+
+     Teszteléshez az URL-ből felülbírálható:
+       ?fx=high | ?fx=mid | ?fx=low   — kényszerített szint
+       ?fx=debug                      — képkocka-számláló a sarokban          */
+  var tier = 'mid';
+
+  function hardwareTier() {
+    var cores = navigator.hardwareConcurrency || 0;
+    /* Csak Chromiumban van; gigabájt, 8-nál felfelé levágva */
+    var mem = navigator.deviceMemory || 0;
+    var dpr = Math.min(window.devicePixelRatio || 1, 3);
+    var pixels = (window.innerWidth * dpr) * (window.innerHeight * dpr);
+
+    /* Két szál vagy 2 GB alatt: már a takarékos szint is sok volna */
+    if ((cores && cores <= 2) || (mem && mem <= 2)) return 'low';
+
+    /* Négy szál / 4 GB — a tipikus „gyengébb gép”: irodai laptop, Chromebook,
+       középkategóriás telefon. Pont az a kör, ahol a lap akadozott. */
+    if ((cores && cores <= 4) || (mem && mem <= 4)) return 'mid';
+
+    /* Sok képpont kevés maggal: 4K-s kijelző középkategóriás gépen. A díszek
+       költsége a képernyő méretével nő, a gépé nem. */
+    if (pixels > 5000000 && cores < 8) return 'mid';
+
+    /* Ha semmit nem tudunk a gépről (régebbi Safari), a takarékos az alap */
+    if (!cores && !mem) return 'mid';
+
+    return 'high';
+  }
+
+  /* A gép nyers képessége. A csökkentett mozgás ettől FÜGGETLEN: az egy
+     ízlésbeli kérés, nem gyengeségi jelzés — egy erős gépen is bekapcsolható.
+     Ezért az előtöltés döntése ezt nézi, a látvány szintje pedig `tier`-t. */
+  var hwTier = hardwareTier();
+
+  function syncTier() {
+    body.classList.toggle('fx-high', tier === 'high');
+    body.classList.toggle('is-lowfx', tier === 'low');
+  }
+
+  /* Csak lefelé lép. A visszatérési érték jelzi, változott-e a szint. */
+  function downgrade(to) {
+    var RANK = { high: 2, mid: 1, low: 0 };
+    if (RANK[to] >= RANK[tier]) return false;
+    tier = to;
+    syncTier();
+    retuneParticles();
+    return true;
+  }
+
+  var forcedTier = /[?&]fx=(high|mid|low)(?:&|$)/.exec(location.search);
+  tier = forcedTier ? forcedTier[1] : (reduced ? 'low' : hwTier);
+  syncTier();
+
   /* ── Panelek és iframe-ek ────────────────────────────────────────────── */
   var panels = {};
   VIEWS.forEach(function (v) {
@@ -61,7 +129,14 @@
     /* A `load` csak a képek és betűtípusok megérkezése után jön — addig a friss
        dokumentum már teljes sebességgel animál a képen kívül. Amint a DOM
        elérhető, ráültetjük a jelzést: a weboldalak szkriptje induláskor ebből
-       az osztályból olvassa ki a kezdőállapotot. */
+       az osztályból olvassa ki a kezdőállapotot.
+
+       A ritmus szándékosan lassú: két iframe-re 50 ms-onként az másodpercenként
+       negyven ébresztés a fő szálon, épp a betöltés alatt, amikor a választó
+       belépő animációja fut. A jelzés attól még időben megérkezik: a `document`
+       elem a legelső képkockán megvan, a `readyState === 'interactive'` pedig
+       már azt jelenti, hogy a weboldal saját szkriptje elindult — onnantól ő
+       maga kezeli az állapotot, nincs mit figyelni. */
     var seed = setInterval(function () {
       var doc;
       try { doc = f.el.contentDocument; } catch (err) { clearInterval(seed); return; }
@@ -70,9 +145,9 @@
       /* A görgetésfigyelő már a `load` előtt felkerülhet — a hero elem
          ekkorra megvan, és a látogató addigra görgethet is. */
       bridgeScroll(key);
-      if (doc.readyState === 'complete') clearInterval(seed);
-    }, 50);
-    setTimeout(function () { clearInterval(seed); }, 15000);
+      if (doc.readyState !== 'loading') clearInterval(seed);
+    }, 120);
+    setTimeout(function () { clearInterval(seed); }, 8000);
   }
 
   /* ── Escape a weboldalakon belül ─────────────────────────────────────────
@@ -427,14 +502,27 @@
   var pump = { raf: null, run: false };
 
   function initParticles() {
-    if (reduced) return;
+    if (reduced || tier === 'low') return;
 
     var canvas = document.getElementById('particles');
     var ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     var W = 0, H = 0, dpr = 1, parts = [];
+    var stacked = false;              /* mobilon a két fél egymás alatt áll */
     var mouse = { x: -999, y: -999 };
+
+    /* Szintenkénti profil.
+       `dprMax`  — a rajzolási felbontás felső határa
+       `cap`     — a vászon rajzfelületének felső határa KÉPPONTBAN
+       `area`    — hány képpontonként essen egy szemcse
+       `min/max` — a szemcseszám alsó és felső korlátja                        */
+    var PROFILE = {
+      high: { dprMax: 1.5, cap: 2400000, area: 21000, min: 26, max: 90 },
+      mid:  { dprMax: 1.0, cap: 1300000, area: 34000, min: 18, max: 52 }
+    };
+
+    function prof() { return PROFILE[tier] || PROFILE.mid; }
 
     /* Előre kirajzolt lágy fényfolt — képkockánként olcsóbb, mint a gradiens */
     function sprite(rgb) {
@@ -457,7 +545,6 @@
     };
 
     function make(side) {
-      var stacked = window.innerWidth <= 900;   /* mobilon egymás alatt állnak */
       var x, y;
       if (stacked) {
         x = Math.random() * W;
@@ -480,27 +567,52 @@
       };
     }
 
-    var quality = 1;
-
     function seed() {
-      var count = Math.round(Math.min(90, Math.max(26, (W * H) / 21000)) * quality);
+      var p = prof();
+      var count = Math.round(Math.min(p.max, Math.max(p.min, (W * H) / p.area)));
       parts = [];
       for (var i = 0; i < count; i++) parts.push(make(i % 2));
     }
 
-    setParticleQuality = function (q) {
-      quality = q;
-      if (q === 0) { pump.run = false; canvas.style.display = 'none'; return; }
-      seed();
+    /* A szint megváltozásakor a keret ezt hívja: új felbontás, új szemcseszám,
+       vagy — a padlón — a vászon teljes leállítása. */
+    retuneParticles = function () {
+      if (tier === 'low') {
+        pump.run = false;
+        canvas.style.display = 'none';
+        return;
+      }
+      canvas.style.display = '';
+      resize();
+      pumpParticles();
     };
 
     function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      var p = prof();
       W = canvas.clientWidth;
       H = canvas.clientHeight;
+      stacked = window.innerWidth <= 900;
+
+      /* A RAJZOLÁSI felbontás felső korlátja.
+         A szemcsék lágy fényfoltok — nem nyerünk semmit azzal, ha képpontra
+         pontosan rajzoljuk őket, a költség viszont egyenesen a rajzfelület
+         képpontszámával nő: törölni, rárajzolni és a lapra keverni minden
+         képkockán az EGÉSZ vásznat kell. A korábbi `min(dpr, 1.5)` egy
+         1920×1080-as kijelzőn 4,6 millió, 4K-n több mint 18 millió képpontot
+         jelentett képkockánként — integrált GPU-n ez volt a vászon fő
+         költsége, nem a szemcsék száma.
+
+         Innentől a rajzfelület felülről kötött: kisebb felbontáson készül, és
+         a böngésző nagyítja a kijelzőre. Lágy foltokon ez nem látszik. */
+      var want = Math.min(window.devicePixelRatio || 1, p.dprMax);
+      var px = W * H * want * want;
+      if (px > p.cap) want = Math.max(0.55, want * Math.sqrt(p.cap / px));
+      dpr = want;
+
       canvas.width  = Math.max(1, Math.round(W * dpr));
       canvas.height = Math.max(1, Math.round(H * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scanSpr = null;
       seed();
     }
 
@@ -531,34 +643,52 @@
 
     /* A két felet elválasztó pászmán lefutó fénycsík — ugyanezért a vásznon:
        DOM-elemként egy vékony, de a teljes képernyőt bejáró réteget kellett
-       képkockánként újrakeverni. */
+       képkockánként újrakeverni.
+
+       A csík maga is előre kirajzolva ül egy apró vásznon. Korábban minden
+       képkockán új `createLinearGradient` objektum készült, és azzal töltöttük
+       ki a téglalapot: a színátmenet felállítása (a színek kiszámolása,
+       a rajzoló felkészítése) így képkockánként újrakezdődött, holott a csík
+       mindvégig ugyanaz — csak a helye változik. Egyszer megrajzoljuk,
+       utána már csak eltoljuk. */
+    var scanSpr = null;
+
+    function buildScan() {
+      var c = document.createElement('canvas');
+      var g2 = c.getContext('2d');
+      var g;
+
+      if (stacked) {
+        c.width = Math.max(2, Math.round(W * 0.22));
+        c.height = 12;
+        g = g2.createLinearGradient(0, 0, c.width, 0);
+      } else {
+        c.width = 12;
+        c.height = Math.max(2, Math.round(H * 0.22));
+        g = g2.createLinearGradient(0, 0, 0, c.height);
+      }
+
+      g.addColorStop(0, 'rgba(253, 246, 240, 0)');
+      g.addColorStop(0.5, 'rgba(253, 246, 240, 0.85)');
+      g.addColorStop(1, 'rgba(253, 246, 240, 0)');
+      g2.fillStyle = g;
+      g2.fillRect(0, 0, c.width, c.height);
+      return c;
+    }
+
     function drawScan(ts) {
       var t = (ts % 7000) / 7000;
       var fade = Math.min(1, Math.min(t, 1 - t) * 7);
       if (fade <= 0.01) return;
+      if (!scanSpr) scanSpr = buildScan();
 
-      var stacked = window.innerWidth <= 900;
-      var g;
       ctx.globalAlpha = 0.75 * fade;
-
       if (stacked) {
-        var lenX = W * 0.22;
-        var x = -lenX + t * (W + lenX * 2);
-        g = ctx.createLinearGradient(x, 0, x + lenX, 0);
-        g.addColorStop(0, 'rgba(253, 246, 240, 0)');
-        g.addColorStop(0.5, 'rgba(253, 246, 240, 0.85)');
-        g.addColorStop(1, 'rgba(253, 246, 240, 0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(x, H / 2 - 6, lenX, 12);
+        var lenX = scanSpr.width;
+        ctx.drawImage(scanSpr, -lenX + t * (W + lenX * 2), H / 2 - 6);
       } else {
-        var lenY = H * 0.22;
-        var y = -lenY + t * (H + lenY * 2);
-        g = ctx.createLinearGradient(0, y, 0, y + lenY);
-        g.addColorStop(0, 'rgba(253, 246, 240, 0)');
-        g.addColorStop(0.5, 'rgba(253, 246, 240, 0.85)');
-        g.addColorStop(1, 'rgba(253, 246, 240, 0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(W / 2 - 6, y, 12, lenY);
+        var lenY = scanSpr.height;
+        ctx.drawImage(scanSpr, W / 2 - 6, -lenY + t * (H + lenY * 2));
       }
       ctx.globalAlpha = 1;
     }
@@ -607,7 +737,7 @@
     }
 
     function reseedX(side) {
-      if (window.innerWidth <= 900) return Math.random() * W;
+      if (stacked) return Math.random() * W;
       return side === 0 ? Math.random() * W * 0.5 : W * 0.5 + Math.random() * W * 0.5;
     }
 
@@ -638,37 +768,104 @@
 
   /* Alapértelmezésben nem csinálnak semmit; az initParticles cseréli le őket. */
   var pumpParticles = function () {};
-  var setParticleQuality = function () {};
+  var retuneParticles = function () {};
 
-  /* ── Önszabályozás gyengébb gépre ────────────────────────────────────────
-     A fenti optimalizálás után a választó 60 kép/mp-et ad, de nem tudhatjuk,
-     milyen gépen és mekkora képernyőn fut. Belépés után megmérjük a valódi
-     képkockaidőt, és ha a gép nem bírja, lépcsőzetesen visszaveszünk.
-     A mediánt nézzük, hogy egy-egy akadás ne rontsa el a döntést. */
-  function watchPerformance() {
-    if (reduced) return;
+  /* ── Önszabályozás: a mért képkockaidő ───────────────────────────────────
+     A gép adottságai alapján felvett szint jó becslés, de nem több annál: egy
+     bevallottan erős gép is akadozhat, ha épp másik fül dolgozik rajta, ha a
+     böngésző szoftveresen rajzol (letiltott vagy tiltólistás GPU), vagy ha a
+     két beágyazott weboldal betöltése elveszi az erőforrást.
 
-    var samples = [], last = 0, started = 0;
+     Ezért ablakonként mérünk, és a mediánt nézzük, hogy egy-egy akadás ne
+     rontsa el a döntést. A mérés csak LEFELÉ léphet.
 
-    function tick(ts) {
-      if (current !== 'chooser') return;         /* csak a választón mérünk */
-      if (!started) { started = ts; last = ts; requestAnimationFrame(tick); return; }
-      samples.push(ts - last);
-      last = ts;
-      if (ts - started < 2200) { requestAnimationFrame(tick); return; }
+     Fontos, hogy több ablakot nézünk, ne csak egyet: a korábbi változat
+     egyetlen, 3,8 mp-nél kezdődő mérésből döntött — az épp a két weboldal
+     betöltésének kellős közepére esett, tehát a lap legrosszabb pillanatát
+     mérte, és utána soha többé nem nézett vissza. Most az első ablak a belépő
+     animáció után, még nyugodt lapon fut (ebből lesz az előtöltés döntése is),
+     a továbbiak pedig végigkísérik a betöltést. */
+  var WINDOWS = 4;                 /* ennyi ablak után abbahagyjuk a mérést */
+  var WINDOW_FRAMES = 70;          /* ~1,2 mp 60 kép/mp mellett */
 
-      samples.sort(function (a, b) { return a - b; });
-      var median = samples[Math.floor(samples.length / 2)] || 16;
+  function watchPerformance(onFirst) {
+    if (reduced || tier === 'low') { if (onFirst) onFirst(null); return; }
 
-      if (median > 40) {            /* 25 kép/mp alatt: minden mozgó réteg le */
-        body.classList.add('is-lowfx');
-        setParticleQuality(0);
-      } else if (median > 26) {     /* 38 kép/mp alatt: feleannyi szemcse */
-        setParticleQuality(0.5);
+    var samples = [], last = 0, winStart = 0, windows = 0, reported = false;
+
+    function verdict(median) {
+      /* Küszöbök szintenként. A takarékos szint már levette a díszeket:
+         ha ott is 30 kép/mp alatt van, a vászonnak kell mennie. */
+      if (tier === 'high') {
+        if (median > 42) downgrade('low');
+        else if (median > 26) downgrade('mid');       /* 38 kép/mp alatt */
+      } else if (tier === 'mid') {
+        if (median > 34) downgrade('low');            /* 29 kép/mp alatt */
       }
     }
 
+    function finishWindow(median) {
+      verdict(median);
+      if (!reported) { reported = true; if (onFirst) onFirst(median); }
+      windows++;
+      if (windows < WINDOWS && tier !== 'low') requestAnimationFrame(tick);
+    }
+
+    function tick(ts) {
+      /* Csak a választón mérünk: a weboldalak fölött a keret amúgy sem rajzol,
+         és a beágyazott dokumentum képkockaideje nem a mi dolgunk. */
+      if (current !== 'chooser') {
+        if (!reported) { reported = true; if (onFirst) onFirst(null); }
+        return;
+      }
+      if (!last) { last = ts; winStart = ts; requestAnimationFrame(tick); return; }
+
+      samples.push(ts - last);
+      last = ts;
+
+      /* Az ablak vagy elég képkocka, vagy elég idő után zárul. Az időkorlát
+         azért kell, mert épp a lassú gépen gyűlne össze a legnehezebben 70
+         képkocka — és ott a legfontosabb, hogy időben szülessen döntés. */
+      var full = samples.length >= WINDOW_FRAMES ||
+        (ts - winStart > 1600 && samples.length >= 20);
+      if (!full) { requestAnimationFrame(tick); return; }
+
+      samples.sort(function (a, b) { return a - b; });
+      var median = samples[Math.floor(samples.length / 2)] || 16;
+      samples = [];
+      last = 0;
+      finishWindow(median);
+    }
+
     requestAnimationFrame(tick);
+  }
+
+  /* ── Képkocka-számláló teszteléshez (?fx=debug) ──────────────────────────
+     Enélkül a gyengébb gépen csak érzésre lehet ítélni. A számláló magától
+     semmit nem befolyásol, és a jelző nélkül létre sem jön. */
+  function initFpsMeter() {
+    if (!/[?&]fx=debug(?:&|$)/.test(location.search)) return;
+
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:999;' +
+      'font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;' +
+      'background:rgba(0,0,0,.72);color:#e2cda2;padding:6px 9px;' +
+      'border-radius:6px;pointer-events:none;white-space:pre';
+    document.body.appendChild(el);
+
+    var frames = 0, since = 0, worst = 0;
+
+    requestAnimationFrame(function loop(ts) {
+      requestAnimationFrame(loop);
+      if (!since) { since = ts; return; }
+      frames++;
+      if (ts - since < 500) return;
+      var fps = Math.round((frames * 1000) / (ts - since));
+      worst = worst ? Math.min(worst, fps) : fps;
+      el.textContent = 'szint: ' + tier + '\n' + fps + ' kép/mp (min ' + worst + ')';
+      frames = 0;
+      since = ts;
+    });
   }
 
   document.addEventListener('visibilitychange', function () { pumpParticles(); });
@@ -678,6 +875,13 @@
      állnak rendelkezésre (Safari, Firefox) — ha nincs adat, előtöltünk, mert
      az a jobb élmény a gépek túlnyomó részén. */
   function preloadWorthwhile() {
+    /* Gyenge gépen egyáltalán nem töltünk elő — akkor sem, ha a gép ADOTTSÁGAI
+       gyengék, és akkor sem, ha a MÉRÉS minősítette annak. A csökkentett mozgás
+       kérése viszont nem gyengeségi jelzés: az egy ízlésbeli beállítás, erős
+       gépen is bekapcsolható, ezért az önmagában nem tiltja az előtöltést. */
+    if (hwTier === 'low') return false;
+    if (tier === 'low' && !reduced) return false;
+
     var net = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (net) {
       if (net.saveData) return false;                       /* „adattakarékos” mód */
@@ -687,6 +891,67 @@
     /* 4 GB alatti (bevallott) memória: két teljes weboldal egyszerre már sok */
     if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 4) return false;
     return true;
+  }
+
+  /* Meghívja a visszahívást, amint az adott weboldal betöltött. Ha már kész,
+     azonnal; ha a `load` valamiért elmarad (hibás kép, akadó erőforrás), egy
+     időkorlát mégis továbbengedi, hogy a lánc ne álljon meg örökre. */
+  function whenFrameLoaded(key, cb) {
+    var f = frames[key];
+    if (!f || !f.el || f.loaded) { cb(); return; }
+
+    var fired = false;
+    function fire() {
+      if (fired) return;
+      fired = true;
+      cb();
+    }
+    f.el.addEventListener('load', fire, { once: true });
+    setTimeout(fire, 9000);
+  }
+
+  /* ── Előtöltés: EGYESÉVEL, nem egyszerre ──────────────────────────────────
+     A választó azért gyors, mert a két weboldal már készen áll, amikor a
+     látogató dönt. Csakhogy két teljes dokumentum — saját betűtípusokkal,
+     vászonanimációval és a szemanatómia szoftveres 3D-motorjával — nem
+     ingyenes: a letöltés, az értelmezés, a stílusszámítás, a képek dekódolása
+     és az első kirajzolás ugyanazon a fő szálon és ugyanazon a GPU-n történik,
+     amelyen közben a választó animációja fut.
+
+     Két változás:
+
+     1. EGYESÉVEL. A második weboldal csak akkor indul, amikor az első
+        betöltött. Erős gépen ez alig érzékelhető különbség, gyengén viszont
+        megfelezi a csúcsterhelést.
+
+     2. KÉSŐBB. Nem fix 1,5 mp-nél, hanem a belépő animáció ÉS az első
+        képkockaidő-mérés után. Így a lap legérzékenyebb két másodperce
+        háborítatlan marad, a mérés pedig nyugodt lapot lát — nem a saját
+        előtöltésünk terhelését méri.
+
+     Ettől a váltás nem törik el: a `go()` úgyis kikéri az adott oldalt, és a
+     látogató amúgy is a fél fölé viszi az egeret kattintás előtt — a
+     `pointerenter` már ott elindítja a betöltést. */
+  function startPreload(start) {
+    if (!preloadWorthwhile()) return;
+
+    /* Mélylinkre érkezve az adott oldal már fut: csak a másik van hátra. */
+    var queue = start === 'masszazs' ? ['optika']
+      : start === 'optika' ? ['masszazs']
+        : ['masszazs', 'optika'];
+
+    var idle = window.requestIdleCallback || function (cb) { return setTimeout(cb, 1); };
+
+    function next(i) {
+      if (i >= queue.length) return;
+      idle(function () {
+        var key = queue[i];
+        requestFrame(key);
+        whenFrameLoaded(key, function () { next(i + 1); });
+      }, { timeout: 2500 });
+    }
+
+    next(0);
   }
 
   /* ── Indulás ─────────────────────────────────────────────────────────── */
@@ -704,39 +969,34 @@
     });
 
     initParticles();
+    initFpsMeter();
 
     if (start !== 'chooser') {
       requestFrame(start);
       jump(start);
     }
 
-    /* A másik oldalt is előtöltjük, hogy a váltás azonnali legyen.
-       Csak a belépő animáció után, hogy ne lassítsa.
-
-       KIVÉTEL: takarékos vagy lassú kapcsolaton, illetve kevés memóriájú
-       gépen nem toljuk le mindkét weboldalt előre. Két teljes dokumentum
-       egyszerre — saját betűtípusokkal, vászonanimációval és a szemanatómia
-       szoftveres 3D-motorjával — épp azon a gépen fogyasztja el a maradék
-       erőforrást, amelyik amúgy sem bírja: ott a választó akadozni kezd, a
-       kompozitor pedig rajzfelületet dobál (fekete villanás). A váltás
-       ilyenkor sem törik el, csak nem azonnali: a `go()` úgyis kikéri az
-       adott oldalt, addig a saját háttérszínén töltésjelző fut. */
-    if (preloadWorthwhile()) {
-      var idle = window.requestIdleCallback || function (cb) { return setTimeout(cb, 1); };
-      setTimeout(function () {
-        idle(function () { requestFrame('masszazs'); }, { timeout: 2500 });
-        setTimeout(function () {
-          idle(function () { requestFrame('optika'); }, { timeout: 2500 });
-        }, 700);
-      }, start === 'chooser' ? 1500 : 400);
-    }
-
     /* A belépő animáció lefutott: innentől a rövidebb, mozgékonyabb
        átmenetek élnek (parallax, hover). */
     setTimeout(function () { body.classList.add('is-live'); }, reduced ? 0 : 2400);
 
-    /* Az iframe-ek betöltése után mérünk, hogy az ne torzítsa az eredményt */
-    setTimeout(watchPerformance, 3800);
+    /* A belépő animáció után mérünk, még háborítatlan lapon — és az első
+       ablak eredménye engedi tovább az előtöltést. Mélylinkre érkezve nincs
+       mit mérni (nem a választó van a képen): ott azonnal továbbenged. */
+    var preloadDone = false;
+    function beginPreload() {
+      if (preloadDone) return;
+      preloadDone = true;
+      startPreload(start);
+    }
+
+    setTimeout(function () { watchPerformance(beginPreload); }, reduced ? 0 : 2500);
+
+    /* Biztonsági háló. A mérés `requestAnimationFrame`-re épül, az pedig nem
+       mindig fut: rejtett fülön a böngésző felfüggeszti, képen kívüli
+       iframe-ben megritkítja. Az előtöltés nem múlhat ezen — ha a mérés nem
+       ad időben eredményt, a gép adottságaiból felvett szinttel indulunk. */
+    setTimeout(beginPreload, 7000);
   }
 
   if (document.readyState === 'loading') {

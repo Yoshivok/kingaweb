@@ -2012,6 +2012,14 @@
         <!-- ÁRAK: az alábbi összegek PLACEHOLDER értékek — cserélje ki a valós árakra!
          Ugyanezek az összegek a mobil kártyanézetben is szerepelnek lentebb. -->
         <div class="pricing reveal">
+          <!-- A tábla mobilon szélesebb a képernyőnél; ez a sor mondja meg, hogy
+               oldalra kell húzni. Asztali méretben nem jelenik meg. -->
+          <p class="price-hint" aria-hidden="true">
+            <svg class="ico ico--xs">
+              <use href="#ico-arrow"></use>
+            </svg>
+            Húzza oldalra a táblázatot a többi időtartamért
+          </p>
           <div class="table-scroll" role="region" aria-label="Árlista táblázat, vízszintesen görgethető" tabindex="0">
             <table class="price-table">
               <caption class="sr-only">Kezelések elérhető időtartamai és áraik</caption>

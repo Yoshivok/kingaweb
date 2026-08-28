@@ -218,6 +218,63 @@ fátyol egy lágy átmenet fölött), az elmosás nem látszik — csak fizet é
 * **Saját ikon az optika oldalain.** Enélkül minden oldalbetöltés egy
   404-es `/favicon.ico` kérést indított.
 
+## Harmadik teljesítmény-kör (a választó gyengébb gépen)
+
+A választó erős gépen 60 kép/mp-et adott, gyengébb gépen viszont továbbra is
+akadozott. A maradék költségeknek közös vonásuk volt: **nem a mozgás volt
+drága, hanem a RAJZOLÁS, amit a mozgás kikényszerített.**
+
+| Ok | Miért drága |
+|---|---|
+| `backdrop-filter: blur(6px)` a két „Belépés” gombon | A gombok a részecskevászon FÖLÖTT ülnek, az pedig minden képkockán újrarajzol — így a mögöttes képet képkockánként újra kellett kiolvasni, elmosni és visszakeverni. Sötét háttéren az elmosás nem is látszott. |
+| `stroke-dashoffset` a bal oldali dísz négy vonalán | Nem kompozitor-tulajdonság: a fél képernyőnyi (kb. 960×1080) SVG-textúra rajzolódott újra 2,6 mp-en át, pont a belépő animáció alatt. |
+| `opacity`-animáció az SVG **gyermekén** (nyomáspontok) | A böngészők nem egységesen viszik a kompozitorra; ahol nem, ott az egész dísz-SVG újrarajzolódik 60-szor másodpercenként, örökké. |
+| `text-shadow: 0 0 46px` átmenete a címeken hoverkor | A teljes címsort újra kell raszterezni minden képkockán, amíg az átmenet tart. |
+| `box-shadow` átmenete a fénypászmán | 2 képpont széles, de teljes magasságú elem, 34 képpontos fényudvarral — minden egérmozdulatra. |
+| `scale(1.035)` a medálon hoverkor | A medál gyermekei maszkolt kúpos színátmenetek; skálázáskor újraraszterizálódnak. |
+| `will-change: transform` álló elemen (`.orn--rays`) | Animáció nélkül is lefoglal egy 900×900-as GPU-textúrát. |
+| `min(dpr, 1.5)` a részecskevásznon | 1920×1080-on 4,6 millió, 4K-n 18 millió képpont képkockánként. Integrált GPU-n ez volt a vászon fő költsége — nem a szemcsék száma. |
+| `createLinearGradient` képkockánként a fénycsíkhoz | A színátmenet felállítása újraindult minden képkockán, holott a csík mindvégig ugyanaz. |
+| Mindkét weboldal előtöltése **egyszerre**, fix 1,5 mp-nél | Két teljes dokumentum letöltése, értelmezése és első kirajzolása ugyanazon a fő szálon, amelyen a belépő animáció fut. |
+
+### A megoldás: három szint
+
+A stíluslap alapértelmezése mostantól a **takarékos** változat — minden szabály
+kimaradt belőle, ami képkockánként rajzolást kérne. Erre jön két kapcsoló,
+amit a `landing.js` tesz a `<body>`-ra:
+
+| Osztály | Mit ad hozzá / vesz el |
+|---|---|
+| `body.fx-high` | A rajzolással járó díszek: lüktető nyomáspontok, megrajzolódó vonalak, cím-fényudvar, medálnagyítás, erősödő pászmafény, a visszatérő fül üvege. |
+| *(alapértelmezett)* | Ugyanaz a kompozíció, ugyanazok a színek és arányok, csak a fenti extrák nélkül. |
+| `body.is-lowfx` | A padló: minden mozgás megáll, a vászon eltűnik. |
+
+A szintet a gép adottságai (`hardwareConcurrency`, `deviceMemory`, felbontás)
+döntik el **még az első kirajzolás előtt** — a korábbi megoldás csak 3,8 mp
+után kezdett mérni, addigra a belépő animáció már le is futott akadozva.
+A mért képkockaidő ezután **már csak lefelé** módosíthat, több ablakban mérve
+(felfelé lépni futás közben zavaró lenne: a díszek a semmiből ugranának be).
+
+A vászon rajzfelülete ezen felül **felülről kötött** (szintenként 2,4 / 1,3
+millió képpont): nagy vagy sűrű kijelzőn kisebb felbontáson készül, és a
+böngésző nagyítja ki. Lágy fényfoltokon ez nem látszik.
+
+Az **előtöltés** két ponton változott: a két weboldal már nem egyszerre, hanem
+**egyesével** töltődik (a második az első `load`-ja után indul), és nem fix
+időzítéssel, hanem a belépő animáció **és** az első képkockaidő-mérés után.
+Gyenge gépen — vagy ha a mérés minősíti annak — teljesen elmarad; a váltás
+ilyenkor sem törik el, csak nem azonnali. A látogató amúgy is a fél fölé viszi
+az egeret kattintás előtt, és a `pointerenter` már ott elindítja a betöltést.
+
+### Ellenőrzés a gyengébb gépen
+
+```
+/?fx=debug     képkocka-számláló a bal alsó sarokban (a mért szinttel)
+/?fx=high      kényszerített szint — így nézhető meg erős gépen is,
+/?fx=mid       mit lát a gyengébb
+/?fx=low
+```
+
 ## Üzembe helyezés
 
 A `server/` mappa a gyökérben van, ezért a kiszolgáló `ROOT` értéke

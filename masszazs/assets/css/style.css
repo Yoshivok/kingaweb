@@ -538,6 +538,9 @@ table { border-collapse: collapse; width: 100%; }
   animation: fade-in 0.3s var(--ease);
 }
 .mobile-nav[hidden] { display: none; }
+/* A süti-sáv `z-index`-e magasabb a menüénél, ezért ráült a nyitott menüre.
+   Amíg a menü nyitva van (`body.is-locked`), elrejtjük — záráskor visszatér. */
+body.is-locked .consent { display: none; }
 .mobile-nav__inner { padding-bottom: 3rem; }
 .mobile-nav__label {
   font-size: 0.71rem; letter-spacing: 0.16em; text-transform: uppercase;
@@ -1431,8 +1434,41 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   box-shadow: var(--sh-sm);
   overflow: hidden;
 }
-.table-scroll { overflow-x: auto; }
+/* A hét oszlopos árlista mobilon nem fér ki: oldalra kell görgetni. Három
+   dolog hiányzott hozzá.
+   (1) Semmi nem mondta meg, hogy van még jobbra — ezt a `.price-hint` sor
+       pótolja, ami csak keskeny kijelzőn jelenik meg.
+   (2) Görgetés közben a kezelés neve is kicsúszott, így a számokról nem derült
+       ki, melyik sorhoz tartoznak — a névoszlop most `sticky`, a helyén marad.
+   (3) A név `nowrap` volt, ezért az oszlop 250 px-et vitt el a 375-ből, és
+       egyszerre egyetlen ár fért mellé. Mobilon tördelhető és fix szélességű,
+       a tábla pedig 720 helyett 560 px: így három ár is látszik egyszerre. */
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
 .price-table { min-width: 720px; font-size: var(--fs-sm); }
+.price-table thead th.price-table__name,
+.price-table tbody th[scope="row"] {
+  position: sticky; left: 0; z-index: 3;
+}
+.price-table thead th.price-table__name { z-index: 4; }
+.price-table tbody th[scope="row"] { background: var(--color-bg-secondary); }
+.price-table tbody tr:hover th[scope="row"] { background: var(--color-accent-light); }
+
+.price-hint {
+  display: none;
+  gap: 0.45rem; align-items: center;
+  margin: 0;
+  padding: 0.8rem clamp(1rem, 2.4vw, 1.75rem) 0;
+  font-size: var(--fs-xs); color: var(--color-text-secondary);
+}
+.price-hint .ico { flex: none; color: var(--color-accent-hover); }
+@media (max-width: 900px) {
+  .price-hint { display: flex; }
+}
 .price-table thead th {
   position: sticky; top: 0;
   background: var(--color-bg-dark);
@@ -1470,6 +1506,18 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
 .price-table tbody tr:last-child th { border-bottom: 0; }
 .price-table td.na { color: var(--color-muted); }
 .price-table__mark { color: var(--color-gold); font-weight: 500; }
+
+@media (max-width: 760px) {
+  .price-table { min-width: 560px; }
+  .price-table tbody th {
+    white-space: normal; line-height: 1.35;
+    width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem;
+    padding: 0.8rem 0.7rem;
+  }
+  .price-table thead th { padding: 0.8rem 0.45rem; }
+  .price-table thead th.price-table__name { padding-left: 0.7rem; }
+  .price-table td { padding: 0.8rem 0.4rem; }
+}
 
 .price-notes {
   display: grid; gap: 0.5rem;
@@ -1705,7 +1753,9 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
 }
 .check { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; }
 .check input {
-  width: 19px; height: 19px; margin: 0.18rem 0 0;
+  /* 22 px: ujjal is kényelmesen üthető. A címke `for`-ral kapcsolódik, így a
+     szöveg egésze is kapcsoló felület marad. */
+  width: 22px; height: 22px; margin: 0.1rem 0 0;
   accent-color: var(--color-accent);
   cursor: pointer; flex: none;
 }
@@ -1916,7 +1966,12 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   padding: 0.22rem 1.25rem 0.22rem 0;
   font-family: var(--font-body);
 }
-.hours td { padding: 0.22rem 0; font-variant-numeric: tabular-nums; text-align: right; }
+/* `nowrap`: keskeny kijelzőn a „8:00 – 19:00" a kötőjelnél két sorba tört, és
+   a nyitvatartás olvashatatlanul szétesett. */
+.hours td {
+  padding: 0.22rem 0; font-variant-numeric: tabular-nums; text-align: right;
+  white-space: nowrap;
+}
 .hours__closed { color: var(--color-warn); }
 
 .map {
@@ -2495,19 +2550,26 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
    nem vágta le őket, néhány képponttal szélesebbé tették az egész lapot —
    az oldal vízszintesen elcsúsztathatóvá vált. Kisebb betű és szűkebb bélés:
    a felirat így is olvasható, de befér. */
+/* A felirat kisebb lesz, hogy a gombostű ne lógjon ki a kártyából — a
+   MAGASSÁGA viszont nem csökkenhet tovább: 25 képpontos gombot ujjal nem lehet
+   biztosan eltalálni. A vízszintes bélés szűkül, a függőleges nő. */
 @media (max-width: 760px) {
   .anatomy-pin {
-    font-size: 0.68rem;
-    padding: 0.24rem 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.45rem 0.5rem;
     gap: 0.28rem;
+    min-height: 32px;
   }
   .anatomy-pin::before { width: 6px; height: 6px; }
 }
-/* A legkeskenyebb készülékeken (320 px) még egy fokozat kell */
-@media (max-width: 400px) {
+/* A legkeskenyebb készülékeken (320-360 px) még egy fokozat kell. A határ
+   szándékosan 360 px: a 375 és 390 px-es telefonokon — ezek a leggyakoribbak —
+   a felirat maradjon a 0.7rem-es, még kényelmesen olvasható méreten. */
+@media (max-width: 360px) {
   .anatomy-pin {
     font-size: 0.62rem;
-    padding: 0.2rem 0.42rem;
+    padding: 0.44rem 0.38rem;
+    gap: 0.22rem;
   }
 }
 
@@ -2794,13 +2856,23 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   :root { --header-h: 66px; }
   .logo__mark { width: 34px; height: 34px; }
   .logo__name { font-size: 1.24rem; }
-  .logo__sub { font-size: 0.58rem; letter-spacing: 0.12em; }
+  /* 0.58rem = 9,3 px: ez már a betűméret alsó határa alatt van, és a fejlécben
+     ráadásul két sorba tört. Egy fokozattal nagyobb, egy sorban tartva — a
+     hamburger mellett ekkora szélességig fér el. */
+  .logo__sub { font-size: 0.64rem; letter-spacing: 0.08em; white-space: nowrap; }
   .header__actions .btn--primary { display: none; }
   .treatment__head { flex-direction: column; gap: 1rem; }
   .treatment__alt { display: block; white-space: normal; }
   .mobile-nav__grid { grid-template-columns: 1fr; }
   .about__caption { margin-top: -2.4rem; padding: 0 1rem; }
   .form-result__summary div { grid-template-columns: 1fr; gap: 0.15rem; }
+}
+
+/* A legkeskenyebb készülékeken az alcím már nem fér ki a hamburger mellett —
+   olvashatatlanná zsugorítani viszont értelmetlen, ezért inkább elhagyjuk.
+   A „Salvia" név önmagában is azonosítja az oldalt. */
+@media (max-width: 430px) {
+  .logo__sub { display: none; }
 }
 
 /* Anatómia szekció fejléc 2 oszlopos elrendezése kiegészítő megjegyzéssel */
