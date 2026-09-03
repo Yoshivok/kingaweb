@@ -87,7 +87,6 @@
     { "@type": "MedicalTherapy", "name": "Szegmentmasszázs" },
     { "@type": "MedicalTherapy", "name": "Kötőszöveti masszázs" },
     { "@type": "MedicalTherapy", "name": "Székmasszázs" },
-    { "@type": "MedicalTherapy", "name": "Sportmasszázs" },
     { "@type": "MedicalTherapy", "name": "Arcmasszázs" },
     { "@type": "MedicalTherapy", "name": "Talpmasszázs" }
   ]
@@ -164,13 +163,6 @@
       <path d="M7 27.5 12 19" />
       <path d="m25 27.5-5-8.5" />
       <path d="M12 19h8" />
-    </symbol>
-
-    <symbol id="ico-sport" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 12.5h5.5L15 7l3.5 18 3.5-12.5H26" />
-      <path d="M4 19.5h4" />
-      <path d="M24 19.5h4" />
     </symbol>
 
     <symbol id="ico-arc" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
@@ -361,9 +353,6 @@
                 <li><a href="#szekmasszazs"><svg class="ico" aria-hidden="true">
                       <use href="#ico-szek"></use>
                     </svg>Székmasszázs</a></li>
-                <li><a href="#sportmasszazs"><svg class="ico" aria-hidden="true">
-                      <use href="#ico-sport"></use>
-                    </svg>Sportmasszázs</a></li>
                 <li><a href="#arcmasszazs"><svg class="ico" aria-hidden="true">
                       <use href="#ico-arc"></use>
                     </svg>Arcmasszázs</a></li>
@@ -411,7 +400,6 @@
         <li><a href="#szegmentmasszazs">Szegmentmasszázs</a></li>
         <li><a href="#kotoszoveti-masszazs">Kötőszöveti masszázs</a></li>
         <li><a href="#szekmasszazs">Székmasszázs</a></li>
-        <li><a href="#sportmasszazs">Sportmasszázs</a></li>
         <li><a href="#arcmasszazs">Arcmasszázs</a></li>
         <li><a href="#talpmasszazs">Talpmasszázs</a></li>
       </ul>
@@ -644,7 +632,7 @@
           <p class="eyebrow reveal">Kezeléseink</p>
           <h2 class="section__title reveal" id="kezelesek-title">Különböző gyógyászati kezelések egyéni céllal</h2>
           <p class="section__lead reveal">
-            Válassza ki, ami a panaszához illik — vagy hagyja ránk: az időpontkérésnél
+            Válassza ki, ami a panaszához illik — vagy hagyja ránk: a foglalásnál
             elég leírnia, mi a gond. Bármelyik kártyára kattintva itt, az oldalon nyílik meg
             a részletes leírás: mit végzünk, kinek javasolt, és mikor nem. Az ellenjavallatok
             listája azért van kint, hogy Ön előre lássa, mit kell egyeztetnünk.
@@ -756,21 +744,6 @@
             </a>
           </li>
           <li class="card reveal">
-            <a class="card__link" href="#sportmasszazs">
-              <span class="card__icon"><svg class="ico ico--xl" aria-hidden="true">
-                  <use href="#ico-sport"></use>
-                </svg></span>
-              <h3 class="card__title">Sportmasszázs</h3>
-              <p class="card__desc">Edzés előtti bemelegítés vagy edzés utáni intenzív nyújtás és regeneráció fokozása.
-              </p>
-              <p class="card__meta"><span class="dur">20</span><span class="dur">30</span><span
-                  class="dur">45</span><span class="dur__unit">perc</span></p>
-              <span class="card__more">Részletek <svg class="ico ico--xs" aria-hidden="true">
-                  <use href="#ico-arrow"></use>
-                </svg></span>
-            </a>
-          </li>
-          <li class="card reveal">
             <a class="card__link" href="#arcmasszazs">
               <span class="card__icon"><svg class="ico ico--xl" aria-hidden="true">
                   <use href="#ico-arc"></use>
@@ -874,7 +847,7 @@
                       munka.</li>
                     <li><strong>Általános közérzet:</strong> levertség, fáradtság csökkentése, koncentrációképesség
                       javítása.</li>
-                    <li><strong>Sport:</strong> az izomzat rugalmasságának megőrzése, regeneráció, sérülésmegelőzés.
+                    <li><strong>Aktív életmód:</strong> az izomzat rugalmasságának megőrzése, regeneráció, izomfeszültség oldása.
                     </li>
                   </ul>
                 </div>
@@ -1284,14 +1257,14 @@
                 </p>
               </div>
 
-              <div class="mechanism mechanism--plain">
-                <h4 class="mechanism__title">Hatásai</h4>
-                <ul class="tags">
-                  <li>Keringésjavítás a szegmentumhoz tartozó területeken</li>
-                  <li>Bőrhőmérséklet emelkedése</li>
-                  <li>Mély izomrelaxáció</li>
-                  <li>Paraszimpatikus idegrendszeri hatás — nyugtatás</li>
-                  <li>Fájdalomcsökkentés a reflexkörön keresztül</li>
+              <div class="mechanism">
+                <h4 class="mechanism__title">A kezelés élettani hatásai</h4>
+                <ul class="mechanism__list">
+                  <li><span>01</span> <div><strong>Keringésjavítás:</strong> a gerincvelői szegmentumhoz tartozó területek vér- és nyirokkeringésének fokozása.</div></li>
+                  <li><span>02</span> <div><strong>Bőrhőmérséklet emelkedése:</strong> a helyi értágulat révén élénkül a sejtek anyagcseréje és oxigénellátása.</div></li>
+                  <li><span>03</span> <div><strong>Mély izomrelaxáció:</strong> a kóros izomvédekezés és a feszülő mélyizmok hatékony fellazítása.</div></li>
+                  <li><span>04</span> <div><strong>Idegrendszeri megnyugvás:</strong> a paraszimpatikus tónus aktiválásával mély testi-lelki ellazulást nyújt.</div></li>
+                  <li><span>05</span> <div><strong>Reflexes fájdalomcsillapítás:</strong> a viscero-szomatikus reflexkör modulálásával csillapítja a kisugárzó panaszokat.</div></li>
                 </ul>
               </div>
 
@@ -1479,101 +1452,14 @@
             </div>
           </article>
 
-          <!-- ─── 08 SPORTMASSZÁZS ─── -->
-          <article class="treatment" tabindex="-1" id="sportmasszazs">
-            <div class="treatment__head">
-              <span class="treatment__icon"><svg class="ico ico--xl" aria-hidden="true">
-                  <use href="#ico-sport"></use>
-                </svg></span>
-              <div class="treatment__headings">
-                <p class="treatment__num">Kezelés 08</p>
-                <h3 class="treatment__title">Sportmasszázs</h3>
-                <p class="durations"><span class="durations__label">Időtartam</span><span class="dur">20</span><span
-                    class="dur">30</span><span class="dur">45</span><span class="dur__unit">perc</span></p>
-              </div>
-              <a class="treatment__close" href="#kezelesek" aria-label="Leírás bezárása" title="Leírás bezárása">
-                <svg class="ico" aria-hidden="true">
-                  <use href="#ico-close"></use>
-                </svg>
-              </a>
-            </div>
-
-            <div class="treatment__body">
-              <div class="prose">
-                <p>
-                  Erőteljesebb, intenzívebb technika, amely dörzsölést, gyúrást és ütögetést
-                  foglal magában. <strong>Edzés előtt</strong> alkalmazva bemelegíti az izmokat és
-                  fokozza a teljesítményt; <strong>edzés vagy fizikai aktivitás után</strong> segíti
-                  a nyújtást, csökkenti az izomlázat és a fáradtságot, és gyorsítja a regenerációt.
-                </p>
-                <p>
-                  Rendszeres alkalmazása hozzájárul a sérülések kockázatának csökkentéséhez,
-                  valamint az állóképesség, a hajlékonyság és a gyorsaság növeléséhez.
-                </p>
-              </div>
-
-              <div class="panels">
-                <div class="panel panel--ind">
-                  <h4 class="panel__title"><svg class="ico" aria-hidden="true">
-                      <use href="#ico-check"></use>
-                    </svg> Indikációk</h4>
-                  <ul class="list list--check">
-                    <li>Sporttevékenységre való felkészülés — rövid, tonizáló kezelés.</li>
-                    <li>Sport utáni regeneráció, nyújtás.</li>
-                    <li>Izomláz enyhítése, fáradt izomzat frissítése.</li>
-                    <li>Aktív fizikai munkát végzőknek az izomtónus megőrzésére.</li>
-                    <li>Sérülésprevenció, hajlékonyság és állóképesség támogatása.</li>
-                  </ul>
-                </div>
-                <div class="panel panel--contra">
-                  <h4 class="panel__title"><svg class="ico" aria-hidden="true">
-                      <use href="#ico-warn"></use>
-                    </svg> Kontraindikációk</h4>
-                  <ul class="list list--warn">
-                    <li>Akut sérülések korai szakasza — ficam, rándulás, törés, szakadás esetén legalább 48–72 órának el
-                      kell telnie, a sérülés mértékétől függően.</li>
-                    <li>Ínszakadás, izomrándulás heveny szaka.</li>
-                    <li>Minden heveny panasz, amely fájdalommal, duzzanattal jár.</li>
-                  </ul>
-                  <p class="panel__intro panel__intro--after">
-                    Ezen túl a gyógymasszázs általános ellenjavallatai érvényesek: láz, gyulladás,
-                    fertőzés, trombózis, daganatos betegség, terhesség és szoptatás, menstruáció
-                    első napjai.
-                  </p>
-                  <a class="panel__link" href="#gyogymasszazs-kontra">
-                    Teljes ellenjavallati lista megtekintése
-                    <svg class="ico ico--xs" aria-hidden="true">
-                      <use href="#ico-arrow"></use>
-                    </svg>
-                  </a>
-                </div>
-              </div>
-
-              <aside class="callout callout--warning">
-                <p class="callout__label">Figyelem</p>
-                <p>
-                  Edzés vagy verseny előtt <strong>kizárólag rövid kezelést</strong> szabad
-                  választani. A túl hosszú vagy túl mély sportmasszázs annyira ellazíthatja az
-                  izmokat, hogy azok átmenetileg kieshetnek az ideális tónusukból, és csökken az
-                  aktív erőkifejtés képessége.
-                </p>
-              </aside>
-
-              <div class="treatment__cta">
-                <button class="btn btn--primary" type="button" data-book="sportmasszazs">Időpontot kérek —
-                  Sportmasszázs</button>
-              </div>
-            </div>
-          </article>
-
-          <!-- ─── 09 ARCMASSZÁZS ─── -->
+          <!-- ─── 08 ARCMASSZÁZS ─── -->
           <article class="treatment" tabindex="-1" id="arcmasszazs">
             <div class="treatment__head">
               <span class="treatment__icon"><svg class="ico ico--xl" aria-hidden="true">
                   <use href="#ico-arc"></use>
                 </svg></span>
               <div class="treatment__headings">
-                <p class="treatment__num">Kezelés 09</p>
+                <p class="treatment__num">Kezelés 08</p>
                 <h3 class="treatment__title">Arcmasszázs <span class="treatment__alt">(gyógyászati reflexoldás)</span>
                 </h3>
                 <p class="durations"><span class="durations__label">Időtartam</span><span class="dur">20</span><span
@@ -1643,14 +1529,14 @@
             </div>
           </article>
 
-          <!-- ─── 10 TALPMASSZÁZS ─── -->
+          <!-- ─── 09 TALPMASSZÁZS ─── -->
           <article class="treatment" tabindex="-1" id="talpmasszazs">
             <div class="treatment__head">
               <span class="treatment__icon"><svg class="ico ico--xl" aria-hidden="true">
                   <use href="#ico-talp"></use>
                 </svg></span>
               <div class="treatment__headings">
-                <p class="treatment__num">Kezelés 10</p>
+                <p class="treatment__num">Kezelés 09</p>
                 <h3 class="treatment__title">Talpmasszázs <span class="treatment__alt">(gyógyászati reflexoldás)</span>
                 </h3>
                 <p class="durations"><span class="durations__label">Időtartam</span><span class="dur">20</span><span
@@ -2244,7 +2130,6 @@
                     <option value="szegmentmasszazs">Szegmentmasszázs</option>
                     <option value="kotoszoveti">Kötőszöveti masszázs</option>
                     <option value="szekmasszazs">Székmasszázs</option>
-                    <option value="sportmasszazs">Sportmasszázs</option>
                     <option value="arcmasszazs">Arcmasszázs</option>
                     <option value="talpmasszazs">Talpmasszázs</option>
                     <option value="tanacs">Nem tudom, kérek javaslatot</option>
@@ -2550,7 +2435,6 @@
         <ul>
           <li><a href="#kotoszoveti-masszazs">Kötőszöveti masszázs</a></li>
           <li><a href="#szekmasszazs">Székmasszázs</a></li>
-          <li><a href="#sportmasszazs">Sportmasszázs</a></li>
           <li><a href="#arcmasszazs">Arcmasszázs</a></li>
           <li><a href="#talpmasszazs">Talpmasszázs</a></li>
         </ul>

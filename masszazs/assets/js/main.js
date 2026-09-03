@@ -41,7 +41,6 @@
     szegmentmasszazs: { name: 'Szegmentmasszázs', durations: [60] },
     kotoszoveti: { name: 'Kötőszöveti masszázs', durations: [60] },
     szekmasszazs: { name: 'Székmasszázs', durations: [20, 30, 45] },
-    sportmasszazs: { name: 'Sportmasszázs', durations: [20, 30, 45] },
     arcmasszazs: { name: 'Arcmasszázs', durations: [20, 30] },
     talpmasszazs: { name: 'Talpmasszázs', durations: [20, 30, 40] },
     tanacs: { name: 'Nem tudom, kérek javaslatot', durations: [] }
@@ -1156,8 +1155,8 @@
             'Izomláz és nyilalló érzés edzés vagy emelés után'
           ],
           causes: 'Nehéz fizikai munka, edzés, terhelés.',
-          treatmentKey: 'sportmasszazs',
-          treatmentName: 'Sportmasszázs / Gyógymasszázs (30–45 perc)'
+          treatmentKey: 'gyogymasszazs',
+          treatmentName: 'Gyógymasszázs / Svédmasszázs (30–45 perc)'
         },
         {
           key: 'kar-konyok',
@@ -1215,8 +1214,8 @@
             'Comb hátsó részének nyúlási korlátozottsága'
           ],
           causes: 'Sporttevékenység, túledzés, hosszú séta.',
-          treatmentKey: 'sportmasszazs',
-          treatmentName: 'Sportmasszázs / Gyógymasszázs (30–60 perc)'
+          treatmentKey: 'gyogymasszazs',
+          treatmentName: 'Gyógymasszázs / Svédmasszázs (30–60 perc)'
         },
         {
           key: 'lab-terd',
@@ -1265,7 +1264,7 @@
           ],
           causes: 'Futás, kemény talajon járás, vádli lerövidülése.',
           treatmentKey: 'gyogymasszazs',
-          treatmentName: 'Gyógymasszázs / Sportmasszázs (30–45 perc)'
+          treatmentName: 'Gyógymasszázs / Svédmasszázs (30–45 perc)'
         }
       ]
     },
@@ -1365,7 +1364,7 @@
           ],
           causes: 'Tartós ülőmunka, futás, egyoldalú terhelés, feszes piriformis izom miatti ülőideg nyomás.',
           treatmentKey: 'gyogymasszazs',
-          treatmentName: 'Gyógymasszázs / Sportmasszázs (45–60 perc)'
+          treatmentName: 'Gyógymasszázs / Svédmasszázs (45–60 perc)'
         },
         {
           key: 'csipo-iliopsoas',
@@ -1569,7 +1568,7 @@
           ],
           causes: 'Vádliizomzat túlfeszülése, sportolás előtti nyújtás hiánya, merev cipőviselet, futóterhelés.',
           treatmentKey: 'gyogymasszazs',
-          treatmentName: 'Gyógymasszázs / Sportmasszázs (30–45 perc)'
+          treatmentName: 'Gyógymasszázs / Svédmasszázs (30–45 perc)'
         },
         {
           key: 'talp-boka',
