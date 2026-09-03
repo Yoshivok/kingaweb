@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const deferredInit = () => {
     initMobileMenu();
     initProductFilters();
+    initProductCatalog();
     initProduct3DTilt();
     initVisionSimulator();
     initEyeAnatomy();
@@ -613,54 +614,113 @@ function initMobileMenu() {
 }
 
 /* ==========================================================================
-   3. Termékszűrő Logika
+   3. Termékkatalógus — betöltés, szűrés, részletek
+   --------------------------------------------------------------------------
+   A rácsban induláskor négy, kézzel megírt kártya áll (`data-fallback="true"`).
+   Ez a TARTALÉK: ezt látja, akinél nem fut a JavaScript, és ez marad, ha a
+   kiszolgáló nem válaszol. Amint a /api/products megjön, az egész rács
+   újraépül belőle — az adminban felvett, módosított vagy elrejtett termékek
+   így kerülnek ki az oldalra.
+
+   A kártyákat és a részletes nézetet az `assets/js/product-render.js` építi,
+   kizárólag DOM-hívásokkal. Emiatt a szűrést és a 3D-billenést nem lehet
+   egyetlen, induláskor elmentett listára kötni: minden újrarajzolás után
+   frissen kell megkeresni a kártyákat. Ezért kapott mindkettő egy `refresh`
+   belépési pontot.
    ========================================================================== */
+
+/* A mindenkori kártyalista. A rács tartalma cserélődik, ezért nem tárolunk
+   elemhivatkozásokat modul szinten — mindig a DOM aktuális állapotát kérdezzük. */
+function currentProductCards() {
+  const grid = document.getElementById('product-grid');
+  return grid ? Array.from(grid.querySelectorAll('.product-card')) : [];
+}
+
+let activeProductFilter = 'all';
+
+/* A szűrés kétütemű: a kártya előbb elhalványul, és csak 300 ms múlva tűnik el
+   a rácsból (`display: none`) — különben a többi kártya azonnal odébb ugrana
+   az átmenet alatt. Ez viszont csapda: ha a látogató időközben MÁSIK szűrőre
+   vált, a korábbi rejtések időzítője akkor is lefut, és eltünteti azt, aminek
+   most látszania kellene. A nemzedékszám ezt zárja ki: minden szűrés új számot
+   kap, és az elavult időzítő magától kilép. */
+let filterGeneration = 0;
+
+function applyProductFilter(filterValue, animate) {
+  activeProductFilter = filterValue;
+  const generation = ++filterGeneration;
+  const cards = currentProductCards();
+  let visible = 0;
+
+  cards.forEach(card => {
+    const category = card.getAttribute('data-category');
+    const show = filterValue === 'all' || category === filterValue;
+    if (show) visible += 1;
+
+    if (!animate) {
+      card.style.display = show ? 'flex' : 'none';
+      card.style.opacity = show ? '1' : '0';
+      card.style.transform = show ? 'scale(1) translateY(0)' : '';
+      return;
+    }
+
+    // Animált ki/beúszás
+    if (show) {
+      card.style.display = 'flex';
+      // Egy pillanattal később, hogy az átmenetnek legyen honnan indulnia:
+      // a `display` váltása és az `opacity` állítása egyetlen képkockában
+      // nem ad átmenetet, csak ugrást.
+      setTimeout(() => {
+        if (generation !== filterGeneration) return;
+        card.style.opacity = '1';
+        card.style.transform = 'scale(1) translateY(0)';
+      }, 50);
+    } else {
+      card.style.opacity = '0';
+      card.style.transform = 'scale(0.95) translateY(10px)';
+      setTimeout(() => {
+        if (generation !== filterGeneration) return;
+        card.style.display = 'none';
+      }, 300);
+    }
+  });
+
+  const empty = document.getElementById('product-empty');
+  if (empty) empty.hidden = visible > 0;
+}
+
 function initProductFilters() {
   const buttons = document.querySelectorAll('.filter-btn');
-  const cards = document.querySelectorAll('.product-card');
-
-  if (buttons.length === 0 || cards.length === 0) return;
+  if (buttons.length === 0) return;
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Aktív gomb csere
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const filterValue = btn.getAttribute('data-filter');
-
-      cards.forEach(card => {
-        const category = card.getAttribute('data-category');
-
-        // Animált ki/beúszás
-        if (filterValue === 'all' || category === filterValue) {
-          card.style.display = 'flex';
-          setTimeout(() => {
-            card.style.opacity = '1';
-            card.style.transform = 'scale(1) translateY(0)';
-          }, 50);
-        } else {
-          card.style.opacity = '0';
-          card.style.transform = 'scale(0.95) translateY(10px)';
-          setTimeout(() => {
-            card.style.display = 'none';
-          }, 300);
-        }
+      buttons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
       });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+      applyProductFilter(btn.getAttribute('data-filter'), true);
     });
   });
+
+  applyProductFilter(activeProductFilter, false);
 }
 
 /* ==========================================================================
    4. Termékkártyák 3D Hover Tilt Effektusa
    ========================================================================== */
 function initProduct3DTilt() {
-  // Csak asztali nézetben fusson a teljesítmény megőrzése érdekében
+  // Csak asztali nézetben és egérrel fusson: érintőképernyőn a hover állapot
+  // beragad, gyengébb gépen pedig fölösleges rajzolás.
   if (window.innerWidth < 768) return;
+  if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const cards = document.querySelectorAll('.product-card');
+  currentProductCards().forEach(card => {
+    if (card.dataset.tiltBound === '1') return;   // ne kössük fel kétszer
+    card.dataset.tiltBound = '1';
 
-  cards.forEach(card => {
     card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left; // Kurzor X a kártyán belül
@@ -682,6 +742,112 @@ function initProduct3DTilt() {
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)';
       card.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease';
     });
+  });
+}
+
+/* ── A katalógus betöltése és a részletek ablaka ─────────────────────────── */
+function initProductCatalog() {
+  const grid = document.getElementById('product-grid');
+  if (!grid || !window.LuminaProducts) return;
+
+  const dialog = document.getElementById('product-dialog');
+  const detailRoot = document.getElementById('product-detail-root');
+  const closeBtn = document.getElementById('product-dialog-close-btn');
+
+  function openDetail(product) {
+    if (!dialog || !detailRoot) return;
+
+    window.LuminaProducts.renderDetail(product, detailRoot, {
+      titleId: 'product-dialog-title',
+      onBook: () => {
+        // A részletekből egyenesen az időpontfoglalásba lehet lépni.
+        dialog.close();
+        const booking = document.getElementById('booking-dialog');
+        if (booking && typeof booking.showModal === 'function') booking.showModal();
+      }
+    });
+
+    // A hosszú leírásnál a görgetés mindig elölről induljon
+    const wrapper = dialog.querySelector('.dialog-wrapper');
+    if (wrapper) wrapper.scrollTop = 0;
+
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+  }
+
+  if (closeBtn && dialog) {
+    closeBtn.addEventListener('click', () => dialog.close());
+  }
+
+  // A galéria billentyűvel is léptethető, amíg az ablak nyitva van
+  if (dialog) {
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      const target = event.target;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+      const selector = event.key === 'ArrowLeft' ? '.pd-nav--prev' : '.pd-nav--next';
+      const button = dialog.querySelector(selector);
+      if (button) { event.preventDefault(); button.click(); }
+    });
+  }
+
+  function render(products) {
+    grid.textContent = '';
+    grid.removeAttribute('data-fallback');
+
+    products.forEach(product => {
+      grid.appendChild(window.LuminaProducts.createCard(product, { onDetails: openDetail }));
+    });
+
+    // A csere után a szűrő, a billenés és a beúszás új elemeket kapott
+    applyProductFilter(activeProductFilter, false);
+    initProduct3DTilt();
+    revealProductCards();
+  }
+
+  // A tartalék kártyák „Érdekel” gombja addig is csináljon valamit: amíg a
+  // katalógus meg nem érkezik, az időpontfoglalást nyitja.
+  grid.querySelectorAll('.product-action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const booking = document.getElementById('booking-dialog');
+      if (booking && typeof booking.showModal === 'function') booking.showModal();
+    });
+  });
+
+  fetch('/api/products', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+    .then(response => (response.ok ? response.json() : null))
+    .then(data => {
+      if (!data || !data.ok || !Array.isArray(data.products)) return;
+      render(data.products);
+    })
+    .catch(() => {
+      /* Nincs kiszolgáló vagy nincs hálózat — a tartalék kártyák maradnak.
+         Nem írunk ki hibát: a látogató szempontjából az oldal működik. */
+    });
+}
+
+/* A kártyák beúszása. Ha a böngésző tudja a görgetéshez kötött animációt,
+   azt a CSS intézi; különben ez a megfigyelő. Újrarajzolás után is fut. */
+function revealProductCards() {
+  if (CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) return;
+
+  const cards = currentProductCards().filter(card => card.dataset.revealBound !== '1');
+  if (!cards.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0) scale(1)';
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.15 });
+
+  cards.forEach(card => {
+    card.dataset.revealBound = '1';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px) scale(0.95)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)';
+    observer.observe(card);
   });
 }
 
@@ -1212,7 +1378,7 @@ function initEyeAnatomy() {
   const bodyEl = document.getElementById('eye-body');
   const resetBtn = document.getElementById('eye-reset-btn');
 
-  if (!svgEl || !hotspotsLayer || !pillsBox || !bodyEl) return;
+  if (!svgEl || !hotspotsLayer || !bodyEl) return;
 
   let selectedPartId = null;
 
@@ -1238,7 +1404,7 @@ function initEyeAnatomy() {
     bodyEl.innerHTML =
       '<div class="eye-placeholder">' +
       '<span class="eye-placeholder__icon">' + EYE_ICONS.role + '</span>' +
-      '<p class="eye-placeholder__text">Kattintson az ábrán látható pulzáló pontokra, a feliratokra vagy a fenti gombokra a szem egyes részeinek megismeréséhez. Minden képlethez részletes orvosi és optometriai leírás tartozik.</p>' +
+      '<p class="eye-placeholder__text">Kattintson az ábrán látható pontokra vagy a feliratokra a szem egyes részeinek megismeréséhez. Minden képlethez részletes orvosi és optometriai leírás tartozik.</p>' +
       '</div>';
   }
 
@@ -1299,11 +1465,13 @@ function initEyeAnatomy() {
       pin.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
 
-    pillsBox.querySelectorAll('.eye-pill').forEach(pill => {
-      const active = pill.getAttribute('data-part') === partId;
-      pill.classList.toggle('is-active', active);
-      pill.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
+    if (pillsBox) {
+      pillsBox.querySelectorAll('.eye-pill').forEach(pill => {
+        const active = pill.getAttribute('data-part') === partId;
+        pill.classList.toggle('is-active', active);
+        pill.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
 
     if (partId) {
       renderCard(partId);
@@ -1321,7 +1489,7 @@ function initEyeAnatomy() {
   function renderHotspotsAndPills() {
     svgEl.innerHTML = '';
     hotspotsLayer.innerHTML = '';
-    pillsBox.innerHTML = '';
+    if (pillsBox) pillsBox.innerHTML = '';
 
     EYE_HOTSPOTS.forEach((item, idx) => {
       const part = EYE_PARTS[item.id];
@@ -1397,18 +1565,20 @@ function initEyeAnatomy() {
         hotspotsLayer.appendChild(pin);
       }
 
-      // 4. Quick filter Pill Button
-      const pill = document.createElement('button');
-      pill.type = 'button';
-      pill.className = 'eye-pill' + (isSelected ? ' is-active' : '');
-      pill.setAttribute('data-part', item.id);
-      pill.setAttribute('role', 'tab');
-      pill.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-      pill.style.animationDelay = (idx * 30) + 'ms';
-      pill.innerHTML = '<span class="eye-pill__swatch" style="background:' + part.swatch + '"></span>' + part.name;
+      // 4. Quick filter Pill Button (ha létezik a konténer)
+      if (pillsBox) {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'eye-pill' + (isSelected ? ' is-active' : '');
+        pill.setAttribute('data-part', item.id);
+        pill.setAttribute('role', 'tab');
+        pill.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        pill.style.animationDelay = (idx * 30) + 'ms';
+        pill.innerHTML = '<span class="eye-pill__swatch" style="background:' + part.swatch + '"></span>' + part.name;
 
-      pill.addEventListener('click', () => selectPart(item.id, true));
-      pillsBox.appendChild(pill);
+        pill.addEventListener('click', () => selectPart(item.id, true));
+        pillsBox.appendChild(pill);
+      }
     });
 
     if (selectedPartId) {
@@ -2543,38 +2713,17 @@ function initScrollAnimationsFallback() {
   }
 
   // 2. Product Card Entrance Animáció Fallback (IntersectionObserver)
-  if (!CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) {
-    const cards = document.querySelectorAll('.product-card');
-
-    if (cards.length > 0) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0) scale(1)';
-            observer.unobserve(entry.target); // Csak egyszer fut le
-          }
-        });
-      }, {
-        threshold: 0.15
-      });
-
-      cards.forEach(card => {
-        // Kezdőállapot beállítása
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px) scale(0.95)';
-        card.style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)';
-        observer.observe(card);
-      });
-    }
-  }
+  //    A megvalósítás a termékkatalógusnál él (revealProductCards), mert a
+  //    rács tartalma a /api/products megérkezésekor kicserélődik — a beúszást
+  //    az új kártyákra is fel kell kötni.
+  revealProductCards();
 }
 
 /* ==========================================================================
    9. Light Dismiss Dialog Fallback (Safari-ra és régebbi böngészőkre)
    ========================================================================== */
 function initDialogDismissFallback() {
-  const dialogs = document.querySelectorAll('#booking-dialog, #service-dialog');
+  const dialogs = document.querySelectorAll('#booking-dialog, #service-dialog, #product-dialog');
   if (!dialogs.length) return;
 
   // Ha a böngésző NEM támogatja a closedby attribútumot (Safari pl.)

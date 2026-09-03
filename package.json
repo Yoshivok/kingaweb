@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "start": "node server/server.js",
-    "dev": "node server/server.js"
+    "dev": "node server/server.js",
+    "test": "node --test \"server/test/*.test.js\"",
+    "arak": "node server/tools/prices-check.js"
   },
   "engines": {
     "node": ">=18"

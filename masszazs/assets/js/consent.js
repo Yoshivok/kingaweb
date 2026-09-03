@@ -46,20 +46,29 @@
   /* ── Külső beágyazások ────────────────────────────────────────────────── */
   function placeholder(box) {
     var label = box.getAttribute('data-consent-label') || 'Tartalom megjelenítése';
-    box.innerHTML =
-      '<div class="embed-gate">' +
+    var gate = box.querySelector('.embed-gate');
+    if (!gate) {
+      gate = document.createElement('div');
+      gate.className = 'embed-gate';
+      gate.innerHTML =
         '<p class="embed-gate__text">Ez a tartalom külső szolgáltatótól töltődik be, ' +
         'ami továbbítja az Ön IP-címét. Megjelenítéshez engedélyre van szükség.</p>' +
-        '<button class="btn btn--ghost btn--sm" type="button">' + label + '</button>' +
-      '</div>';
-    box.querySelector('button').addEventListener('click', function () {
-      set(true);
-    });
+        '<button class="btn btn--ghost btn--sm" type="button">' + label + '</button>';
+      box.appendChild(gate);
+    }
+    var btn = gate.querySelector('button');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        set(true);
+      });
+    }
   }
 
   function release(box) {
     var src = box.getAttribute('data-consent-src');
     if (!src) return;
+    var existing = box.querySelector('iframe');
+    if (existing && existing.getAttribute('src') === src) return;
     var frame = document.createElement('iframe');
     frame.src = src;
     frame.title = box.getAttribute('data-consent-title') || 'Beágyazott tartalom';

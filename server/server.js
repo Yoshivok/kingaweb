@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SALVIA GYÓGYMASSZÁZS — helyi kiszolgáló + időpontkérés e-mailben
+   MANULA-OPTIC MED. — helyi kiszolgáló
    ─────────────────────────────────────────────────────────────────────────
-   • kiszolgálja a statikus oldalt (index.html, assets, jogi aloldalak)
-   • POST /api/idopont — két levelet küld:
-       1. visszaigazolás a vendégnek
-       2. értesítés a masszőrnek
+   • kiszolgálja a statikus oldalt (választó, masszázs, optika, jogi aloldalak)
+   • POST /api/idopont       — masszázs időpontkérés e-mailben
+   • GET  /api/products      — a nyilvános terméklista (az optika oldalhoz)
+   • /admins                 — admin felület (bejelentkezés után termékkezelés)
+   • /api/admin/*            — védett admin végpontok
    • nincs külső csomag: minden a Node beépített moduljaiból
 
    Indítás:  node server/server.js
    Beállítás: server/config.json  (a config.example.json másolata)
-              vagy környezeti változók: SMTP_USER, SMTP_PASS, MAIL_TO
+              vagy környezeti változók: SMTP_USER, SMTP_PASS, MAIL_TO,
+              ADMIN_USER, ADMIN_PASSWORD, TRUST_PROXY
    ═══════════════════════════════════════════════════════════════════════ */
 'use strict';
 
@@ -20,9 +22,13 @@ const path = require('node:path');
 const zlib = require('node:zlib');
 const { sendMail, buildMessage } = require('./smtp');
 const { customerMail, ownerMail } = require('./mail-templates');
+const { Api } = require('./lib/api');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUTBOX = path.join(__dirname, 'outbox');
+/* A száraz futás levelei. A DATA_DIR-hez hasonlóan teszthez átirányítható. */
+const OUTBOX = process.env.OUTBOX_DIR
+  ? path.resolve(process.env.OUTBOX_DIR)
+  : path.join(__dirname, 'outbox');
 
 /* ── Beállítások ──────────────────────────────────────────────────────────── */
 function loadConfig() {
@@ -33,6 +39,7 @@ function loadConfig() {
 
   const cfg = {
     port: Number(process.env.PORT || file.port || 8000),
+    host: process.env.HOST || file.host || '127.0.0.1',
     smtp: {
       host: process.env.SMTP_HOST || (file.smtp && file.smtp.host) || 'smtp.gmail.com',
       port: Number(process.env.SMTP_PORT || (file.smtp && file.smtp.port) || 587),
@@ -44,7 +51,18 @@ function loadConfig() {
     /* Ide érkezik a masszőr értesítése. NEM jelenik meg a weboldalon. */
     to: process.env.MAIL_TO || file.to || '',
     phoneRaw: file.phoneRaw || '+36205017453',
-    timeZone: file.timeZone || 'Europe/Budapest'
+    timeZone: file.timeZone || 'Europe/Budapest',
+
+    /* Fordított proxy (nginx, Caddy, Render…) mögött igaz legyen: ilyenkor
+       hisszük el az X-Forwarded-For / X-Forwarded-Proto fejlécet. KÖZVETLEN
+       kiszolgálásnál hagyja hamisnak — különben bárki hamis IP-vel kerülné
+       meg a sebességkorlátot. */
+    trustProxy: envBool(process.env.TRUST_PROXY, file.trustProxy === true),
+
+    /* Az admin fiók CSAK az első indításkor jön létre ezekből az értékekből;
+       utána a `server/data/admin.json`-ben él, hashelve. */
+    adminUser: process.env.ADMIN_USER || file.adminUser || 'kinga',
+    adminPassword: process.env.ADMIN_PASSWORD || file.adminPassword || 'admin'
   };
 
   cfg.from = process.env.MAIL_FROM || file.from || cfg.smtp.user;
@@ -53,9 +71,25 @@ function loadConfig() {
   return cfg;
 }
 
+function envBool(value, fallback) {
+  if (value == null || value === '') return fallback;
+  return /^(1|true|yes|igen)$/i.test(String(value));
+}
+
 const config = loadConfig();
 
-/* ── Statikus kiszolgálás ─────────────────────────────────────────────────── */
+const api = new Api({
+  root: ROOT,
+  trustProxy: config.trustProxy,
+  defaultAdmin: { username: config.adminUser, password: config.adminPassword },
+  log: (line) => console.log(line)
+});
+
+/* ── Statikus kiszolgálás ─────────────────────────────────────────────────
+   ENGEDÉLYEZŐ lista, nem tiltólista. Csak az itt felsorolt kiterjesztések
+   mennek ki; minden más 404. Így egy véletlenül a gyökérbe kerülő
+   `.env`, `.bak`, `.md` vagy `.sql` fájl nem tölthető le akkor sem, ha
+   senki nem gondolt rá külön. */
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -65,10 +99,154 @@ const MIME = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
   '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.woff2': 'font/woff2',
-  '.ico': 'image/x-icon'
+  '.woff': 'font/woff',
+  '.ico': 'image/x-icon',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.webmanifest': 'application/manifest+json'
 };
+
+/* Mappák, amelyekhez a böngésző soha nem férhet hozzá.
+   `server/`        — itt van a config.json és a jelszó-hash
+   `admin/`         — csak a /admins útvonalon keresztül, egy ajtón át
+   `_eredeti_kepek/`— a WebP-re váltás előtti, 17 MB-nyi eredeti fotó
+   `node_modules/`  — ha valaha bekerülne */
+const BLOCKED_DIRS = ['server', 'admin', '_eredeti_kepek', 'node_modules'];
+
+/* Nevesített fájlok, amelyek a gyökérben landolnának, de senkire nem
+   tartoznak: a projekt függőségeit és szkriptjeit írják le. Nem titok, de
+   nem is kell kiadni — a felderítés első lépése mindig ez a néhány név. */
+const BLOCKED_FILES = new Set([
+  'package.json', 'package-lock.json', 'npm-shrinkwrap.json',
+  'yarn.lock', 'pnpm-lock.yaml', 'composer.json', 'dockerfile', 'docker-compose.yml'
+]);
+
+const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.svg', '.json', '.txt', '.xml', '.webmanifest']);
+const LONG_LIVED = new Set(['.webp', '.png', '.jpg', '.jpeg', '.gif', '.avif', '.woff2', '.woff', '.ico']);
+const MIN_COMPRESS_BYTES = 1024;
+
+function cacheControlFor(ext) {
+  if (LONG_LIVED.has(ext)) return 'public, max-age=86400';
+  return 'no-cache';
+}
+
+/* ── Biztonsági fejlécek ──────────────────────────────────────────────────
+   Minden válasz megkapja őket, a 404-es és 405-ös is.
+
+   A CSP a legfontosabb: megmondja a böngészőnek, HONNAN futtathat kódot.
+   `script-src 'self'` mellett egy beszúrt `<script>` vagy `onerror=` nem
+   fut le — ezért kellett minden inline szkriptet külön fájlba tenni.
+   `base-uri 'none'` megakadályozza, hogy egy beszúrt `<base>` átirányítsa
+   az összes relatív hivatkozást, `object-src 'none'` pedig a régi
+   beágyazási felületeket zárja ki.
+
+   A `frame-ancestors` a választóoldal miatt `'self'`: a keret a saját
+   `masszazs/` és `optika/` lapjait ágyazza be. Idegen oldal viszont nem
+   teheti iframe-be az oldalt (kattintás-eltérítés elleni védelem). */
+const CSP_PUBLIC = [
+  "default-src 'self'",
+  "base-uri 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "frame-src 'self' https://www.google.com",
+  "manifest-src 'self'"
+].join('; ');
+
+/* Az admin szigorúbb: semmilyen keretbe nem ágyazható, és térképet sem tölt. */
+const CSP_ADMIN = [
+  "default-src 'self'",
+  "base-uri 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "frame-src 'none'"
+].join('; ');
+
+/* ── A strukturált adat (JSON-LD) beengedése hash-sel ──────────────────────
+   A választóoldal és a masszázs oldal `<script type="application/ld+json">`
+   blokkot hordoz: ez mondja meg a keresőknek, hogy helyi vállalkozásról van
+   szó, hol van, mikor tart nyitva. A böngésző ezt nem futtatja — de a CSP
+   akkor is `<script>` elemnek látja, és `script-src 'self'` mellett kizárná.
+
+   Nem lazítunk a szabályon egy `'unsafe-inline'`-nal (az minden beszúrt
+   szkriptet is beengedne). Helyette KISZÁMOLJUK a blokkok SHA-256 lenyomatát
+   indításkor, és pontosan azokat engedjük át. Egyetlen karakter változása a
+   blokkban új lenyomatot ad — vagyis egy beszúrt szkript nem tud átcsúszni
+   egy meglévő engedélyen.
+
+   Indításkor számoljuk, nem kézzel írjuk be: így a hash nem tud elavulni,
+   ha valaki átírja a nyitvatartást a JSON-LD-ben. */
+const LD_JSON = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+
+function collectInlineScriptHashes() {
+  const hashes = new Set();
+  const crypto = require('node:crypto');
+
+  const walk = (dir, depth) => {
+    if (depth > 3) return;
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.') || BLOCKED_DIRS.includes(entry.name)) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full, depth + 1); continue; }
+      if (!entry.name.endsWith('.html')) continue;
+
+      let html = '';
+      try { html = fs.readFileSync(full, 'utf8'); } catch { continue; }
+      LD_JSON.lastIndex = 0;
+      let match;
+      while ((match = LD_JSON.exec(html)) !== null) {
+        const digest = crypto.createHash('sha256').update(match[1], 'utf8').digest('base64');
+        hashes.add(`'sha256-${digest}'`);
+      }
+    }
+  };
+
+  walk(ROOT, 0);
+  return [...hashes];
+}
+
+const LD_HASHES = collectInlineScriptHashes();
+
+const CSP_PUBLIC_FINAL = LD_HASHES.length
+  ? CSP_PUBLIC.replace("script-src 'self'", "script-src 'self' " + LD_HASHES.join(' '))
+  : CSP_PUBLIC;
+
+function securityHeaders(res, { admin = false, secure = false } = {}) {
+  res.setHeader('Content-Security-Policy', admin ? CSP_ADMIN : CSP_PUBLIC_FINAL);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', admin ? 'DENY' : 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', admin ? 'same-origin' : 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  if (admin) {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
+  /* HSTS csak HTTPS-en. HTTP-n kiküldve értelmetlen, és fejlesztés közben
+     a böngésző beragadna a https-re a localhoston. */
+  if (secure) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+}
 
 /* ── Tömörítés és gyorsítótár ──────────────────────────────────────────────
    Szöveges válaszokat (HTML/CSS/JS/SVG/JSON) érdemes tömöríteni: a
@@ -91,16 +269,7 @@ const MIME = {
      újra semmit. Szerkesztés után azonnal a friss fájl megy ki — kézzel
      karbantartott oldalnál ez fontosabb, mint a megspórolt kérés.
    • Kép/betűtípus → egy nap. Ezek ritkán változnak és ezek a nagyok
-     (~2,9 MB), így a napon belüli visszatérés teljesen hálózat nélkül megy.
-     Képcserénél egy nap alatt magától kigördül; ha sürgős, elég átnevezni. */
-const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.svg', '.json', '.txt', '.xml']);
-const LONG_LIVED = new Set(['.webp', '.png', '.jpg', '.jpeg', '.woff2', '.ico']);
-const MIN_COMPRESS_BYTES = 1024;
-
-function cacheControlFor(ext) {
-  if (LONG_LIVED.has(ext)) return 'public, max-age=86400';
-  return 'no-cache';
-}
+     (~2,9 MB), így a napon belüli visszatérés teljesen hálózat nélkül megy. */
 
 /* Melyik tömörítést kéri a böngésző? A Brotli tömörebb, de csak akkor
    használjuk, ha a kliens jelezte, hogy érti. */
@@ -139,69 +308,158 @@ function compressedBody(filePath, data, stat, encoding) {
   return hit;
 }
 
-async function serveStatic(req, res) {
-  const url = new URL(req.url, 'http://localhost');
-  let rel = decodeURIComponent(url.pathname);
+/* ── Útvonal feloldása ────────────────────────────────────────────────────
+   Ez a függvény dönti el, melyik fájl kérhető le. Sorrendben:
+
+   1. A `%`-kódolás feloldása. Hibás kódolásnál (`%zz`) nincs találgatás.
+   2. Nullbájt tiltása. A `kep.webp%00.php` trükk régi C-alapú rétegeknél a
+      névnek csak az első felét látta — a Node nem érintett, de a bejáratnál
+      olcsóbb kizárni, mint minden rétegben végiggondolni.
+   3. `path.posix.normalize` — a `..` és `.` szakaszok kiejtése. Az URL
+      útvonala mindig `/`-jel tagolt, akkor is, ha a kiszolgáló Windowson
+      fut; ezért a `posix` változat, nem a platformfüggő.
+   4. Feloldás a gyökérhez képest, majd ELLENŐRZÉS, hogy tényleg a gyökér
+      alatt maradtunk. Ez a valódi zár: a fenti lépések elrontása esetén is
+      itt akad fenn a kilépés.
+   5. Rejtett fájlok és tiltott mappák kizárása.
+   6. Végül a fájlrendszeri VALÓDI útvonal (`realpath`) újraellenőrzése:
+      egy kifelé mutató szimbolikus link így sem visz ki a gyökérből. */
+function resolvePath(urlPathname) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(urlPathname);
+  } catch {
+    return null;
+  }
+  if (decoded.includes('\0')) return null;
+  if (!decoded.startsWith('/')) return null;
+
+  let rel = path.posix.normalize(decoded);
   if (rel.endsWith('/')) rel += 'index.html';
 
-  const filePath = path.join(ROOT, rel);
-  /* könyvtárból kilépés tiltása */
-  if (!filePath.startsWith(ROOT + path.sep) && filePath !== path.join(ROOT, 'index.html')) {
-    res.writeHead(403).end('403 — tiltott útvonal');
-    return;
-  }
-  /* a szerver saját mappája (benne a config.json!) nem kiszolgálható */
-  if (filePath.startsWith(path.join(ROOT, 'server'))) {
-    res.writeHead(404).end('404');
-    return;
-  }
+  const segments = rel.split('/').filter(Boolean);
+  if (segments.some((s) => s === '..' || s.startsWith('.'))) return null;
+  if (segments.length && BLOCKED_DIRS.includes(segments[0])) return null;
+  if (segments.length && BLOCKED_FILES.has(segments[segments.length - 1].toLowerCase())) return null;
 
+  const filePath = path.resolve(ROOT, ...segments);
+  if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) return null;
+
+  return filePath;
+}
+
+/** A szimbolikus linkek feloldása után is a gyökér alatt vagyunk? */
+async function insideRoot(filePath) {
   try {
-    const data = await fsp.readFile(filePath);
-    const stat = await fsp.stat(filePath);
-    const ext = path.extname(filePath).toLowerCase();
-
-    const headers = {
-      'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': cacheControlFor(ext),
-      'Last-Modified': stat.mtime.toUTCString(),
-      'X-Content-Type-Options': 'nosniff'
-    };
-
-    /* Nem módosult a fájl a látogató legutóbbi kérése óta → 304, nulla bájt */
-    const since = req.headers['if-modified-since'];
-    if (since && Math.floor(stat.mtimeMs / 1000) <= Math.floor(Date.parse(since) / 1000)) {
-      res.writeHead(304, headers).end();
-      return;
-    }
-
-    let body = data;
-    const encoding = COMPRESSIBLE.has(ext) && data.length >= MIN_COMPRESS_BYTES
-      ? pickEncoding(req)
-      : null;
-
-    if (encoding) {
-      body = compressedBody(filePath, data, stat, encoding);
-      headers['Content-Encoding'] = encoding;
-      headers['Vary'] = 'Accept-Encoding';
-    }
-
-    headers['Content-Length'] = body.length;
-    res.writeHead(200, headers);
-    if (req.method === 'HEAD') res.end(); else res.end(body);
-  } catch (err) {
-    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end('<h1>404</h1><p><a href="/">Vissza a főoldalra</a></p>');
+    const real = await fsp.realpath(filePath);
+    return real === ROOT || real.startsWith(ROOT + path.sep);
+  } catch {
+    return false;
   }
 }
 
-/* ── Egyszerű sebességkorlát: IP-nként 5 kérés / óra ──────────────────────── */
+async function sendFile(req, res, filePath, { admin = false } = {}) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mime = MIME[ext];
+  if (!mime) { notFound(req, res); return; }
+
+  let stat;
+  try {
+    stat = await fsp.stat(filePath);
+  } catch {
+    notFound(req, res);
+    return;
+  }
+  if (!stat.isFile()) { notFound(req, res); return; }
+  if (!await insideRoot(filePath)) { notFound(req, res); return; }
+
+  const headers = {
+    'Content-Type': mime,
+    'Cache-Control': admin ? 'no-store' : cacheControlFor(ext),
+    'Last-Modified': stat.mtime.toUTCString()
+  };
+
+  /* Nem módosult a fájl a látogató legutóbbi kérése óta → 304, nulla bájt.
+     Az admin lapjai kimaradnak: ott a friss kód fontosabb. */
+  const since = req.headers['if-modified-since'];
+  if (!admin && since) {
+    const sinceSec = Math.floor(Date.parse(since) / 1000);
+    if (Number.isFinite(sinceSec) && Math.floor(stat.mtimeMs / 1000) <= sinceSec) {
+      res.writeHead(304, headers);
+      res.end();
+      return;
+    }
+  }
+
+  let body;
+  try {
+    body = await fsp.readFile(filePath);
+  } catch {
+    notFound(req, res);
+    return;
+  }
+
+  const encoding = COMPRESSIBLE.has(ext) && body.length >= MIN_COMPRESS_BYTES
+    ? pickEncoding(req)
+    : null;
+
+  if (encoding) {
+    body = compressedBody(filePath, body, stat, encoding);
+    headers['Content-Encoding'] = encoding;
+    headers['Vary'] = 'Accept-Encoding';
+  }
+
+  headers['Content-Length'] = body.length;
+  res.writeHead(200, headers);
+  if (req.method === 'HEAD') res.end(); else res.end(body);
+}
+
+function notFound(req, res) {
+  const body = Buffer.from(
+    '<!doctype html><html lang="hu"><meta charset="utf-8">' +
+    '<title>404 — nincs ilyen oldal</title>' +
+    '<h1>404</h1><p><a href="/">Vissza a főoldalra</a></p>',
+    'utf8'
+  );
+  res.writeHead(404, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': body.length,
+    'Cache-Control': 'no-store'
+  });
+  if (req.method === 'HEAD') res.end(); else res.end(body);
+}
+
+async function serveStatic(req, res, url) {
+  const filePath = resolvePath(url.pathname);
+  if (!filePath) { notFound(req, res); return; }
+  await sendFile(req, res, filePath);
+}
+
+/* ── Az admin felület kiszolgálása ────────────────────────────────────────
+   Az `admin/` mappa a statikus kiszolgálásból ki van zárva; egyedül ez a
+   néhány, névvel felsorolt útvonal vezet hozzá. Így nincs „elfelejtett”
+   fájl a mappában, ami véletlenül letölthető lenne. */
+const ADMIN_ROUTES = new Map([
+  ['/admins', 'index.html'],
+  ['/admins/', 'index.html'],
+  ['/admins/app.css', 'app.css'],
+  ['/admins/app.js', 'app.js'],
+  ['/admins/products.js', 'products.js'],
+  ['/admins/prices.js', 'prices.js']
+]);
+
+async function serveAdmin(req, res, name) {
+  await sendFile(req, res, path.join(ROOT, 'admin', name), { admin: true });
+}
+
+/* ── Egyszerű sebességkorlát az időpontkéréshez: IP-nként 5 kérés / óra ──── */
 const hits = new Map();
 function rateLimited(ip) {
   const now = Date.now();
   const list = (hits.get(ip) || []).filter((t) => now - t < 3600000);
   list.push(now);
   hits.set(ip, list);
+  if (hits.size > 5000) hits.clear();
   return list.length > 5;
 }
 
@@ -302,59 +560,107 @@ function readBody(req, limit = 64 * 1024) {
   });
 }
 
+async function handleAppointment(req, res) {
+  if (req.method !== 'POST') {
+    res.writeHead(405, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'csak POST' }));
+    return;
+  }
+
+  const ip = req.socket.remoteAddress || 'ismeretlen';
+  if (rateLimited(ip)) {
+    console.warn(`  ! sebességkorlát: ${ip}`);
+    res.writeHead(429, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'Túl sok kérés. Kérjük, próbálja később.' }));
+    return;
+  }
+
+  try {
+    const raw = await readBody(req);
+    const data = clean(JSON.parse(raw));
+    const problems = validate(data);
+
+    if (problems.length) {
+      console.warn('  ! hiányos űrlap:', problems.join(', '));
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Hiányos vagy hibás adat: ' + problems.join(', ') }));
+      return;
+    }
+
+    console.log(`\n→ időpontkérés: ${data.name} · ${data.treatment} · ${data.duration}`);
+    const result = await deliver(data);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, dryRun: result.dryRun }));
+  } catch (err) {
+    console.error('  ✗ hiba:', err.message);
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'A levelet nem sikerült elküldeni.' }));
+  }
+}
+
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-
-  if (url.pathname === '/api/idopont') {
-    if (req.method !== 'POST') {
-      res.writeHead(405, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'csak POST' }));
-      return;
-    }
-
-    const ip = req.socket.remoteAddress || 'ismeretlen';
-    if (rateLimited(ip)) {
-      console.warn(`  ! sebességkorlát: ${ip}`);
-      res.writeHead(429, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'Túl sok kérés. Kérjük, próbálja később.' }));
-      return;
-    }
-
-    try {
-      const raw = await readBody(req);
-      const data = clean(JSON.parse(raw));
-      const problems = validate(data);
-
-      if (problems.length) {
-        console.warn('  ! hiányos űrlap:', problems.join(', '));
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: 'Hiányos vagy hibás adat: ' + problems.join(', ') }));
-        return;
-      }
-
-      console.log(`\n→ időpontkérés: ${data.name} · ${data.treatment} · ${data.duration}`);
-      const result = await deliver(data);
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, dryRun: result.dryRun }));
-    } catch (err) {
-      console.error('  ✗ hiba:', err.message);
-      res.writeHead(502, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'A levelet nem sikerült elküldeni.' }));
-    }
+  let url;
+  try {
+    url = new URL(req.url, 'http://localhost');
+  } catch {
+    res.writeHead(400).end('400');
     return;
   }
 
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.writeHead(405).end('405');
-    return;
+  const adminFile = ADMIN_ROUTES.get(url.pathname);
+  const isAdminArea = !!adminFile || url.pathname.startsWith('/api/admin/');
+  const secure = !!(req.socket && req.socket.encrypted)
+    || (config.trustProxy && String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https');
+
+  securityHeaders(res, { admin: isAdminArea, secure });
+
+  try {
+    /* 1. Az admin felület lapjai */
+    if (adminFile) {
+      if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end('405'); return; }
+      await serveAdmin(req, res, adminFile);
+      return;
+    }
+
+    /* 2. Az API (nyilvános terméklista + admin végpontok) */
+    if (await api.handle(req, res, url)) return;
+
+    /* 3. A masszázs időpontkérése */
+    if (url.pathname === '/api/idopont') {
+      await handleAppointment(req, res);
+      return;
+    }
+
+    /* 4. Statikus fájlok */
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' }).end('405');
+      return;
+    }
+    await serveStatic(req, res, url);
+  } catch (err) {
+    /* A hiba részletei a naplóba mennek, a látogatóhoz nem: a veremkiírás
+       fájlneveket és könyvtárszerkezetet árulna el. */
+    console.error('  ✗ kiszolgálási hiba:', err && err.message);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('500');
+    } else {
+      res.end();
+    }
   }
-  await serveStatic(req, res);
 });
 
-server.listen(config.port, '127.0.0.1', () => {
-  console.log('\n  Salvia Gyógymasszázs — helyi kiszolgáló');
-  console.log(`  http://localhost:${config.port}\n`);
+/* Lassú-kapcsolat (slowloris) elleni időkorlátok. Alapértelmezés szerint a
+   Node fejlécekre 60 mp-et vár; a nyitva tartott, félbehagyott kérés
+   kapcsolatot foglal. */
+server.headersTimeout = 20000;
+server.requestTimeout = 60000;
+server.keepAliveTimeout = 10000;
+
+server.listen(config.port, config.host, () => {
+  console.log('\n  Manula-Optic Med. — helyi kiszolgáló');
+  console.log(`  http://${config.host}:${config.port}\n`);
   if (config.dryRun) {
     console.log('  ⚠ SZÁRAZ FUTÁS: nincs SMTP-hitelesítés vagy címzett megadva.');
     console.log('    A levelek nem mennek ki, hanem a server/outbox/ mappába íródnak.');
@@ -364,4 +670,39 @@ server.listen(config.port, '127.0.0.1', () => {
     console.log(`  Küldés: ${config.smtp.host}:${config.smtp.port} · feladó: ${config.from}`);
     console.log(`  Masszőr értesítése ide megy: ${config.to}\n`);
   }
+
+  console.log(`  Admin felület:  http://${config.host}:${config.port}/admins`);
+
+  /* Árva képek takarítása: a szerkesztés közben feltöltött, végül el nem
+     mentett fotók így nem gyűlnek a lemezen. Indításkor egyszer, utána
+     óránként. A takarítás csak a gépi nevű, egy óránál régebbi és egyetlen
+     termék által sem hivatkozott fájlokat érinti — a kézzel odamásolt
+     képekhez nem nyúl. Lásd `server/lib/uploads.js`. */
+  const sweepUploads = () => {
+    api.uploads
+      .collectGarbage(require('./lib/store').referencedImages())
+      .then((removed) => { if (removed) console.log(`  ⌫ ${removed} nem használt kép törölve`); })
+      .catch(() => { /* a takarítás elmaradása nem hiba */ });
+  };
+  setTimeout(sweepUploads, 5000).unref();
+  setInterval(sweepUploads, 60 * 60 * 1000).unref();
+
+  /* Az alapértelmezett jelszóra minden indításkor figyelmeztetünk — ez a
+     leggyakoribb valós biztonsági rés, nem a kifinomult támadás. */
+  require('./lib/store')
+    .loadAdmin({ username: config.adminUser, password: config.adminPassword })
+    .then((admin) => {
+      if (admin.isDefault) {
+        console.log('\n  ⚠ AZ ADMIN MÉG AZ ALAPÉRTELMEZETT JELSZÓT HASZNÁLJA.');
+        console.log(`    Felhasználó: ${admin.username}`);
+        console.log('    Élesítés előtt cserélje le az admin felület „Jelszó” fülén.');
+      }
+      if (!config.trustProxy) {
+        console.log('\n  ℹ trustProxy = false — közvetlen kiszolgálás.');
+        console.log('    Fordított proxy (nginx, Caddy, Render) mögött állítsa igazra,');
+        console.log('    különben a sebességkorlát mindenkit egy IP-nek lát.');
+      }
+      console.log('');
+    })
+    .catch((err) => console.error('  ✗ az admin fiók betöltése nem sikerült:', err.message));
 });

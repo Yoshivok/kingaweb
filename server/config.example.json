@@ -1,14 +1,31 @@
 {
+  "//": "Másolja config.json néven, és töltse ki. A config.json NINCS verziókövetve, és a kiszolgáló nem is adja ki böngészőnek.",
+
   "port": 8000,
+  "//host": "127.0.0.1 = csak helyben érhető el (proxy mögé való). 0.0.0.0 = minden hálózati felületen.",
+  "host": "127.0.0.1",
+
+  "//trustProxy": "IGAZ, ha fordított proxy (nginx, Caddy, Render, Railway) mögött fut. Ilyenkor hisszük el az X-Forwarded-For és X-Forwarded-Proto fejlécet — ez kell ahhoz, hogy a sebességkorlát a VALÓDI látogatót lássa, és hogy a munkamenet-süti megkapja a Secure jelzőt. KÖZVETLEN kiszolgálásnál hagyja hamisnak, különben bárki hamis IP-vel kerülné meg a korlátozást.",
+  "trustProxy": false,
+
+  "//admin": "CSAK az első indításkor számít: ekkor jön létre a server/data/admin.json, benne a jelszó HASH-elve. Utána ez a két sor figyelmen kívül marad — a jelszót az admin felület „Jelszó” gombjával lehet cserélni. Élesítés előtt cserélje le.",
+  "adminUser": "kinga",
+  "adminPassword": "admin",
+
+  "//smtp": "Gmailnél NEM a fiók jelszava kell, hanem 16 karakteres app-jelszó.",
   "smtp": {
     "host": "smtp.gmail.com",
     "port": 587,
     "user": "sajat.cim@gmail.com",
     "pass": "ide-jon-a-16-karakteres-app-jelszo"
   },
+
   "from": "sajat.cim@gmail.com",
   "fromName": "Salvia Gyógymasszázs",
+
+  "//to": "Ide érkezik a masszőr értesítése. A weboldalon sehol nem jelenik meg.",
   "to": "ide-jon-a-masszor-cime@example.com",
+
   "phoneRaw": "+36301234567",
   "timeZone": "Europe/Budapest"
 }

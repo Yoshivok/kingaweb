@@ -31,7 +31,10 @@
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..500&family=Plus+Jakarta+Sans:wght@400..700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="index.css?v=37">
+  <link rel="stylesheet" href="index.css?v=42">
+  <!-- A termékkártyák és a részletek ablakának stílusa. Külön fájl, mert az
+       admin felület előnézete is pontosan ezt tölti be. -->
+  <link rel="stylesheet" href="assets/css/products.css?v=1">
 </head>
 
 <body>
@@ -305,13 +308,10 @@
         <div class="section-header">
           <span class="section-subtitle">A Szem Felépítése</span>
           <h2 class="section-title">Interaktív Szemanatómia</h2>
-          <p class="section-description">Kattintson a szem belső és külső képleteire, a pulzáló pontokra vagy a fenti
-            gombokra a részletes orvosi és optometriai leírásokért: megismerheti az egyes részek feladatát, a lehetséges
-            elváltozásokat és a vizsgálati módszereket.</p>
+          <p class="section-description">Kattintson a szem belső és külső képleteire vagy a pulzáló pontokra a részletes
+            orvosi és optometriai leírásokért: megismerheti az egyes részek feladatát, a lehetséges elváltozásokat és a
+            vizsgálati módszereket.</p>
         </div>
-
-        <!-- Gyorsválasztó a szem képleteihez (a JavaScript tölti fel) -->
-        <div class="eye-pills" id="eye-pills" role="tablist" aria-label="A szem részei"></div>
 
         <div class="eye-layout">
           <!-- Szem Színpad (Képes illusztráció & Hotspot réteg) -->
@@ -353,7 +353,7 @@
                 <path
                   d="M12.4 9.3a1.3 1.3 0 0 1 2.6 0v3.1a4.6 4.6 0 0 1-4.6 4.6H9.3a4 4 0 0 1-2.9-1.25L3.6 12.8a1.35 1.35 0 0 1 1.9-1.9L7 12.3" />
               </svg>
-              <span>Kattintson az ábrán lévő pontokra vagy a fenti gombokra a részletes orvosi leírásért!</span>
+              <span>Kattintson az ábrán lévő pontokra vagy a feliratokra a részletes orvosi leírásért!</span>
             </div>
           </div>
 
@@ -476,8 +476,15 @@
           <button class="filter-btn" data-filter="accessories" id="filter-accessories">Kiegészítők</button>
         </div>
 
-        <!-- Termék Grid -->
-        <div class="product-grid" id="product-grid">
+        <!-- Termék Grid
+             A benne lévő négy kártya TARTALÉK tartalom: ezt látja az, akinél
+             nem fut a JavaScript, és ez marad a képernyőn akkor is, ha a
+             kiszolgáló nem elérhető. Élesben az `index.js` a /api/products
+             válaszából építi újra a rácsot — amit az admin felületen
+             szerkesztenek, az itt jelenik meg.
+             A tartalék tartalom párja a `server/lib/store.js` seedProducts()
+             függvénye; a kettő induláskor azonos. -->
+        <div class="product-grid" id="product-grid" data-fallback="true">
           <!-- Kártya 1: Szemüvegkeret -->
           <div class="product-card" data-category="frames">
             <div class="product-image-wrapper">
@@ -561,6 +568,13 @@
             </div>
           </div>
         </div>
+
+        <!-- Akkor látszik, ha egy szűrőhöz nincs termék, vagy ha az admin
+             minden terméket elrejtett. -->
+        <p class="product-empty" id="product-empty" hidden>
+          Ebben a kategóriában jelenleg nincs kiemelt termékünk. Szalonunkban
+          a teljes kínálat megtekinthető &mdash; szeretettel várjuk!
+        </p>
       </div>
     </section>
   </main>
@@ -569,18 +583,17 @@
   <footer id="contact-section" class="footer">
     <div class="container footer-grid">
 
-      <!-- Céginfó -->
-      <div class="footer-info">
-        <a href="#" class="logo footer-logo">
-          <span class="logo-text">Lumina <span class="logo-accent">Optika</span></span>
-        </a>
-        <p class="footer-about">Prémium optikai szaküzlet és látásvizsgálati központ. Gondoskodó figyelem és a
-          legmagasabb minőség az Ön látásáért.</p>
-      </div>
-
-      <!-- Elérhetőségek -->
-      <div class="footer-contact">
-        <h3 class="footer-title">Kapcsolat</h3>
+      <!-- 1. Oszlop: Kapcsolat -->
+      <div class="footer-card footer-contact-card">
+        <div class="footer-card-header">
+          <span class="footer-card-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+          </span>
+          <h3 class="footer-title">Kapcsolat</h3>
+        </div>
         <ul class="contact-list">
           <li>
             <span class="contact-icon">
@@ -589,7 +602,10 @@
                 <circle cx="12" cy="10" r="3" />
               </svg>
             </span>
-            <span>1052 Budapest, Bécsi utca 4.</span>
+            <span class="contact-text">
+              <strong class="contact-address">1111 Budapest, Karinthy Frigyes út 20.</strong>
+              <small class="contact-sub">Utcai bejárat, akadálymentes megközelítés</small>
+            </span>
           </li>
           <li>
             <span class="contact-icon">
@@ -612,39 +628,86 @@
         </ul>
       </div>
 
-      <!-- Nyitvatartás -->
-      <div class="footer-hours">
-        <h3 class="footer-title">Nyitvatartás</h3>
-        <table class="hours-table">
-          <tr>
-            <td>Hétfő - Péntek:</td>
-            <td>09:00 - 19:00</td>
-          </tr>
-          <tr>
-            <td>Szombat:</td>
-            <td>10:00 - 15:00</td>
-          </tr>
-          <tr>
-            <td>Vasárnap:</td>
-            <td>Zárva</td>
-          </tr>
-        </table>
+      <!-- 2. Oszlop: Nyitvatartás & Tudnivalók -->
+      <div class="footer-card footer-hours-card">
+        <div>
+          <div class="footer-card-header">
+            <span class="footer-card-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </span>
+            <h3 class="footer-title">Nyitvatartás</h3>
+          </div>
+          <table class="hours-table">
+            <tr>
+              <td>Hétfő - Péntek:</td>
+              <td>09:00 - 19:00</td>
+            </tr>
+            <tr>
+              <td>Szombat:</td>
+              <td>10:00 - 15:00</td>
+            </tr>
+            <tr>
+              <td>Vasárnap:</td>
+              <td>Zárva</td>
+            </tr>
+          </table>
+        </div>
+        <div class="footer-perks">
+          <div class="footer-perk">
+            <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            <span>Ingyenes látásvizsgálat szemüvegkészítés mellé</span>
+          </div>
+          <div class="footer-perk">
+            <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            <span>Egészségpénztári és bankkártyás fizetés</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Térkép helye -->
-      <div class="footer-map-container">
-        <h3 class="footer-title">Térkép</h3>
-        <div class="footer-map" id="footer-map" aria-label="Térkép Budapest Bécsi utca 4">
-          <!-- Stylized Mock Interactive Map -->
-          <div class="mock-map">
-            <div class="map-bg"></div>
-            <div class="map-routes"></div>
-            <div class="map-pin" title="Lumina Optika">
-              <div class="pin-ring"></div>
-              <div class="pin-dot"></div>
-            </div>
-            <span class="map-label">Bécsi utca 4.</span>
+      <!-- 3. Oszlop: Térkép & Megközelítés -->
+      <div class="footer-card footer-map-card">
+        <div>
+          <div class="footer-card-header">
+            <span class="footer-card-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
+              </svg>
+            </span>
+            <h3 class="footer-title">Megközelítés &amp; Térkép</h3>
           </div>
+          <div class="footer-map" id="footer-map"
+            data-consent-src="https://maps.google.com/maps?hl=hu&amp;q=Budapest+Karinthy+Frigyes+%C3%BAt+20&amp;ie=UTF8&amp;t=&amp;z=16&amp;iwloc=B&amp;output=embed"
+            data-consent-title="A Lumina Optika helye a térképen"
+            data-consent-label="Térkép megjelenítése"
+            aria-label="Térkép Budapest Karinthy Frigyes út 20.">
+            <!-- Stylized Mock Interactive Map -->
+            <div class="mock-map">
+              <div class="map-bg"></div>
+              <div class="map-routes"></div>
+              <div class="map-pin" title="Lumina Optika">
+                <div class="pin-ring"></div>
+                <div class="pin-dot"></div>
+              </div>
+              <span class="map-label">Karinthy Frigyes út 20.</span>
+            </div>
+          </div>
+        </div>
+        <div class="footer-map-foot">
+          <span class="footer-map-transit">6-os villamos &middot; M4 Móricz Zs. körtér</span>
+          <a class="footer-map-route"
+            href="https://www.google.com/maps/dir/?api=1&amp;destination=Budapest+Karinthy+Frigyes+%C3%BAt+20"
+            target="_blank" rel="noopener">
+            Útvonaltervezés &rarr;
+          </a>
         </div>
       </div>
     </div>
@@ -896,6 +959,17 @@
     </div>
   </dialog>
 
+  <!-- Termék Részletek Modális Ablak (Native Dialog)
+       A tartalmat teljes egészében a product-render.js építi fel, DOM-hívásokkal
+       (soha nem innerHTML-lel) — így az adminban beírt szöveg nem tud kóddá válni. -->
+  <dialog id="product-dialog" class="booking-dialog product-dialog" closedby="any"
+    aria-labelledby="product-dialog-title">
+    <div class="dialog-wrapper">
+      <button class="dialog-close-btn" id="product-dialog-close-btn" aria-label="Bezárás">&times;</button>
+      <div class="product-detail" id="product-detail-root"></div>
+    </div>
+  </dialog>
+
   <!-- Globális Toast Értesítések (Pl. LocalStorage-ból betöltött korábbi foglalás) -->
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
@@ -919,11 +993,11 @@
     </div>
   </div>
 
-  <script>
-    var yearEl = document.getElementById('footer-year');
-    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
-  </script>
-  <script src="index.js?v=44"></script>
+  <script src="/assets/js/year.js" defer></script>
+  <!-- A termékkártyák és a részletes nézet felépítése. Ugyanezt a fájlt
+       használja az admin felület előnézete is, hogy a kettő ne csússzon el. -->
+  <script src="assets/js/product-render.js?v=1"></script>
+  <script src="index.js?v=46"></script>
   <script src="assets/js/consent.js" defer></script>
 </body>
 

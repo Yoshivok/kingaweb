@@ -1,0 +1,123 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ÁRLISTA — a táblázat és a hozzá tartozó megjegyzések
+   ─────────────────────────────────────────────────────────────────────────
+   KÖZÖS stíluslap: a masszázs oldal ÉS az admin felület árszerkesztőjének
+   előnézete is ezt tölti be. A párja a `masszazs/assets/js/main.js`
+   `renderPriceTable()` függvénye — a kettőt együtt kell módosítani.
+
+   Miért külön fájl: így az admin előnézet nem közelítés, hanem ugyanaz a
+   megjelenés, ugyanabból a forrásból. Ha ez a lap a `style.css`-ben maradna,
+   az adminnak vagy be kellene töltenie a masszázs oldal teljes, 90 kB-os
+   stíluslapját (ütköző `.btn`, `input` szabályokkal együtt), vagy másolatot
+   tartani belőle — az utóbbi pedig előbb-utóbb elcsúszik.
+
+   A színtokeneket (`--color-accent-light`, `--fs-sm` stb.) a betöltő oldal
+   adja: a `masszazs/assets/css/style.css` és az `admin/app.css` ugyanazokat
+   a neveket definiálja.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.pricing {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-sm);
+  overflow: hidden;
+}
+/* A hét oszlopos árlista mobilon nem fér ki: oldalra kell görgetni. Három
+   dolog hiányzott hozzá.
+   (1) Semmi nem mondta meg, hogy van még jobbra — ezt a `.price-hint` sor
+       pótolja, ami csak keskeny kijelzőn jelenik meg.
+   (2) Görgetés közben a kezelés neve is kicsúszott, így a számokról nem derült
+       ki, melyik sorhoz tartoznak — a névoszlop most `sticky`, a helyén marad.
+   (3) A név `nowrap` volt, ezért az oszlop 250 px-et vitt el a 375-ből, és
+       egyszerre egyetlen ár fért mellé. Mobilon tördelhető és fix szélességű,
+       a tábla pedig 720 helyett 560 px: így három ár is látszik egyszerre. */
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+/* A kártya (`.pricing`) a befoglaló teljes szélességét elfoglalja, és a
+   megjegyzések alatta végig is érnek — a táblázat viszont tartalom szerint
+   méreteződne, jó 300 px-rel keskenyebbre, üres fehér sávot hagyva a jobb
+   oldalán. A `width: 100%` kitölteti vele a kártyát; a `min-width` marad,
+   mert keskeny kijelzőn az indítja a vízszintes görgetést. */
+.price-table { width: 100%; min-width: 720px; font-size: var(--fs-sm); }
+.price-table thead th.price-table__name,
+.price-table tbody th[scope="row"] {
+  position: sticky; left: 0; z-index: 3;
+}
+.price-table thead th.price-table__name { z-index: 4; }
+.price-table tbody th[scope="row"] { background: var(--color-bg-secondary); }
+.price-table tbody tr:hover th[scope="row"] { background: var(--color-accent-light); }
+
+.price-hint {
+  display: none;
+  gap: 0.45rem; align-items: center;
+  margin: 0;
+  padding: 0.8rem clamp(1rem, 2.4vw, 1.75rem) 0;
+  font-size: var(--fs-xs); color: var(--color-text-secondary);
+}
+.price-hint .ico { flex: none; color: var(--color-accent-hover); }
+@media (max-width: 900px) {
+  .price-hint { display: flex; }
+}
+.price-table thead th {
+  position: sticky; top: 0;
+  background: var(--color-bg-dark);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs); font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  text-align: center;
+  padding: 0.95rem 0.7rem;
+  white-space: nowrap;
+}
+.price-table thead th.price-table__name { text-align: left; padding-left: clamp(1rem, 2.4vw, 1.75rem); }
+.price-table tbody th {
+  text-align: left; font-family: var(--font-body);
+  font-size: var(--fs-sm); font-weight: 400;
+  padding: 0.95rem clamp(1rem, 2.4vw, 1.75rem);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.price-table tbody th a { color: var(--color-text-primary); }
+.price-table tbody th a:hover { color: var(--color-accent-deep); }
+.price-table td {
+  text-align: center;
+  padding: 0.95rem 0.7rem;
+  border-bottom: 1px solid var(--color-border);
+  border-left: 1px solid rgba(235, 220, 208, 0.6);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+  font-weight: 400;
+}
+.price-table tbody tr:hover td,
+.price-table tbody tr:hover th { background: var(--color-accent-light); }
+.price-table tbody tr:last-child td,
+.price-table tbody tr:last-child th { border-bottom: 0; }
+.price-table td.na { color: var(--color-muted); }
+.price-table__mark { color: var(--color-gold); font-weight: 500; }
+
+@media (max-width: 760px) {
+  .price-table { min-width: 560px; }
+  .price-table tbody th {
+    white-space: normal; line-height: 1.35;
+    width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem;
+    padding: 0.8rem 0.7rem;
+  }
+  .price-table thead th { padding: 0.8rem 0.45rem; }
+  .price-table thead th.price-table__name { padding-left: 0.7rem; }
+  .price-table td { padding: 0.8rem 0.4rem; }
+}
+
+.price-notes {
+  display: grid; gap: 0.5rem;
+  padding: 1.25rem clamp(1rem, 2.4vw, 1.75rem);
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--fs-xs); color: var(--color-text-secondary);
+  line-height: 1.6;
+}

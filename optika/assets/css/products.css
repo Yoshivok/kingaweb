@@ -1,0 +1,698 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TERMÉKEK — kártyák és a részletes nézet
+   ─────────────────────────────────────────────────────────────────────────
+   KÖZÖS stíluslap: a nyilvános optika oldal ÉS az admin felület előnézete is
+   ezt tölti be. A párja a `assets/js/product-render.js`, ami ugyanezeket az
+   osztályneveket építi fel — a kettőt együtt kell módosítani.
+
+   Miért külön fájl: az admin előnézet így nem közelítés, hanem ugyanaz a
+   megjelenés, ugyanabból a forrásból. Ha ez a lap az `index.css`-ben maradna,
+   az adminnak vagy be kellene töltenie a weboldal teljes, 100 kB-os
+   stíluslapját (ütköző `.btn`, `.field-input` szabályokkal együtt), vagy
+   másolatot tartani belőle — az utóbbi pedig előbb-utóbb elcsúszik.
+
+   A színtokeneket (`--color-accent` stb.) a betöltő oldal adja: az
+   `optika/index.css` és az `admin/app.css` ugyanazokat a neveket definiálja.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 30px;
+}
+
+/* Product Card Premium Design & 3D Tilt */
+.product-card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 30px -5px rgba(36, 28, 24, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-smooth);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(36, 28, 24, 0.12);
+  border-color: var(--color-accent);
+}
+
+.product-image-wrapper {
+  position: relative;
+  aspect-ratio: 1;
+  background-color: #faf7f4;
+  overflow: hidden;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-smooth);
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.06);
+}
+
+.product-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: var(--color-text-primary);
+  color: #ffffff;
+  font-family: var(--font-headings);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.product-info {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-brand {
+  font-family: var(--font-headings);
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.product-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.product-desc {
+  font-size: 1.02rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.product-price {
+  font-family: var(--font-headings);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Native view-timeline scroll reveals */
+@media (prefers-reduced-motion: no-preference) {
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    .product-card {
+      animation: reveal-fade auto linear backwards;
+      animation-timeline: view();
+      animation-range: entry 10% entry 40%;
+    }
+  }
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   16. Termékrészletek — jelvények, galéria, részletes nézet
+   --------------------------------------------------------------------------
+   A részletes nézet ugyanabban a `<dialog>`-ban él, mint az időpontfoglalás,
+   ezért örökli annak keretét, hátterét és be-/kiúszását (`.booking-dialog`).
+   Itt csak az különbözik, ami a termékre jellemző: a fotógaléria és a
+   kétoszlopos fejrész.
+
+   Teljesítmény: a galéria váltásakor csak `opacity` és `transform` mozog.
+   A dialógus háttérelmosásának SUGARA végig állandó — a projekt korábbi
+   mérései szerint a sugár animálása egész képernyős újraraszterizálást
+   kényszerít ki, ami gyengébb gépen fekete villanásként jelenik meg.
+   ========================================================================== */
+
+/* --- Jelvény-árnyalatok ---
+   Az admin három készletből választ; ezek csak színben térnek el, hogy az
+   „Akció” észrevehető legyen anélkül, hogy kilógna a lap hangulatából. */
+.product-badge--premium {
+  background-color: var(--color-text-primary);
+  color: #ffffff;
+}
+
+.product-badge--new {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.product-badge--sale {
+  background-color: #a8422f;
+  color: #ffffff;
+}
+
+/* --- Fotószámláló a kártyán ---
+   Csak akkor jelenik meg, ha egynél több fotó tartozik a termékhez: így a
+   látogató tudja, hogy a kártya mögött van még mit megnézni. */
+.product-photo-count {
+  position: absolute;
+  left: 15px;
+  bottom: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 999px;
+  background-color: rgba(36, 28, 24, 0.72);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.product-photo-count::before {
+  content: "";
+  width: 13px;
+  height: 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  box-shadow: 3px -3px 0 -1.5px rgba(255, 255, 255, 0.55);
+}
+
+/* --- Kép nélküli termék helyőrzője --- */
+.product-image-placeholder,
+.pd-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: var(--color-accent-light);
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  text-align: center;
+  padding: 20px;
+}
+
+/* --- Üres kategória üzenete --- */
+.product-empty {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--color-text-secondary);
+  max-width: 46ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.product-empty[hidden] {
+  display: none;
+}
+
+/* --- A részletek ablaka --- */
+.product-dialog {
+  max-width: 940px;
+}
+
+.product-dialog .dialog-wrapper {
+  padding: 0;
+}
+
+/* A bezáró gomb a fotó fölé kerül, ezért kap saját, olvasható hátteret. */
+.product-dialog .dialog-close-btn {
+  z-index: 3;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 2rem;
+  line-height: 1;
+  padding-bottom: 5px;
+  background-color: rgba(250, 248, 245, 0.94);
+  box-shadow: 0 2px 12px rgba(36, 28, 24, 0.18);
+}
+
+/* --- Felső blokk: galéria + fejadatok --- */
+.pd-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+}
+
+.pd-gallery {
+  background-color: #f4efe9;
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-stage {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background-color: #f4efe9;
+}
+
+.pd-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pd-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  font-family: var(--font-headings);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-text-primary);
+  color: #ffffff;
+}
+
+/* Léptetőgombok. Érintésre is elég nagyok (44 px), és a fókuszgyűrű
+   látszik rajtuk — billentyűvel is használható a galéria. */
+.pd-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(250, 248, 245, 0.92);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(36, 28, 24, 0.18);
+  transition: background-color var(--transition-normal), opacity var(--transition-normal);
+}
+
+.pd-nav:hover {
+  background-color: #ffffff;
+}
+
+.pd-nav--prev {
+  left: 14px;
+}
+
+.pd-nav--next {
+  right: 14px;
+}
+
+.pd-counter {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background-color: rgba(36, 28, 24, 0.72);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Bélyegképsor. Vízszintesen görgethető, hogy sok fotónál se törjön szét. */
+.pd-thumbs {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.pd-thumb {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+  opacity: 0.6;
+  scroll-snap-align: start;
+  transition: opacity var(--transition-normal), border-color var(--transition-normal);
+}
+
+.pd-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pd-thumb:hover,
+.pd-thumb.is-active {
+  opacity: 1;
+  border-color: var(--color-accent);
+}
+
+/* --- Fejadatok --- */
+.pd-head {
+  padding: 46px 40px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pd-brand {
+  font-family: var(--font-headings);
+  font-size: 0.92rem;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.pd-title {
+  font-family: var(--font-headings);
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.pd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.pd-chip {
+  display: inline-block;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background-color: var(--color-accent-light);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.pd-chip--price {
+  background-color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  color: #ffffff;
+  font-family: var(--font-headings);
+  font-weight: 600;
+}
+
+.pd-lead {
+  font-size: 1.06rem;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+/* --- Szöveges rész --- */
+.pd-body {
+  padding: 8px 40px 0;
+}
+
+.pd-paragraph {
+  font-size: 1.04rem;
+  line-height: 1.75;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+  max-width: 68ch;
+}
+
+.pd-section {
+  margin-top: 30px;
+}
+
+.pd-subtitle {
+  font-family: var(--font-headings);
+  font-size: 1.22rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pd-list {
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+
+.pd-list li {
+  position: relative;
+  padding-left: 28px;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* A pipa tiszta CSS: két szárból hajlított, elforgatott alakzat. Így nem kell
+   se kép, se ikonkészlet, és a szöveggel együtt nagyítódik. */
+.pd-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.5em;
+  width: 6px;
+  height: 11px;
+  border: solid var(--color-accent);
+  border-width: 0 2px 2px 0;
+  transform: translateY(-60%) rotate(45deg);
+}
+
+.pd-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 30px;
+}
+
+.pd-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.pd-spec-row dt {
+  font-size: 0.96rem;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.pd-spec-row dd {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.pd-note {
+  margin-top: 26px;
+  padding: 18px 20px;
+  border-left: 3px solid var(--color-accent);
+  background-color: var(--color-accent-light);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: 0.99rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+.pd-empty {
+  font-size: 1.02rem;
+  color: var(--color-text-secondary);
+  padding: 10px 0 0;
+}
+
+.pd-actions {
+  padding: 30px 40px 40px;
+  margin-top: 26px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pd-actions-note {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+/* --- Tábla és mobil ---
+   768 px alatt a fejrész a fotó ALÁ kerül, a dialógus pedig alulról feljövő
+   lappá válik: teljes szélesség, lekerekített felső sarkok, a képernyő
+   aljáig érő tartalom. Ez a mobilon megszokott „sheet” viselkedés, és több
+   hely marad a szövegnek, mint egy középre igazított dobozban. */
+@media (max-width: 860px) {
+  .pd-top {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  .pd-head {
+    padding: 26px 24px 20px;
+  }
+
+  .pd-title {
+    font-size: 1.55rem;
+  }
+
+  .pd-body {
+    padding: 4px 24px 0;
+  }
+
+  .pd-actions {
+    padding: 24px;
+  }
+
+  .pd-specs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-dialog {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    margin-top: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 94svh;
+  }
+
+  .product-dialog .dialog-wrapper {
+    max-height: 94svh;
+    /* Az alsó rendszersáv (iOS otthon-csík) alatt is maradjon kattintható hely */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .product-dialog .dialog-close-btn {
+    top: 12px;
+    right: 12px;
+  }
+
+  .pd-stage {
+    aspect-ratio: 1;
+  }
+
+  /* Érintőképernyőn a húzás a fő mozdulat; a nyilak elférnek mellette,
+     de kisebb helyet foglalnak. */
+  .pd-nav {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pd-nav--prev {
+    left: 8px;
+  }
+
+  .pd-nav--next {
+    right: 8px;
+  }
+
+  .pd-thumbs {
+    padding: 10px;
+  }
+
+  .pd-thumb {
+    flex-basis: 54px;
+    width: 54px;
+    height: 54px;
+  }
+
+  .pd-head {
+    padding: 22px 18px 16px;
+  }
+
+  .pd-title {
+    font-size: 1.4rem;
+  }
+
+  .pd-body {
+    padding: 4px 18px 0;
+  }
+
+  .pd-paragraph,
+  .pd-list li {
+    font-size: 1rem;
+  }
+
+  .pd-actions {
+    padding: 20px 18px 26px;
+  }
+
+  .pd-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .pd-spec-row {
+    /* Szűk kijelzőn a hosszú érték nem fér el egy sorban a címke mellett */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .pd-spec-row dd {
+    text-align: left;
+  }
+}
+
+/* Alulról felúszó lap a mobil megjelenéshez. A `.booking-dialog` átmenetét
+   írja felül, csak ebben a nézetben. */
+@media (max-width: 600px) and (prefers-reduced-motion: no-preference) {
+  .product-dialog {
+    transform: translateY(24px);
+  }
+
+  .product-dialog[open] {
+    transform: translateY(0);
+
+    @starting-style {
+      transform: translateY(100%);
+    }
+  }
+}

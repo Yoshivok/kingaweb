@@ -76,7 +76,7 @@ function shell(opts) {
         <tr><td style="background:${C.cream};padding:22px 30px;border-top:1px solid ${C.border}">
           <p style="margin:0 0 6px;font:400 13px/1.6 Arial,Helvetica,sans-serif;color:${C.muted}">
             <strong style="color:${C.ink}">Salvia Gyógymasszázs</strong><br>
-            1051 Budapest, Példa utca 12. &middot; 06 20 501 7453
+            1111 Budapest, Karinthy Frigyes út 20. &middot; 06 20 501 7453
           </p>
           <p style="margin:0;font:400 12px/1.6 Arial,Helvetica,sans-serif;color:${C.muted}">
             ${esc(opts.footerNote)}
@@ -148,7 +148,7 @@ function customerMail(data, cfg) {
     `1 munkanapon belül visszahívjuk a megadott számon (${data.phone}), és egyeztetjük a pontos időpontot.`,
     'Ez a levél még nem foglalás, és nem jár fizetési kötelezettséggel.',
     '',
-    'Salvia Gyógymasszázs · 1051 Budapest, Példa utca 12. · 06 20 501 7453'
+    'Salvia Gyógymasszázs · 1111 Budapest, Karinthy Frigyes út 20. · 06 20 501 7453'
   ].filter(Boolean).join('\n');
 
   return { subject, html, text };

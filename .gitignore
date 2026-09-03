@@ -1,2 +1,24 @@
 .claude/
 
+# ── Futásidejű adatok — NEM tartoznak a verziókövetésbe ──────────────────
+#
+# server/data/         a termékek (products.json) ÉS az admin jelszó-hash
+#                      (admin.json). A jelszó-hash git-be tétele még akkor is
+#                      hiba, ha „csak” hash: egy nyilvános tárolóból bárki
+#                      elviheti és offline törheti. A termékadat pedig a
+#                      KISZOLGÁLÓN keletkezik: ha a verziókövetésben lenne,
+#                      minden telepítés visszaírná a régi állapotot.
+# optika/assets/products/  az adminból feltöltött termékfotók. Ugyanaz az ok:
+#                      a kiszolgálón jönnek létre, nem a fejlesztőgépen.
+#
+# Mentés: ezt a két helyet érdemes rendszeresen félretenni a szerverről —
+# együtt adják a teljes termékkatalógust.
+server/data/
+optika/assets/products/*
+!optika/assets/products/.gitkeep
+
+# Száraz futáskor ide kerülnek a ki nem küldött levelek
+server/outbox/
+
+# SMTP-jelszót tartalmaz
+server/config.json

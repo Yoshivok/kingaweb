@@ -21,6 +21,18 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var current = 'chooser';
   var moveTimer = null;
+  var wakeTimer = null;
+  /* Hamis, amíg egy induló váltás érkező panelje az ébresztésére vár. */
+  var woken = true;
+  /* Igaz a sáv csúszása alatt. A váltás a lap legdrágább pillanata: egyszerre
+     mozog a sáv, nagyít a választó, és rajzol a két teljes weboldal. Amit
+     ilyenkor meg lehet állítani, azt megállítjuk. */
+  var sliding = false;
+  /* Igaz a belépő animáció alatt. Ugyanaz a gondolat, mint a `sliding`-nál:
+     a lap első két másodperce a legdrágább — akkor fut a belépő animáció,
+     akkor érkeznek a betűtípusok, és akkor mérünk. A háttér szemcséi
+     ilyenkor nem hiányoznak senkinek. */
+  var entering = true;
 
   /* ── TELJESÍTMÉNYSZINT ────────────────────────────────────────────────────
      Három szint: 'high' | 'mid' | 'low'. A stíluslap alapból a TAKARÉKOS
@@ -121,7 +133,10 @@
       /* Friss dokumentum: az „fut-e most” állapotot újra ki kell küldeni,
          különben az előtöltött oldal a képen kívül is animálna. */
       f.motion = undefined;
-      tellFrame(key, current === key);
+      /* Ha a látogató a betöltés előtt kattintott, a dokumentum épp a csúszás
+         alatt készül el. A csúszás CSENDES első felében ilyenkor sem indulhat —
+         a félidős ébresztés (vagy az `afterMove`) majd szól neki. */
+      tellFrame(key, current === key && woken);
       if (current !== key) panels[key].classList.add('is-parked');
     });
     f.el.src = f.el.getAttribute('data-src');
@@ -322,9 +337,26 @@
     } catch (err) { /* eltérő eredet: marad a postMessage */ }
   }
 
+  /* Láthatóvá teszi a panelt — de a MOZGÁSÁT szándékosan NEM indítja el.
+     Az érkező weboldal hero-ja ugyanúgy elvenné a fő szálat a csúszás alatt,
+     mint a távozóé: eddig épp a legrosszabbkor, a becsúszás első képkockáin
+     kezdett teljes sebességgel animálni, miközben a böngészőnek amúgy is ki
+     kellett rajzolnia az egész beérkező dokumentumot. A mozgás az
+     csúszás MÁSODIK FELÉBEN indul (lásd `go`), amikor a panel java már a képen
+     van — a hero belépője így ott fut le, ahol tényleg látszik. */
   function unpark(view) {
     if (panels[view]) panels[view].classList.remove('is-parked');
-    tellFrame(view, true);
+  }
+  /* Csak a MOZGÁST állítja meg a többi panelen — a láthatóságukhoz nem nyúl.
+     A `parkOthers` (ami el is rejti őket) csak a csúszás végén futhat, mert a
+     távozó panelnek látszania kell, amíg kicsúszik. A benne futó animációnak
+     viszont nem: egy kicsúszó, ezredmásodpercek alatt eltűnő hero-ról senki
+     nem veszi észre, hogy közben kimerevedett — a felszabaduló fő szál és
+     GPU viszont épp a csúszásnak kell. */
+  function quietOthers(view) {
+    VIEWS.forEach(function (v) {
+      if (v !== view) tellFrame(v, false);
+    });
   }
   function parkOthers(view) {
     VIEWS.forEach(function (v) {
@@ -355,6 +387,11 @@
     opts = opts || {};
     if (!ORDER.hasOwnProperty(view) || view === current) return;
 
+    /* Gyors egymásutánban indított váltásnál a korábbi ébresztés már nem
+       arra a panelre vonatkozik, amelyik érkezik. */
+    clearTimeout(wakeTimer);
+    woken = false;
+
     requestFrame(view);            /* ha eddig nem kértük, most sürgős */
 
     /* A fénysöprés a tartalommal együtt mozog: az optika felé haladva
@@ -367,6 +404,16 @@
 
     /* Az érkező panel azonnal kirajzolható kell legyen, még a csúszás előtt */
     unpark(view);
+
+    /* …a többi viszont ITT hallgat el, nem a csúszás végén. Korábban a
+       `parkOthers` volt az egyetlen hely, ahol a weboldalak leállítást kaptak,
+       az pedig csak `afterMove`-ban fut: a távozó oldal hero-ja a teljes 1050 ms
+       alatt végig teljes sebességgel animált, miközben a sáv csúszott és a
+       választó nagyított. Épp ott adódott össze minden költség, ahol a
+       legsimábbnak kellene lennie. */
+    sliding = true;
+    quietOthers(view);
+    pumpParticles();
 
     body.classList.toggle('is-leaving', view !== 'chooser');
     setActivePanel(view);
@@ -388,12 +435,31 @@
     body.classList.add('is-moving');
     clearTimeout(moveTimer);
     moveTimer = setTimeout(function () { afterMove(view); }, SLIDE_MS);
+
+    /* Az érkező oldal a csúszás felénél ébred. A két véglet közül egyik sem jó:
+       a csúszás ELEJÉN indítva (ez volt eddig) a hero teljes sebességgel
+       animál, miközben a böngésző még csak most rajzolja ki az egész
+       dokumentumot és közben a sáv is csúszik — ez volt a váltás akadásának a
+       fő oka. A csúszás VÉGÉRE halasztva viszont a hero szövege üresen
+       érkezne be: `hero-in … both`-tal indul, vagyis `opacity: 0`-ról.
+       Félidőben a panel java már a képen van, a drága első fél mégis csendes. */
+    clearTimeout(wakeTimer);
+    wakeTimer = setTimeout(function () {
+      woken = true;
+      tellFrame(view, true);
+    }, Math.round(SLIDE_MS * 0.5));
   }
 
   function afterMove(view) {
+    sliding = false;
     body.classList.remove('is-moving');
     delete body.dataset.dir;
     parkOthers(view);
+    /* Biztosíték: ha a félidős ébresztés valamiért elmaradt, itt mindenképp
+       megtörténik. Ha már megvolt, a `tellFrame` felismeri és nem csinál semmit. */
+    clearTimeout(wakeTimer);
+    woken = true;
+    tellFrame(view, true);
     /* A fókusz az érkező panelre kerül: az iframe-en belül így működik a
        billentyűs görgetés, a választón pedig a nyilak és az Escape. */
     if (view !== 'chooser' && frames[view]) {
@@ -481,21 +547,35 @@
   if (!reduced && window.matchMedia('(hover: hover)').matches) {
     var parX = 0, parY = 0, parRaf = null;
 
+    /* A parallaxot HÁROM elem használja: a két dísz és a medál. Korábban a
+       `--px/--py` a közös `.chooser`-en változott — csakhogy egy egyéni tulajdonság
+       megváltoztatása a teljes részfa stílusát újraszámoltatja, itt 59 elemét
+       (köztük a két dísz-SVG összes útvonalát), MINDEN egérmozdulatnál. A három
+       tényleges fogyasztóra kötve ez háromra csökken. */
+    var parLayers = [
+      document.querySelector('.orn--left'),
+      document.querySelector('.orn--right'),
+      document.querySelector('.medallion')
+    ].filter(function (el) { return !!el; });
+
+    function setPar(x, y) {
+      for (var i = 0; i < parLayers.length; i++) {
+        parLayers[i].style.setProperty('--px', x);
+        parLayers[i].style.setProperty('--py', y);
+      }
+    }
+
     chooser.addEventListener('pointermove', function (e) {
       parX = (e.clientX / window.innerWidth) - 0.5;
       parY = (e.clientY / window.innerHeight) - 0.5;
       if (parRaf) return;
       parRaf = requestAnimationFrame(function () {
         parRaf = null;
-        chooser.style.setProperty('--px', parX.toFixed(4));
-        chooser.style.setProperty('--py', parY.toFixed(4));
+        setPar(parX.toFixed(4), parY.toFixed(4));
       });
     });
 
-    chooser.addEventListener('pointerleave', function () {
-      chooser.style.setProperty('--px', 0);
-      chooser.style.setProperty('--py', 0);
-    });
+    chooser.addEventListener('pointerleave', function () { setPar(0, 0); });
   }
 
   /* ── Részecskeréteg ──────────────────────────────────────────────────── */
@@ -518,8 +598,8 @@
        `area`    — hány képpontonként essen egy szemcse
        `min/max` — a szemcseszám alsó és felső korlátja                        */
     var PROFILE = {
-      high: { dprMax: 1.5, cap: 2400000, area: 21000, min: 26, max: 90 },
-      mid:  { dprMax: 1.0, cap: 1300000, area: 34000, min: 18, max: 52 }
+      high: { dprMax: 1.25, cap: 1500000, area: 22000, min: 24, max: 80 },
+      mid:  { dprMax: 1.0,  cap:  850000, area: 36000, min: 16, max: 46 }
     };
 
     function prof() { return PROFILE[tier] || PROFILE.mid; }
@@ -614,10 +694,19 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       scanSpr = null;
       seed();
+
+      /* A méretváltás kiüríti a vásznat. Amíg a mozgás nem fut (a belépő
+         animáció alatt, vagy másik panelen állva), nincs ki újrarajzolja —
+         egy álló képkocka visszateszi a kompozíciót. */
+      if (!pump.run) paint(performance.now ? performance.now() : Date.now());
     }
 
     var lastDraw = 0;
-    var STEP = 2;          /* fele annyi képkocka, kétszeres lépés → azonos sebesség */
+    /* A szemcsék lassan sodródnak — 25 kép/mp bőven elég hozzá, és negyedével
+       kevesebb teljes vászontörlést és -újrarajzolást jelent, mint a korábbi
+       32. A lépés ezzel arányosan nő, így a SEBESSÉG nem változik. */
+    var FRAME_MS = 40;
+    var STEP = FRAME_MS / 15.5;   /* a korábbi 31 ms ↔ 2 lépés arány megtartva */
 
     /* A logó szemformáját visszhangzó, lassan forgó lencsemotívum. Azért a
        vásznon van, mert itt már úgyis történik rajzolás minden képkockán;
@@ -693,12 +782,13 @@
       ctx.globalAlpha = 1;
     }
 
-    function frame(ts) {
-      if (!pump.run) { pump.raf = null; return; }
-      pump.raf = requestAnimationFrame(frame);
-      if (ts - lastDraw < 31) return;
-      lastDraw = ts;
-
+    /* A RAJZOLÁS maga, a hurkolástól függetlenül. Azért külön, mert induláskor
+       egyetlen álló képkockát is kérünk belőle: a vászon nem csak szemcséket
+       rajzol, hanem a lencsemotívumot és a fénycsíkot is — vagyis a kompozíció
+       része. Ha a hurokkal együtt késleltetnénk, ezek egyszerűen hiányoznának
+       a lap első másodperceiből. Így a kép az első képkockától teljes, csak
+       még nem mozog. */
+    function paint(ts) {
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'lighter';
       drawLens(ts);
@@ -736,6 +826,14 @@
       ctx.globalCompositeOperation = 'source-over';
     }
 
+    function frame(ts) {
+      if (!pump.run) { pump.raf = null; return; }
+      pump.raf = requestAnimationFrame(frame);
+      if (ts - lastDraw < FRAME_MS) return;
+      lastDraw = ts;
+      paint(ts);
+    }
+
     function reseedX(side) {
       if (stacked) return Math.random() * W;
       return side === 0 ? Math.random() * W * 0.5 : W * 0.5 + Math.random() * W * 0.5;
@@ -755,12 +853,22 @@
       rTimer = setTimeout(resize, 180);
     });
 
+    /* A `resize` egyben ki is rajzolja az első, álló képkockát: a lencsemotívum
+       és a fénycsík ettől a pillanattól a helyén van, hiába indul a mozgás
+       csak a belépő animáció után. */
     resize();
     document.body.classList.add('canvas-lens');
 
     pumpParticles = function () {
-      var want = (current === 'chooser') && document.visibilityState === 'visible';
-      if (want && !pump.raf) { pump.run = true; pump.raf = requestAnimationFrame(frame); }
+      /* Csúszás közben nem rajzolunk: a vászon képkockánkénti munkája épp a
+         sáv transzformációjától venné el a fő szálat. Egy másodpercre megálló
+         szemcsemozgás egy csúszó képernyőn észrevehetetlen. */
+      var want = (current === 'chooser') && document.visibilityState === 'visible'
+        && !sliding && !entering;
+      if (want && !pump.raf) {
+        pump.run = true;
+        pump.raf = requestAnimationFrame(frame);
+      }
       if (!want) { pump.run = false; }
     };
     pumpParticles();
@@ -978,7 +1086,12 @@
 
     /* A belépő animáció lefutott: innentől a rövidebb, mozgékonyabb
        átmenetek élnek (parallax, hover). */
-    setTimeout(function () { body.classList.add('is-live'); }, reduced ? 0 : 2400);
+    setTimeout(function () {
+      body.classList.add('is-live');
+      /* A belépő lefutott: innentől mehet a háttérréteg is. */
+      entering = false;
+      pumpParticles();
+    }, reduced ? 0 : 2400);
 
     /* A belépő animáció után mérünk, még háborítatlan lapon — és az első
        ablak eredménye engedi tovább az előtöltést. Mélylinkre érkezve nincs

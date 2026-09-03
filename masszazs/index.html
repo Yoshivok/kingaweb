@@ -18,7 +18,7 @@
      3. Végzettségek ..... #rolunk / .credentials lista + Kinga fényképe
      4. Telefonszám ...... 06 20 501 7453
      5. E-mail ........... kgmomed@gmail.com
-     6. Cím .............. 1051 Budapest, Példa utca 12.
+     6. Cím .............. 1111 Budapest, Karinthy Frigyes út 20.
      7. Nyitvatartás ..... #kapcsolat szekció + JSON-LD
      8. ÁRAK ............. #araink táblázat — a jelenlegi értékek PLACEHOLDEREK!
      9. Térkép ........... #kapcsolat — lásd az ott lévő iframe-mintát
@@ -42,7 +42,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400&family=Outfit:wght@300..600&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=6">
+  <link rel="stylesheet" href="assets/css/style.css?v=7">
+  <!-- Az árlista táblázatának stílusa. Külön fájl, mert az admin felület
+       árszerkesztőjének előnézete is pontosan ezt tölti be. -->
+  <link rel="stylesheet" href="assets/css/prices.css?v=1">
   <noscript>
     <style>
       .reveal {
@@ -67,8 +70,8 @@
   "paymentAccepted": "Készpénz, bankkártya (a helyszínen)",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "Példa utca 12.",
-    "postalCode": "1051",
+    "streetAddress": "Karinthy Frigyes út 20.",
+    "postalCode": "1111",
     "addressLocality": "Budapest",
     "addressCountry": "HU"
   },
@@ -2038,38 +2041,38 @@
                 <tr>
                   <th scope="row"><a href="#gyogymasszazs">Gyógymasszázs</a></th>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>8&nbsp;900 Ft</td>
+                  <td>9&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>12&nbsp;500 Ft</td>
-                  <td>15&nbsp;900 Ft</td>
-                  <td>22&nbsp;900 Ft</td>
+                  <td>13&nbsp;000 Ft</td>
+                  <td>16&nbsp;000 Ft</td>
+                  <td>23&nbsp;000 Ft</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#svedmasszazs">Svédmasszázs</a></th>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>8&nbsp;500 Ft</td>
+                  <td>7&nbsp;500 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>11&nbsp;900 Ft</td>
-                  <td>14&nbsp;900 Ft</td>
-                  <td>21&nbsp;500 Ft</td>
+                  <td>9&nbsp;000 Ft</td>
+                  <td>13&nbsp;000 Ft</td>
+                  <td>16&nbsp;000 Ft</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#nyirokmasszazs">Nyirokmasszázs, drenázs</a></th>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>9&nbsp;500 Ft</td>
+                  <td>10&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>13&nbsp;500 Ft</td>
-                  <td>16&nbsp;900 Ft</td>
+                  <td>15&nbsp;000 Ft</td>
+                  <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#cellulitmasszazs">Cellulitmasszázs, zsírtörés<span
                         class="price-table__mark">*</span></a></th>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>10&nbsp;500 Ft</td>
+                  <td>10&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>14&nbsp;500 Ft</td>
-                  <td>18&nbsp;500 Ft</td>
+                  <td>15&nbsp;000 Ft</td>
+                  <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
@@ -2078,7 +2081,7 @@
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>17&nbsp;500 Ft</td>
+                  <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
@@ -2087,31 +2090,22 @@
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>17&nbsp;500 Ft</td>
+                  <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#szekmasszazs">Székmasszázs</a></th>
-                  <td>6&nbsp;500 Ft</td>
-                  <td>8&nbsp;500 Ft</td>
+                  <td>6&nbsp;000 Ft</td>
+                  <td>7&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
-                  <td>11&nbsp;900 Ft</td>
-                  <td class="na" aria-label="nem elérhető">—</td>
-                  <td class="na" aria-label="nem elérhető">—</td>
-                </tr>
-                <tr>
-                  <th scope="row"><a href="#sportmasszazs">Sportmasszázs</a></th>
-                  <td>6&nbsp;900 Ft</td>
-                  <td>8&nbsp;900 Ft</td>
-                  <td class="na" aria-label="nem elérhető">—</td>
-                  <td>12&nbsp;500 Ft</td>
+                  <td>9&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#arcmasszazs">Arcmasszázs</a></th>
-                  <td>6&nbsp;500 Ft</td>
-                  <td>8&nbsp;500 Ft</td>
+                  <td>5&nbsp;000 Ft</td>
+                  <td>7&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2119,9 +2113,9 @@
                 </tr>
                 <tr>
                   <th scope="row"><a href="#talpmasszazs">Talpmasszázs</a></th>
-                  <td>6&nbsp;500 Ft</td>
-                  <td>8&nbsp;500 Ft</td>
-                  <td>10&nbsp;900 Ft</td>
+                  <td>5&nbsp;500 Ft</td>
+                  <td>7&nbsp;500 Ft</td>
+                  <td>9&nbsp;500 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2386,7 +2380,7 @@
                 </svg></span>
               <div>
                 <h3>Rendelő</h3>
-                <p>1051 Budapest, Példa utca 12.<br>1. emelet 4. — kapucsengő: Salvia</p>
+                <p>1111 Budapest, Karinthy Frigyes út 20.<br>1. emelet 4. — kapucsengő: Salvia</p>
                 <p class="contact__sub">Bejárat az utcáról, lift van. Kérjük, a kapucsengőn jelezzen érkezéskor.</p>
               </div>
             </li>
@@ -2452,41 +2446,57 @@
              addig a helyén magyarázat és egy engedélyező gomb áll. Ne tegyen ide
              közvetlen <iframe>-et: az hozzájárulás nélkül is továbbítaná az IP-címet.
         -->
-            <div class="map__placeholder" role="img"
-              aria-label="Térkép helye — a rendelő címe: 1051 Budapest, Példa utca 12.">
+            <div class="map__placeholder" role="region"
+              data-consent-src="https://maps.google.com/maps?hl=hu&amp;q=Budapest+Karinthy+Frigyes+%C3%BAt+20&amp;ie=UTF8&amp;t=&amp;z=16&amp;iwloc=B&amp;output=embed"
+              data-consent-title="A Salvia Gyógymasszázs rendelő helye a térképen"
+              data-consent-label="Térkép megjelenítése"
+              aria-label="Térkép helye — a rendelő címe: 1111 Budapest, Karinthy Frigyes út 20.">
               <svg viewBox="0 0 600 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
                 <rect width="600" height="460" fill="#f7efe9" />
-                <g stroke="#ebdcd0" stroke-width="10" fill="none">
-                  <path d="M-20 120h640M-20 300h640M120 -20v500M400 -20v500" />
+                <!-- Utcahálózat: Karinthy Frigyes út és keresztező utcák -->
+                <g stroke="#ebdcd0" stroke-width="14" fill="none">
+                  <!-- Karinthy Frigyes út (főút) -->
+                  <path d="M-20 230h640" />
+                  <!-- Keresztező utcák (pl. Bercsényi, Budafoki út, Bartók felé) -->
+                  <path d="M120 -20v500M360 -20v500M500 -20v500" />
+                  <path d="M-20 90h640M-20 370h640" />
                 </g>
-                <g stroke="#ffffff" stroke-width="4" fill="none">
-                  <path d="M-20 120h640M-20 300h640M120 -20v500M400 -20v500" />
+                <g stroke="#ffffff" stroke-width="6" fill="none">
+                  <path d="M-20 230h640" />
+                  <path d="M120 -20v500M360 -20v500M500 -20v500" />
+                  <path d="M-20 90h640M-20 370h640" />
                 </g>
+                <!-- Épülettömbök -->
                 <g fill="#eaded2">
-                  <rect x="150" y="150" width="90" height="60" rx="6" />
-                  <rect x="260" y="150" width="110" height="120" rx="6" />
-                  <rect x="150" y="240" width="80" height="30" rx="6" />
-                  <rect x="430" y="150" width="120" height="70" rx="6" />
-                  <rect x="430" y="330" width="90" height="80" rx="6" />
-                  <rect x="30" y="330" width="70" height="70" rx="6" />
-                  <rect x="200" y="330" width="150" height="80" rx="6" />
+                  <rect x="20" y="110" width="80" height="100" rx="6" />
+                  <rect x="140" y="110" width="200" height="100" rx="6" />
+                  <rect x="380" y="110" width="100" height="100" rx="6" />
+                  <rect x="20" y="250" width="80" height="100" rx="6" />
+                  <!-- Vásárhely udvar / Karinthy Frigyes út 20. tömb -->
+                  <rect x="140" y="250" width="200" height="100" rx="6" stroke="var(--color-accent)" stroke-width="1.5" />
+                  <rect x="380" y="250" width="100" height="100" rx="6" />
                 </g>
+                <!-- Utcanevek vázlatosan -->
+                <text x="150" y="222" fill="#8c786a" font-size="12" font-family="'Outfit', sans-serif" font-weight="600" letter-spacing="0.04em">Karinthy Frigyes út</text>
+                <text x="14" y="80" fill="#aa9789" font-size="10" font-family="'Outfit', sans-serif">Móricz Zs. körtér felé</text>
+                <text x="410" y="80" fill="#aa9789" font-size="10" font-family="'Outfit', sans-serif">Duna / Budafoki út felé</text>
+                <!-- Térkép díszítő pontok -->
                 <g fill="#e0c9b4">
-                  <circle cx="70" cy="200" r="34" />
-                  <circle cx="500" cy="270" r="26" />
+                  <circle cx="50" cy="50" r="28" />
+                  <circle cx="530" cy="400" r="24" />
                 </g>
               </svg>
               <div class="map__pin">
                 <svg class="ico ico--xl" aria-hidden="true">
                   <use href="#ico-pin"></use>
                 </svg>
-                <p>1051 Budapest,<br>Példa utca 12.</p>
+                <p>1111 Budapest,<br>Karinthy Frigyes út 20.</p>
               </div>
             </div>
             <div class="map__foot">
-              <p>Tömegközlekedés: [metró/villamos/busz megállók] — 4 perc gyalog.</p>
+              <p>Tömegközlekedés: 6-os villamos (Karinthy F. út / Budafoki út), M4 metró, 47, 49 villamosok (Móricz Zs. körtér) — 2–4 perc gyalog.</p>
               <a class="btn btn--ghost btn--sm"
-                href="https://www.google.com/maps/search/?api=1&amp;query=1051+Budapest+P%C3%A9lda+utca+12"
+                href="https://www.google.com/maps/dir/?api=1&amp;destination=Budapest+Karinthy+Frigyes+%C3%BAt+20"
                 target="_blank" rel="noopener">
                 Útvonaltervezés <svg class="ico ico--xs" aria-hidden="true">
                   <use href="#ico-arrow"></use>
@@ -2560,7 +2570,7 @@
               </svg>kgmomed@gmail.com</a></li>
           <li><span><svg class="ico" aria-hidden="true">
                 <use href="#ico-pin"></use>
-              </svg>1051 Budapest, Példa utca 12.</span></li>
+              </svg>1111 Budapest, Karinthy Frigyes út 20.</span></li>
           <li><span><svg class="ico" aria-hidden="true">
                 <use href="#ico-clock"></use>
               </svg>H–Cs 8–19 &middot; P 8–17 &middot; Szo 9–13</span></li>
@@ -2587,7 +2597,7 @@
     </svg>
   </button>
 
-  <script src="assets/js/main.js?v=7" defer></script>
+  <script src="assets/js/main.js?v=8" defer></script>
 
   <!-- ══════════════════ HOZZÁJÁRULÁS (sütik, külső tartalmak) ══════════════════ -->
   <div class="consent" id="consent" role="region" aria-label="Sütik és külső tartalmak beállítása" hidden>

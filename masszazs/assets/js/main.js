@@ -588,7 +588,13 @@
     durationSel.required = true;
     durationSel.appendChild(new Option('Válasszon hosszt…', ''));
     conf.durations.forEach(function (min) {
-      durationSel.appendChild(new Option(min + ' perc', String(min)));
+      /* Ha az árlista már megérkezett, a hossz mellé az árat is kiírjuk —
+         így a vendég nem az árlistához visszalapozva dönt. Az űrlap az
+         option ÉRTÉKÉT használja (a percet), a feliratot nem, tehát ez a
+         kiegészítés a beküldött adaton nem változtat. */
+      var price = conf.prices ? conf.prices[min] : null;
+      var label = price != null ? (min + ' perc — ' + formatFt(price)) : (min + ' perc');
+      durationSel.appendChild(new Option(label, String(min)));
     });
     if (previous && conf.durations.indexOf(parseInt(previous, 10)) !== -1) {
       durationSel.value = previous;
@@ -1888,6 +1894,147 @@
       }, reduceMotion ? 0 : 650);
     });
   }
+
+  /* ── 11. ÁRLISTA A KISZOLGÁLÓRÓL ──────────────────────────────────────────
+     Az „Áraink” táblázat a `/api/prices` válaszából épül újra, hogy az admin
+     felületen átírt összegek azonnal itt legyenek. A HTML-ben lévő táblázat
+     TARTALÉK: azt látja, akinél nem fut a JavaScript, és az marad a képernyőn,
+     ha a kiszolgáló nem válaszol.
+
+     Ugyanez az adat állítja be a foglalási űrlap választható hosszait is.
+     Korábban ez a lista két helyen élt (a táblázatban és a TREATMENTS
+     konstansban), és külön kellett karbantartani őket — ami előbb-utóbb azt
+     jelentette volna, hogy a vendég olyan hosszt választ, aminek nincs ára. */
+
+  /* „8900” → „8 900 Ft”. A hármas csoportok között nem törhető szóköz áll,
+     hogy az összeg soha ne szakadjon két sorba. */
+  function formatFt(value) {
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Ft';
+  }
+
+  function priceCell(value) {
+    var td = document.createElement('td');
+    if (value == null) {
+      td.className = 'na';
+      td.setAttribute('aria-label', 'nem elérhető');
+      td.textContent = '—';
+    } else {
+      td.textContent = formatFt(value);
+    }
+    return td;
+  }
+
+  function renderPriceTable(data) {
+    var table = $('.price-table');
+    if (!table) return;
+
+    var thead = table.tHead;
+    var tbody = table.tBodies[0];
+    if (!thead || !tbody) return;
+
+    /* ── Fejléc ── */
+    thead.textContent = '';
+    var headRow = document.createElement('tr');
+
+    var nameHead = document.createElement('th');
+    nameHead.scope = 'col';
+    nameHead.className = 'price-table__name';
+    nameHead.textContent = 'Kezelés';
+    headRow.appendChild(nameHead);
+
+    data.durations.forEach(function (min) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = min + ' perc';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+
+    /* ── Sorok ── */
+    tbody.textContent = '';
+    data.treatments.forEach(function (treatment) {
+      var tr = document.createElement('tr');
+
+      var rowHead = document.createElement('th');
+      rowHead.scope = 'row';
+
+      /* A kezelés neve a saját szakaszára ugrik, ha van hozzá horgony. */
+      var label = treatment.anchor
+        ? document.createElement('a')
+        : document.createElement('span');
+      if (treatment.anchor) label.href = '#' + treatment.anchor;
+      label.textContent = treatment.name;
+
+      if (treatment.footnote) {
+        var mark = document.createElement('span');
+        mark.className = 'price-table__mark';
+        mark.textContent = '*';
+        label.appendChild(mark);
+      }
+      rowHead.appendChild(label);
+      tr.appendChild(rowHead);
+
+      data.durations.forEach(function (min) {
+        tr.appendChild(priceCell(treatment.prices[min]));
+      });
+      tbody.appendChild(tr);
+    });
+
+    /* ── Megjegyzések a táblázat alatt ── */
+    var notes = $('.price-notes');
+    if (notes) {
+      notes.textContent = '';
+      data.notes.forEach(function (note) {
+        var li = document.createElement('li');
+        if (note.mark) {
+          var star = document.createElement('span');
+          star.className = 'price-table__mark';
+          star.textContent = '*';
+          li.appendChild(star);
+          li.appendChild(document.createTextNode(' '));
+        }
+        li.appendChild(document.createTextNode(note.text));
+        notes.appendChild(li);
+      });
+      notes.hidden = data.notes.length === 0;
+    }
+  }
+
+  /* A foglalási űrlap választható hosszai: egy kezeléshez pontosan azok a
+     hosszak kérhetők, amelyekhez ár tartozik. */
+  function applyDurations(data) {
+    data.treatments.forEach(function (treatment) {
+      var conf = TREATMENTS[treatment.key];
+      if (!conf) return;
+      conf.durations = data.durations.filter(function (min) {
+        return treatment.prices[min] != null;
+      });
+      conf.prices = treatment.prices;
+    });
+
+    /* A hosszválasztó már felépült az induláskori adatokból — újratöltjük,
+       megtartva a látogató esetleges választását. */
+    if (typeof fillDurations === 'function' && treatmentSel) {
+      fillDurations(treatmentSel.value, true);
+    }
+  }
+
+  function loadPrices() {
+    if (!window.fetch) return;
+    fetch('/api/prices', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (!data || !data.ok || !Array.isArray(data.treatments) || !data.treatments.length) return;
+        renderPriceTable(data);
+        applyDurations(data);
+      })
+      .catch(function () {
+        /* Nincs kiszolgáló vagy nincs hálózat — a HTML-ben lévő tartalék
+           táblázat marad. A látogató szempontjából az oldal működik. */
+      });
+  }
+
+  loadPrices();
 
   // Initialize Anatomy Module
   renderAnatomyView();

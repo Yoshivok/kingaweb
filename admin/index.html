@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- Az admin felület sehol nem jelenhet meg találatként. A kiszolgáló
+       ugyanezt fejlécben is kiküldi (X-Robots-Tag), mert a robotok egy része
+       csak azt nézi. -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="referrer" content="same-origin">
+
+  <title>Manula-Optic Med. — Adminisztráció</title>
+
+  <link rel="icon" href="/optika/assets/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Az Outfit az árlista-előnézethez kell: a masszázs oldal azt használja,
+       és a számok szélessége betűtípusonként eltér. -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..500&family=Plus+Jakarta+Sans:wght@400..700&family=Outfit:wght@300..600&display=swap"
+    rel="stylesheet">
+
+  <!-- A két weboldal saját stílusai — az előnézetek EBBŐL épülnek, nem
+       másolatból. Így amit az admin lát, az fog megjelenni élesben. -->
+  <link rel="stylesheet" href="/optika/assets/css/products.css?v=1">
+  <link rel="stylesheet" href="/masszazs/assets/css/prices.css?v=1">
+  <link rel="stylesheet" href="/admins/app.css?v=2">
+</head>
+
+<body class="admin-body is-loading">
+
+  <!-- ══════════════════ 1. BEJELENTKEZÉS ══════════════════
+       Amíg nincs érvényes munkamenet, csak ez látszik. A tényleges védelmet
+       nem ez adja (a kiszolgáló minden kérésnél újra ellenőriz), ez csak a
+       felület. -->
+  <main class="login-screen" id="login-screen" hidden>
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="login-logo" aria-hidden="true">
+          <svg viewBox="0 0 100 100" width="42" height="42">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="4" />
+            <circle cx="35" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3" />
+            <circle cx="65" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3" />
+            <path d="M 50,45 A 25,25 0 0,0 50,55" fill="none" stroke="currentColor" stroke-width="3" />
+          </svg>
+        </span>
+        <span class="login-title">Lumina <span class="accent">Optika</span></span>
+        <span class="login-subtitle">Adminisztrációs felület</span>
+      </div>
+
+      <form class="login-form" id="login-form" novalidate autocomplete="on">
+        <div class="field">
+          <label class="field-label" for="login-username">Felhasználónév</label>
+          <input class="field-input" type="text" id="login-username" name="username" autocomplete="username"
+            autocapitalize="none" autocorrect="off" spellcheck="false" required maxlength="64">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="login-password">Jelszó</label>
+          <div class="field-with-button">
+            <input class="field-input" type="password" id="login-password" name="password"
+              autocomplete="current-password" required maxlength="512">
+            <button class="reveal-btn" type="button" id="login-reveal" aria-label="Jelszó megjelenítése"
+              aria-pressed="false">Mutat</button>
+          </div>
+        </div>
+
+        <p class="login-error" id="login-error" role="alert" hidden></p>
+
+        <button class="btn btn-primary btn-full" type="submit" id="login-submit">Belépés</button>
+      </form>
+
+      <p class="login-note">
+        Ez a felület a weboldal kiemelt termékeit kezeli. A módosítások mentés után
+        azonnal megjelennek a nyilvános oldalon.
+      </p>
+      <a class="login-back" href="/optika/">&larr; Vissza a weboldalra</a>
+    </div>
+  </main>
+
+  <!-- ══════════════════ 2. ADMIN FELÜLET ══════════════════ -->
+  <div class="admin-app" id="admin-app" hidden>
+
+    <header class="admin-header">
+      <div class="admin-header-inner">
+        <div class="admin-header-left">
+          <!-- Csak területen belül látszik; a választóra visz vissza. -->
+          <button class="back-btn" type="button" id="section-back" hidden>
+            <span aria-hidden="true">&larr;</span> Területek
+          </button>
+
+          <span class="admin-logo">
+            <span class="admin-logo-icon" aria-hidden="true">
+              <svg viewBox="0 0 100 100" width="28" height="28">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="4" />
+                <circle cx="35" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3" />
+                <circle cx="65" cy="50" r="15" fill="none" stroke="currentColor" stroke-width="3" />
+                <path d="M 50,45 A 25,25 0 0,0 50,55" fill="none" stroke="currentColor" stroke-width="3" />
+              </svg>
+            </span>
+            <span class="admin-logo-text">Manula-Optic&nbsp;Med.</span>
+            <span class="admin-chip">Admin</span>
+          </span>
+
+          <!-- A választott terület neve; a választón üres. -->
+          <span class="admin-area" id="admin-area"></span>
+        </div>
+
+        <div class="admin-header-actions">
+          <span class="admin-user" id="admin-user"></span>
+          <button class="btn btn-ghost btn-sm" type="button" id="password-btn">Jelszó</button>
+          <button class="btn btn-outline btn-sm" type="button" id="logout-btn">Kilépés</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Figyelmeztetés, amíg az alapértelmezett jelszó van érvényben -->
+    <div class="admin-warning" id="default-password-warning" hidden>
+      <strong>Az alapértelmezett jelszó még érvényben van.</strong>
+      Amíg ez így marad, bárki beléphet, aki ismeri a felület címét.
+      <button class="link-btn" type="button" id="warning-change-btn">Jelszó cseréje most</button>
+    </div>
+
+    <!-- ══════════════════ TERÜLETVÁLASZTÓ ══════════════════
+         Bejelentkezés után ez fogad. Szándékosan egyszerű: nem a
+         választóoldal animált változata, csak két nagy, egyértelmű kártya.
+         Valódi hivatkozások, tehát középső gombbal új lapon is megnyílnak. -->
+    <main class="chooser" id="chooser" hidden>
+      <div class="admin-container">
+        <div class="chooser-head">
+          <h1 class="chooser-title">Mit szeretne szerkeszteni?</h1>
+          <p class="chooser-lead">
+            Válassza ki, melyik weboldal tartalmán dolgozik. A mentett módosítások
+            azonnal megjelennek a látogatóknál.
+          </p>
+        </div>
+
+        <div class="chooser-grid">
+          <a class="chooser-card" href="#optika">
+            <span class="chooser-icon" aria-hidden="true">
+              <svg viewBox="0 0 100 100" width="42" height="42" fill="none" stroke="currentColor"
+                stroke-width="4">
+                <circle cx="50" cy="50" r="40" />
+                <circle cx="35" cy="50" r="15" stroke-width="3" />
+                <circle cx="65" cy="50" r="15" stroke-width="3" />
+                <path d="M 50,45 A 25,25 0 0,0 50,55" stroke-width="3" />
+              </svg>
+            </span>
+            <span class="chooser-card-name">Lumina Optika</span>
+            <span class="chooser-card-desc">Kiemelt termékek: keretek, napszemüvegek, lencsék,
+              kiegészítők. Fotók, leírások, árak, sorrend.</span>
+            <span class="chooser-card-go">Termékek kezelése &rarr;</span>
+          </a>
+
+          <a class="chooser-card" href="#masszazs">
+            <span class="chooser-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor"
+                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12c3-4 6-4 9 0s6 4 9 0" />
+                <path d="M3 18c3-4 6-4 9 0s6 4 9 0" />
+                <path d="M3 6c3-4 6-4 9 0s6 4 9 0" />
+              </svg>
+            </span>
+            <span class="chooser-card-name">Salvia Gyógymasszázs</span>
+            <span class="chooser-card-desc">Áraink és időtartamok. A táblázat összegei és a
+              foglalási űrlap választható hosszai.</span>
+            <span class="chooser-card-go">Árak kezelése &rarr;</span>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <!-- ══════════════════ LUMINA OPTIKA — TERMÉKEK ══════════════════ -->
+    <main class="admin-main" id="section-optika" hidden>
+      <div class="admin-container">
+
+        <div class="admin-page-head">
+          <span class="admin-eyebrow">Exkluzív Választék</span>
+          <h1 class="admin-page-title">Kiemelt termékek kezelése</h1>
+          <p class="admin-page-desc">
+            Itt veheti fel, módosíthatja vagy törölheti azokat a termékeket, amelyek a
+            weboldal <em>Kiemelt Termékeink</em> szakaszában megjelennek. A mentés után a
+            változás azonnal látszik a nyilvános oldalon.
+          </p>
+        </div>
+
+        <!-- Számok egy pillantásra -->
+        <div class="admin-stats" id="admin-stats">
+          <div class="stat">
+            <span class="stat-value" id="stat-total">0</span>
+            <span class="stat-label">termék összesen</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-published">0</span>
+            <span class="stat-label">megjelenik az oldalon</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-draft">0</span>
+            <span class="stat-label">rejtett piszkozat</span>
+          </div>
+        </div>
+
+        <!-- Eszközsor -->
+        <div class="admin-toolbar">
+          <button class="btn btn-primary" type="button" id="new-product-btn">
+            <span aria-hidden="true">+</span> Új termék
+          </button>
+
+          <div class="toolbar-filters">
+            <label class="visually-hidden" for="search-input">Keresés a termékek között</label>
+            <input class="field-input toolbar-search" type="search" id="search-input"
+              placeholder="Keresés név vagy márka szerint…" maxlength="80" autocomplete="off">
+
+            <label class="visually-hidden" for="category-filter">Kategória szűrő</label>
+            <select class="field-input toolbar-select" id="category-filter">
+              <option value="all">Minden kategória</option>
+              <option value="frames">Szemüvegkeretek</option>
+              <option value="sunglasses">Napszemüvegek</option>
+              <option value="lenses">Dioptriás lencsék</option>
+              <option value="accessories">Kiegészítők</option>
+            </select>
+
+            <label class="visually-hidden" for="status-filter">Állapot szűrő</label>
+            <select class="field-input toolbar-select" id="status-filter">
+              <option value="all">Minden állapot</option>
+              <option value="published">Csak a megjelenők</option>
+              <option value="draft">Csak a rejtettek</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- A termékek listája -->
+        <div class="admin-grid" id="admin-grid"></div>
+
+        <p class="admin-empty" id="admin-empty" hidden></p>
+      </div>
+    </main>
+
+    <!-- ══════════════════ SALVIA GYÓGYMASSZÁZS — ÁRAK ══════════════════
+         Az árlista nem táblázatként szerkeszthető, hanem kezelésenként egy
+         kártyán. Egy 10×6-os táblázat telefonon apró mezőkből állna, oldalra
+         görgetve — kártyánként viszont minden hossz elfér egymás mellett. -->
+    <main class="admin-main" id="section-masszazs" hidden>
+      <div class="admin-container">
+
+        <div class="admin-page-head">
+          <span class="admin-eyebrow">Salvia Gyógymasszázs</span>
+          <h1 class="admin-page-title">Áraink és időtartamok</h1>
+          <p class="admin-page-desc">
+            Itt írhatja át a weboldal <em>Áraink</em> táblázatának összegeit. Ugyanez az
+            adat adja a foglalási űrlap választható hosszait is: amelyik mezőt üresen
+            hagyja, az a kezelés abban a hosszban <strong>nem kérhető</strong> — a
+            táblázatban „&mdash;” jelenik meg, és a foglalásnál sem választható.
+          </p>
+        </div>
+
+        <!-- Eszközsor -->
+        <div class="admin-toolbar prices-toolbar">
+          <div class="toolbar-actions">
+            <button class="btn btn-primary" type="button" id="prices-save">Mentés</button>
+            <button class="btn btn-ghost" type="button" id="prices-reset">Változtatások elvetése</button>
+          </div>
+          <p class="prices-status" id="prices-status" role="status"></p>
+        </div>
+
+        <p class="editor-error" id="prices-error" role="alert" hidden></p>
+
+        <!-- Időtartam-oszlopok -->
+        <section class="panel">
+          <h2 class="panel-title">Időtartamok</h2>
+          <p class="field-hint">
+            A táblázat oszlopai. Egy időtartam eltávolításakor a hozzá tartozó összegek
+            is eltűnnek — a mentés előtt még visszavonható.
+          </p>
+          <div class="duration-chips" id="duration-chips"></div>
+
+          <form class="duration-add" id="duration-add-form">
+            <label class="visually-hidden" for="duration-new">Új időtartam percben</label>
+            <input class="field-input" type="number" id="duration-new" min="5" max="300" step="5"
+              inputmode="numeric" placeholder="pl. 120">
+            <button class="btn btn-outline btn-sm" type="submit">+ Időtartam</button>
+          </form>
+        </section>
+
+        <!-- Kezelések -->
+        <div class="price-cards" id="price-cards"></div>
+
+        <!-- Megjegyzések -->
+        <section class="panel">
+          <h2 class="panel-title">Megjegyzések a táblázat alatt</h2>
+          <p class="field-hint">
+            A táblázat alatt megjelenő magyarázatok. A csillag (*) bekapcsolása azt a
+            kezelést jelöli, amelynél a fenti kártyán is bekapcsolta a csillagot.
+          </p>
+          <div class="repeat-list" id="notes-list"></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="add-note">+ Új megjegyzés</button>
+        </section>
+
+        <!-- Előnézet -->
+        <section class="panel">
+          <h2 class="panel-title">Előnézet</h2>
+          <p class="field-hint">
+            Így fog kinézni a weboldalon. Ugyanaz a stíluslap rajzolja, mint élesben.
+          </p>
+          <div class="preview-frame masszazs-scope">
+            <div class="pricing">
+              <div class="table-scroll">
+                <table class="price-table" id="price-preview">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <ul class="price-notes" id="price-preview-notes"></ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Ragadós mentősáv: hosszú listánál a felső gomb kigördül a képből. -->
+      <div class="save-bar" id="prices-save-bar" hidden>
+        <span class="save-bar-text">Nem mentett módosítások</span>
+        <div class="save-bar-actions">
+          <button class="btn btn-ghost btn-sm" type="button" id="prices-reset-sticky">Elvetés</button>
+          <button class="btn btn-primary btn-sm" type="button" id="prices-save-sticky">Mentés</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="admin-footer">
+      <div class="admin-container">
+        <p>
+          Manula-Optic Med. &middot; adminisztráció &middot;
+          <a href="/optika/" target="_blank" rel="noopener">Lumina Optika</a> &middot;
+          <a href="/masszazs/" target="_blank" rel="noopener">Salvia Gyógymasszázs</a>
+        </p>
+        <p class="admin-footer-note" id="session-note"></p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ══════════════════ 3. SZERKESZTŐ ══════════════════ -->
+  <dialog class="editor-dialog" id="editor-dialog" aria-labelledby="editor-title">
+    <form class="editor-form" id="editor-form" novalidate>
+
+      <header class="editor-header">
+        <div>
+          <h2 class="editor-title" id="editor-title">Új termék</h2>
+          <p class="editor-subtitle" id="editor-subtitle">Töltse ki az adatokat, majd mentse el.</p>
+        </div>
+        <button class="icon-btn" type="button" id="editor-close" aria-label="Bezárás">&times;</button>
+      </header>
+
+      <nav class="editor-tabs" id="editor-tabs" role="tablist" aria-label="Szerkesztő szakaszai">
+        <button class="editor-tab is-active" type="button" role="tab" data-tab="basics" aria-selected="true">
+          Alapadatok
+        </button>
+        <button class="editor-tab" type="button" role="tab" data-tab="photos" aria-selected="false">
+          Fotók <span class="tab-count" id="tab-count-photos">0</span>
+        </button>
+        <button class="editor-tab" type="button" role="tab" data-tab="details" aria-selected="false">
+          Részletes leírás
+        </button>
+        <button class="editor-tab" type="button" role="tab" data-tab="preview" aria-selected="false">
+          Előnézet
+        </button>
+      </nav>
+
+      <div class="editor-body">
+
+        <!-- ── Alapadatok ── -->
+        <section class="editor-panel is-active" data-panel="basics">
+          <div class="field">
+            <label class="field-label" for="f-title">
+              Termék neve <span class="required">*</span>
+            </label>
+            <input class="field-input" type="text" id="f-title" maxlength="90" required
+              placeholder="pl. Titanium Light">
+            <span class="field-hint">Ez a név jelenik meg nagy betűvel a kártyán.</span>
+            <span class="char-count" data-for="f-title"></span>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="f-brand">Márka</label>
+              <input class="field-input" type="text" id="f-brand" maxlength="60" placeholder="pl. AURA DESIGN">
+              <span class="field-hint">A név fölött, kis nagybetűs sorban jelenik meg.</span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="f-price">Ár</label>
+              <input class="field-input" type="text" id="f-price" maxlength="40" placeholder="pl. 68 000 Ft">
+              <span class="field-hint">Szabad szöveg — írható „42 000 Ft / db” vagy „Ár egyeztetés szerint” is.</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="f-category">Kategória</label>
+              <select class="field-input" id="f-category">
+                <option value="frames">Szemüvegkeretek</option>
+                <option value="sunglasses">Napszemüvegek</option>
+                <option value="lenses">Dioptriás lencsék</option>
+                <option value="accessories">Kiegészítők</option>
+              </select>
+              <span class="field-hint">A weboldal szűrősora ez alapján rendez.</span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="f-badge-preset">Jelvény a kép sarkában</label>
+              <select class="field-input" id="f-badge-preset">
+                <option value="">Nincs jelvény</option>
+                <option value="Prémium|premium">Prémium</option>
+                <option value="Új kollekció|new">Új kollekció</option>
+                <option value="Akció|sale">Akció</option>
+                <option value="Újdonság|new">Újdonság</option>
+                <option value="Kifutó|sale">Kifutó</option>
+                <option value="custom">Egyedi szöveg…</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" id="custom-badge-field" hidden>
+            <label class="field-label" for="f-badge-text">Egyedi jelvényszöveg</label>
+            <div class="field-row field-row--tight">
+              <input class="field-input" type="text" id="f-badge-text" maxlength="28" placeholder="pl. -20%">
+              <select class="field-input" id="f-badge-tone" aria-label="Jelvény színe">
+                <option value="premium">Sötét (semleges)</option>
+                <option value="new">Terrakotta (kiemelt)</option>
+                <option value="sale">Piros (akció)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-short">Rövid leírás</label>
+            <textarea class="field-input field-textarea" id="f-short" rows="3" maxlength="320"
+              placeholder="Egy-két mondat, ami a kártyán látszik."></textarea>
+            <span class="field-hint">Ez a szöveg a terméklistában, a kártyán jelenik meg.</span>
+            <span class="char-count" data-for="f-short"></span>
+          </div>
+
+          <div class="field">
+            <label class="switch">
+              <input type="checkbox" id="f-published" checked>
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              <span class="switch-label">
+                <strong>Megjelenik a weboldalon</strong>
+                <span>Kikapcsolva piszkozat marad: csak itt látszik, a látogatóknál nem.</span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- ── Fotók ── -->
+        <section class="editor-panel" data-panel="photos">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button"
+            aria-label="Fotók feltöltése: kattintson vagy húzza ide a képeket">
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="M17 8l-5-5-5 5" />
+                <path d="M12 3v13" />
+              </svg>
+            </span>
+            <strong>Húzza ide a fotókat, vagy kattintson a tallózáshoz</strong>
+            <span class="dropzone-hint">
+              JPG, PNG vagy WebP &middot; legfeljebb 8 fotó &middot; a képek automatikusan
+              WebP formátumra tömörödnek, hogy gyorsan töltsenek be
+            </span>
+            <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/avif" multiple hidden>
+          </div>
+
+          <p class="upload-status" id="upload-status" role="status" hidden></p>
+
+          <div class="photo-list" id="photo-list"></div>
+
+          <p class="field-hint photo-note">
+            Az <strong>első fotó</strong> a borítókép: ez látszik a terméklistában.
+            A sorrend a nyilakkal módosítható.
+          </p>
+        </section>
+
+        <!-- ── Részletes leírás ── -->
+        <section class="editor-panel" data-panel="details">
+          <div class="field">
+            <label class="field-label" for="f-intro">Bevezető</label>
+            <textarea class="field-input field-textarea field-textarea--tall" id="f-intro" rows="7" maxlength="2400"
+              placeholder="Mit érdemes tudni a termékről? Írjon nyugodtan több bekezdést — az üres sor új bekezdést kezd."></textarea>
+            <span class="field-hint">Ez a részletes nézet elején, a fotó mellett jelenik meg. Üres sor = új bekezdés.</span>
+            <span class="char-count" data-for="f-intro"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Amit tudni érdemes</span>
+            <span class="field-hint">Pipás felsorolás. Egy tulajdonság egy sor.</span>
+            <div class="repeat-list" id="features-list"></div>
+            <button class="btn btn-ghost btn-sm" type="button" id="add-feature">+ Új sor</button>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Adatok</span>
+            <span class="field-hint">Táblázatos adatok, például „Anyag — japán titán”.</span>
+            <div class="repeat-list" id="specs-list"></div>
+            <button class="btn btn-ghost btn-sm" type="button" id="add-spec">+ Új adat</button>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-outro">Záró megjegyzés</label>
+            <textarea class="field-input field-textarea" id="f-outro" rows="4" maxlength="1200"
+              placeholder="Például garancia, szállítási idő, vagy amit a vásárlás előtt tudni kell."></textarea>
+            <span class="field-hint">Kiemelt dobozban, a leírás végén jelenik meg.</span>
+            <span class="char-count" data-for="f-outro"></span>
+          </div>
+        </section>
+
+        <!-- ── Előnézet ── -->
+        <section class="editor-panel" data-panel="preview">
+          <p class="preview-note">
+            Így fogja látni a látogató, ha rákattint az <em>Érdekel</em> gombra.
+            Ugyanaz a kód rajzolja, mint a weboldalon — amit itt lát, az fog megjelenni.
+          </p>
+          <div class="preview-frame">
+            <div class="preview-card" id="preview-card"></div>
+          </div>
+          <div class="preview-frame preview-frame--detail">
+            <div class="product-detail" id="preview-detail"></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="editor-footer">
+        <p class="editor-error" id="editor-error" role="alert" hidden></p>
+        <div class="editor-footer-actions">
+          <button class="btn btn-ghost" type="button" id="editor-cancel">Mégse</button>
+          <button class="btn btn-primary" type="submit" id="editor-save">Mentés</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ══════════════════ 4. JELSZÓCSERE ══════════════════ -->
+  <dialog class="editor-dialog editor-dialog--narrow" id="password-dialog" aria-labelledby="password-title">
+    <form class="editor-form" id="password-form" novalidate>
+      <header class="editor-header">
+        <div>
+          <h2 class="editor-title" id="password-title">Belépési adatok módosítása</h2>
+          <p class="editor-subtitle">A mentés után minden eszközön újra be kell jelentkeznie.</p>
+        </div>
+        <button class="icon-btn" type="button" id="password-close" aria-label="Bezárás">&times;</button>
+      </header>
+
+      <div class="editor-body">
+        <div class="field">
+          <label class="field-label" for="p-current">Jelenlegi jelszó <span class="required">*</span></label>
+          <input class="field-input" type="password" id="p-current" autocomplete="current-password" required
+            maxlength="512">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="p-username">Új felhasználónév</label>
+          <input class="field-input" type="text" id="p-username" autocomplete="username" maxlength="32"
+            autocapitalize="none" spellcheck="false" placeholder="Üresen hagyva marad a mostani">
+          <span class="field-hint">3–32 karakter: betű, szám, pont, kötőjel vagy aláhúzás.</span>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="p-new">Új jelszó <span class="required">*</span></label>
+          <div class="field-with-button">
+            <input class="field-input" type="password" id="p-new" autocomplete="new-password" required maxlength="512">
+            <button class="reveal-btn" type="button" id="p-reveal" aria-label="Jelszó megjelenítése"
+              aria-pressed="false">Mutat</button>
+          </div>
+          <ul class="password-rules" id="password-rules">
+            <li data-rule="length">legalább 12 karakter</li>
+            <li data-rule="lower">van benne kisbetű</li>
+            <li data-rule="upper">van benne nagybetű</li>
+            <li data-rule="digit">van benne szám</li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="p-confirm">Új jelszó mégegyszer <span class="required">*</span></label>
+          <input class="field-input" type="password" id="p-confirm" autocomplete="new-password" required
+            maxlength="512">
+        </div>
+      </div>
+
+      <footer class="editor-footer">
+        <p class="editor-error" id="password-error" role="alert" hidden></p>
+        <div class="editor-footer-actions">
+          <button class="btn btn-ghost" type="button" id="password-cancel">Mégse</button>
+          <button class="btn btn-primary" type="submit">Mentés és újra bejelentkezés</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ══════════════════ 5. MEGERŐSÍTÉS ══════════════════ -->
+  <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title">
+    <div class="confirm-inner">
+      <h2 class="confirm-title" id="confirm-title">Biztosan törli?</h2>
+      <p class="confirm-text" id="confirm-text"></p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" type="button" id="confirm-cancel">Mégse</button>
+        <button class="btn btn-danger" type="button" id="confirm-ok">Törlés</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Visszajelzések -->
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- A termékkártya és a részletes nézet felépítése — ugyanaz a fájl, mint
+       a nyilvános oldalon, hogy az előnézet ne térhessen el a valóságtól. -->
+  <script src="/optika/assets/js/product-render.js?v=1"></script>
+  <!-- A váz először: a szekciók az ő `Admin.register` hívásán át
+       csatlakoznak, tehát utána kell betöltődniük. -->
+  <script src="/admins/app.js?v=2"></script>
+  <script src="/admins/products.js?v=1"></script>
+  <script src="/admins/prices.js?v=1"></script>
+</body>
+
+</html>

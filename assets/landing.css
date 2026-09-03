@@ -42,6 +42,24 @@
    járó extrák maradnak el ott, ahol nincs rájuk fedezet.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* A parallax két változója. Az `inherits: false` a lényeg: enélkül a `--px`
+   megváltoztatása a teljes RÉSZFA stílusát újraszámoltatja, mert bármelyik
+   leszármazott hivatkozhatna rá. Így viszont csak azon a három elemen számol
+   újra, amelyiken ténylegesen beállítjuk. Ahol a böngésző nem ismeri a
+   `@property`-t, minden a régiben marad — a landing.js akkor is közvetlenül a
+   három rétegre írja az értéket, tehát a hatás ugyanaz. */
+@property --px {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --py {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 /* ── 1. DESIGN TOKENEK ─────────────────────────────────────────────────── */
 :root {
   /* Alapszínek — azonosak a két weboldaléval */
@@ -307,6 +325,10 @@ body:not([data-view="chooser"]) .chooser * {
   height: 100%;
   z-index: 1;
   pointer-events: none;
+  /* A vászon az első képkockától látszik (a landing.js egy álló képet rajzol
+     rá induláskor), de a MOZGÁSA csak a belépő animáció után indul: a
+     képkockánkénti törlés és újrarajzolás épp a legérzékenyebb két
+     másodpercben venné el a fő szálat. */
 }
 
 /* ── 4. DÍSZEK ─────────────────────────────────────────────────────────── */
