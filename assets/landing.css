@@ -1144,6 +1144,9 @@ body.is-live .hint {
 
   .half {
     flex: 1 1 50%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
   }
 
   .half--massage {
@@ -1155,17 +1158,28 @@ body.is-live .hint {
   }
 
   .half__inner,
-  .half--massage .half__inner,
-  .half--optics .half__inner {
+  .half--massage .half__inner {
     margin: 0 auto;
-    padding: clamp(1.4rem, 4.5vh, 2.6rem) 1.5rem 0;
+    padding: calc(clamp(1.4rem, 4.5vh, 2.6rem) + env(safe-area-inset-top, 0px)) 1.5rem 0;
     text-align: center;
     align-items: center;
     max-width: 34ch;
   }
 
   .half--optics .half__inner {
-    padding: 0 1.5rem clamp(1.4rem, 4.5vh, 2.6rem);
+    margin: 0 auto;
+    padding: 0 1.5rem calc(clamp(1.4rem, 4.5vh, 2.6rem) + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    align-items: center;
+    max-width: 34ch;
+  }
+
+  .half:active {
+    opacity: 0.88;
+  }
+
+  .half:active .half__cta {
+    transform: scale(0.96);
   }
 
   .half--massage:hover .half__inner,

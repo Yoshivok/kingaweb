@@ -166,30 +166,50 @@
     setTimeout(navigate, slideDuration() + 60);
   }
 
+  var isTouch = !window.matchMedia('(hover: hover)').matches;
+
   halves.forEach(function (half) {
     var target = half.getAttribute('data-target');
-    var href = half.getAttribute('href');
+    var href = half.href || half.getAttribute('href');
 
-    ['pointerenter', 'focus'].forEach(function (evt) {
-      half.addEventListener(evt, function () {
-        prefetch(href);
-        body.dataset.hover = target;
+    /* Egérrel rendelkező asztali eszközökön: hover állapot és előtöltés.
+       Érintőkijelzőkön (iOS Safari, Android) szándékosan NEM figyelünk a
+       pointerenter-re, mert az iOS Safari a hover-animációt kiváltó érintést
+       „lebegtetésként” kezeli, és elnyeli (nem küld click eseményt). */
+    if (!isTouch) {
+      ['pointerenter', 'focus'].forEach(function (evt) {
+        half.addEventListener(evt, function () {
+          prefetch(href);
+          body.dataset.hover = target;
+        });
       });
-    });
 
-    ['pointerleave', 'blur'].forEach(function (evt) {
-      half.addEventListener(evt, function () { delete body.dataset.hover; });
-    });
+      ['pointerleave', 'blur'].forEach(function (evt) {
+        half.addEventListener(evt, function () { delete body.dataset.hover; });
+      });
+    } else {
+      half.addEventListener('touchstart', function () {
+        prefetch(href);
+      }, { passive: true });
+    }
 
     half.addEventListener('click', function (e) {
       /* Középső gomb vagy módosítóbillentyű: hagyjuk a böngészőre, hadd
-         nyíljon új lapon. Csökkentett mozgásnál nincs mit animálni. */
+         nyíljon új lapon. */
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-      if (reduced) return;
-      /* Natív átmenetnél NEM veszünk el semmit a böngésző kezéből: a saját,
-         időzített kicsúszásunk csak késleltetné a navigációt, ráadásul a
-         pillanatkép a már kifakult lapról készülne. */
-      if (nativeTransition) return;
+
+      /* Érintőkijelzőkön (telefon, tablet), csökkentett mozgásnál, vagy natív
+         View Transitions támogatásnál NEM tiltjuk le az alapértelmezett navigációt
+         (nincs e.preventDefault()). A böngésző azonnal és natívan átvált az oldalra,
+         nem ragadhat be időzítő vagy webview-korlátozás miatt. */
+      if (isTouch || reduced || nativeTransition) {
+        body.dataset.dir = (target === 'optika') ? 'left' : 'right';
+        body.dataset.view = target;
+        body.classList.add('is-moving');
+        return;
+      }
+
+      /* Csak asztali gépen, natív View Transitions nélkül: saját kicsúszó animáció */
       e.preventDefault();
       leave(target, href);
     });
