@@ -327,6 +327,10 @@
       <nav class="nav" aria-label="Főmenü">
         <ul class="nav__list">
           <li class="nav__item"><a class="nav__link" href="#rolunk">Rólam</a></li>
+          <!-- Vissza a szolgáltatásválasztóhoz. Korábban a választóoldal kerete
+               adott ehhez egy lebegő fület; mióta ez az oldal önálló lapként
+               nyílik meg, a visszaútnak is itt a helye. -->
+          <li class="nav__item"><a class="nav__link" href="../index.html">Választó</a></li>
           <li class="nav__item nav__item--has-menu">
             <button class="nav__link nav__toggle" type="button" aria-expanded="false" aria-controls="menu-kezelesek">
               Kezelések <svg class="ico ico--xs" aria-hidden="true">
@@ -418,6 +422,7 @@
         <li><a href="#tudnivalok">Általános tudnivalók</a></li>
         <li><a href="#araink">Áraink és időtartamok</a></li>
         <li><a href="#kapcsolat">Elérhetőségek</a></li>
+        <li><a href="../index.html">Vissza a választóhoz</a></li>
       </ul>
       <a class="btn btn--primary btn--block" href="#idopontfoglalas">Időpontot kérek</a>
       <a class="mobile-nav__phone" href="tel:+36205017453">
@@ -2158,28 +2163,29 @@
       <div class="container booking">
         <div class="booking__intro">
           <p class="eyebrow reveal">Időpontfoglalás</p>
-          <h2 class="section__title reveal" id="foglalas-title">Kérjen időpontot — kötelezettség nélkül</h2>
+          <h2 class="section__title reveal" id="foglalas-title">Foglaljon időpontot — néhány kattintással</h2>
           <div class="prose reveal">
             <p>
-              Töltse ki az űrlapot, és <strong>1 munkanapon belül</strong> visszahívjuk vagy
-              e-mailben válaszolunk a pontos időpont egyeztetése céljából. A beküldés nem
-              jelent véglegesített foglalást és nem jár fizetési kötelezettséggel.
+              A naptár a <strong>valóban szabad</strong> kezdéseket mutatja: minden kezelés után
+              20 perc szünetet tartunk, ezért csak olyan időpont választható, ami tényleg
+              belefér. A foglalás azonnal érvényes, visszaigazoló levelet küldünk — online
+              fizetés nincs, a kezelés díja a helyszínen fizetendő.
             </p>
           </div>
           <ol class="steps reveal">
             <li><span>1</span>
-              <div><strong>Adatok megadása</strong>
-                <p>Név, elérhetőség, kívánt kezelés és preferált időpont.</p>
+              <div><strong>Kezelés és hossz</strong>
+                <p>Válassza ki, mire jönne és mennyi időre — az ár rögtön látszik.</p>
               </div>
             </li>
             <li><span>2</span>
-              <div><strong>Visszajelzés</strong>
-                <p>Egyeztetjük a szabad időpontot, és szükség esetén kérdezünk a panaszról.</p>
+              <div><strong>Szabad időpont</strong>
+                <p>A naptár csak a ténylegesen foglalható kezdéseket kínálja fel.</p>
               </div>
             </li>
             <li><span>3</span>
-              <div><strong>Kezelés</strong>
-                <p>Rövid felmérés, majd a kezelés. A fizetés a helyszínen történik.</p>
+              <div><strong>Visszaigazolás</strong>
+                <p>Az időpont azonnal rögzül, és e-mailben is megerősítjük.</p>
               </div>
             </li>
           </ol>
@@ -2198,6 +2204,7 @@
         <div class="booking__form-wrap reveal">
           <form class="form" id="booking-form" novalidate>
             <p class="form__intro">A <span class="req" aria-hidden="true">*</span>-gal jelölt mezők kitöltése kötelező.
+              A kezelés és a hossz kiválasztása után töltődnek be a szabad időpontok.
             </p>
 
             <div class="form__row">
@@ -2258,43 +2265,33 @@
                     <use href="#ico-chevron"></use>
                   </svg>
                 </div>
-                <p class="field__hint" id="hint-duration">Csak a szakmailag indokolt hosszak választhatók.</p>
+                <p class="field__hint" id="hint-duration">Csak a szakmailag indokolt hosszak választhatók. A hossz
+                  határozza meg, mikor van szabad hely.</p>
                 <p class="field__error" id="e-duration" role="alert" hidden></p>
               </div>
             </div>
 
             <div class="form__row form__row--2">
               <div class="field">
-                <label for="f-date">Preferált dátum</label>
-                <input type="date" id="f-date" name="date" aria-describedby="e-date">
+                <label for="f-date">Nap <span class="req" aria-hidden="true">*</span></label>
+                <input type="date" id="f-date" name="date" required aria-describedby="e-date">
                 <p class="field__error" id="e-date" role="alert" hidden></p>
               </div>
               <div class="field">
-                <label for="f-time">Preferált időpont</label>
+                <label for="f-time">Időpont <span class="req" aria-hidden="true">*</span></label>
                 <div class="select-wrap">
-                  <!-- Az óralista a választott dátum nyitvatartásához igazodik:
-                   assets/js/main.js → OPENING + fillTimes(). Az itt szereplő
-                   hétköznapi lista a szkript nélküli alapállapot. -->
-                  <select id="f-time" name="time" aria-describedby="e-time hint-time">
-                    <option value="">Mindegy / egyeztetés szerint</option>
-                    <option value="08:00">8:00</option>
-                    <option value="09:00">9:00</option>
-                    <option value="10:00">10:00</option>
-                    <option value="11:00">11:00</option>
-                    <option value="12:00">12:00</option>
-                    <option value="13:00">13:00</option>
-                    <option value="14:00">14:00</option>
-                    <option value="15:00">15:00</option>
-                    <option value="16:00">16:00</option>
-                    <option value="17:00">17:00</option>
-                    <option value="18:00">18:00</option>
+                  <!-- Az óralista a kiszolgáló naptárából jön: assets/js/main.js →
+                       loadSlots(). Szkript nélkül nincs mit felkínálni, ezért itt
+                       csak a magyarázó felirat áll. -->
+                  <select id="f-time" name="time" required aria-describedby="e-time hint-time">
+                    <option value="">Először válasszon kezelést, hosszt és napot</option>
                   </select>
                   <svg class="ico ico--xs select-wrap__ico" aria-hidden="true">
                     <use href="#ico-chevron"></use>
                   </svg>
                 </div>
-                <p class="field__hint" id="hint-time">Hétfő–péntek 8:00–19:00, szombat 9:00–13:00. A pontos kezdést a
-                  visszahíváskor véglegesítjük.</p>
+                <p class="field__hint" id="hint-time">Hétfő–péntek 8:00–19:00, szombat 9:00–13:00. A listában csak a
+                  szabad kezdések szerepelnek.</p>
                 <p class="field__error" id="e-time" role="alert" hidden></p>
               </div>
             </div>
@@ -2333,7 +2330,7 @@
             </div>
 
             <button class="btn btn--primary btn--block btn--lg" type="submit">
-              Időpontkérés elküldése
+              Időpont lefoglalása
               <svg class="ico" aria-hidden="true">
                 <use href="#ico-arrow"></use>
               </svg>
@@ -2342,8 +2339,8 @@
               <svg class="ico" aria-hidden="true">
                 <use href="#ico-shield"></use>
               </svg>
-              Nincs online fizetés, nincs regisztráció. Adatait kizárólag az időpont-egyeztetéshez
-              használjuk. Az időpontkérés beküldésével elfogadja az
+              Nincs online fizetés, nincs regisztráció. Adatait kizárólag a foglalás
+              teljesítéséhez használjuk. A foglalással elfogadja az
               <a href="aszf.html">Általános Szerződési Feltételeket</a>.
             </p>
           </form>
@@ -2353,11 +2350,11 @@
             <span class="form-result__icon"><svg class="ico ico--xl" aria-hidden="true">
                 <use href="#ico-check"></use>
               </svg></span>
-            <h3 class="form-result__title" id="form-result-title">Az időpontkérés összeállt</h3>
+            <h3 class="form-result__title" id="form-result-title">Az időpontját lefoglaltuk</h3>
             <p class="form-result__text" id="form-result-text"></p>
             <div class="form-result__summary" id="form-result-summary"></div>
             <div class="form-result__actions" id="form-result-actions"></div>
-            <button class="form-result__back btn btn--ghost btn--sm" type="button" id="form-reset">Új időpontkérés
+            <button class="form-result__back btn btn--ghost btn--sm" type="button" id="form-reset">Új foglalás
               indítása</button>
           </div>
         </div>

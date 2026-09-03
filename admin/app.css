@@ -1969,3 +1969,777 @@ body.is-loading .admin-app {
   background-color: var(--color-bg-primary);
   padding: clamp(14px, 2.4vw, 28px);
 }
+
+/* ══════════════════ NAPTÁR ══════════════════
+   Mindkét terület tetején ugyanez a blokk ül (`admin/booking.js`). Mobilra
+   tervezve: a heti és a havi rács vízszintesen görgethető, hogy a hét napjai
+   ne préselődjenek olvashatatlanra egy telefon képernyőjén.
+
+   A napi nézet ezzel szemben LISTA, nem rács: egy napon néhány foglalás van,
+   azoknál viszont minden adat kell (név, telefon, e-mail, megjegyzés), és az
+   olvasható sorokban fér el, nem oszlopokban. */
+.cal {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: clamp(16px, 3vw, 26px);
+  margin-bottom: clamp(24px, 4vw, 40px);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.cal-title {
+  font-family: var(--font-headings);
+  font-size: clamp(1.4rem, 3.4vw, 1.85rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cal-sub {
+  margin-top: 6px;
+  max-width: 62ch;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.cal-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Nézetválasztó ──────────────────────────────────────────────────────── */
+.cal-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 18px;
+  scrollbar-width: none;
+}
+
+.cal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cal-tab {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  min-height: 44px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.cal-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.cal-tab.is-active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* ── Lépősáv (nap / hét / hónap) ─────────────────────────────────────────── */
+.cal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.cal-nav {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.cal-nav:hover {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+.cal-bar-label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cal-bar-label strong {
+  font-family: var(--font-headings);
+  font-size: clamp(1.02rem, 2.4vw, 1.2rem);
+  font-weight: 600;
+}
+
+.cal-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background-color: var(--color-accent);
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Napi menetrend ─────────────────────────────────────────────────────── */
+.cal-open {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+
+.cal-open.is-closed {
+  color: var(--color-warning);
+}
+
+.cal-agenda {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+}
+
+.cal-item--booking {
+  border-left: 3px solid var(--color-accent);
+}
+
+/* A szünet szándékosan halványabb: nem esemény, hanem a nap szerkezete. */
+.cal-item--break {
+  border-style: dashed;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.cal-time {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 62px;
+  line-height: 1.35;
+}
+
+.cal-time strong {
+  font-size: 1.06rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-time span {
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cal-name {
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cal-service {
+  font-size: 0.92rem;
+  color: var(--color-text-secondary);
+}
+
+.cal-contact {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.cal-contact a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.cal-contact a:hover {
+  text-decoration: underline;
+}
+
+.cal-note {
+  margin-top: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent-light);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cal-rest {
+  margin-top: 6px;
+  font-size: 0.84rem;
+  color: var(--color-text-secondary);
+}
+
+.cal-cancel {
+  flex-shrink: 0;
+}
+
+.cal-count {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.cal-empty {
+  padding: 22px 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ── Heti nézet ─────────────────────────────────────────────────────────
+   Hét oszlop. Keskeny képernyőn a rács nem törik szét, hanem oldalra
+   görgethető: a hét egészének képe fontosabb, mint hogy minden elférjen. */
+.cal-week-slot {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 8px;
+  min-width: 700px;
+}
+
+.cal-weekday {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+}
+
+.cal-weekday.is-closed {
+  opacity: 0.55;
+}
+
+.cal-weekday.is-today {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-light);
+}
+
+.cal-weekday-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 2px 8px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: inherit;
+  text-align: left;
+}
+
+.cal-weekday-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.cal-weekday-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cal-weekday-note {
+  font-size: 0.86rem;
+  color: var(--color-text-secondary);
+  padding: 4px 2px;
+}
+
+.cal-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  color: inherit;
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.cal-chip:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.cal-chip-time {
+  font-size: 0.86rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-chip-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-chip-service {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Havi nézet ─────────────────────────────────────────────────────────── */
+.cal-modebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+}
+
+.cal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.cal-switch input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.cal-modebar-hint {
+  flex: 1 1 260px;
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+}
+
+.cal-grid-weekdays {
+  display: grid;
+  /* `minmax(0, 1fr)`, nem `1fr`: az `1fr` alapértelmezett alsó határa a
+     tartalom minimális szélessége, amit a cella `min-height` + `aspect-ratio`
+     párosa 44 px-re emel. Keskeny telefonon 7 × 44 px + hézagok nem fér el a
+     kártyában, és a rács kilóg belőle. A `minmax(0, …)` engedi összemenni. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cal-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1;
+  min-height: 44px;
+  padding: 4px 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.cal-cell--empty {
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+.cal-cell:not(.cal-cell--empty):hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-light);
+}
+
+.cal-cell-num {
+  font-size: 0.98rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cell-count {
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background-color: var(--color-accent);
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 17px;
+}
+
+.cal-cell-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+}
+
+.cal-cell.is-today {
+  border-color: var(--color-accent);
+  border-width: 2px;
+}
+
+.cal-cell.is-past {
+  opacity: 0.5;
+}
+
+/* Zárva tartó nap (nyitvatartás szerint) — halvány, de nem tiltott: a napi
+   menetrendje továbbra is megnézhető. */
+.cal-cell.is-closed {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+}
+
+/* Kijelölt szabadnap: ez döntés, nem a hét ritmusa, ezért látszania kell. */
+.cal-cell.is-closure {
+  background-color: #fdf3e3;
+  border-color: var(--color-warning);
+}
+
+.cal-cell.is-marking {
+  cursor: copy;
+}
+
+/* ── Nyitvatartás-szerkesztő ─────────────────────────────────────────────── */
+.cal-panel {
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+}
+
+.cal-panel-title {
+  font-family: var(--font-headings);
+  font-size: 1.12rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.cal-panel-hint {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+  max-width: 70ch;
+}
+
+.cal-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cal-hour-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.cal-hour-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cal-hour-day input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.cal-hour-times {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-hour-times .field-input {
+  width: auto;
+  min-width: 118px;
+}
+
+.cal-dash {
+  color: var(--color-text-secondary);
+}
+
+.cal-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.cal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cal-field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.cal-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Szünet- és szabadnapsor: mezők egy sorban, szűk helyen tördelve.
+   SZÁNDÉKOSAN flexbox, nem rács. A `repeat(auto-fit, …)` mellé nem kerülhet
+   `auto` szélességű sáv (a törlőgombé) — a szabály ilyenkor érvénytelen, és a
+   böngésző az EGÉSZ `grid-template-columns`-t eldobja: minden mező egymás alá
+   került volna. A flexbox ugyanezt az elrendezést adja, ilyen csapda nélkül. */
+.cal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+}
+
+.cal-row .cal-field {
+  flex: 1 1 150px;
+}
+
+.cal-days {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cal-daybuttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cal-daybtn {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-primary);
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.cal-daybtn.is-on {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.cal-remove {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-primary);
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--color-error);
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+
+.cal-remove:hover {
+  background-color: rgba(168, 66, 66, 0.1);
+}
+
+.cal-savebar {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-text-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-md);
+}
+
+.cal-savebar-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.cal-savebar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cal-savebar .btn-ghost {
+  color: #e8ddd4;
+}
+
+.cal-savebar .btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* A napi sor telefonon két sorba tördel: a lemondás gomb alulra kerül, hogy
+   a vendég adatai teljes szélességben olvashatók maradjanak. */
+@media (max-width: 560px) {
+  /* Keskenyebb kártyakeret és szűkebb hézagok: a havi rács 7 oszlopa így
+     marad ujjal célozható méretű. */
+  .cal {
+    padding: 14px 12px;
+  }
+
+  .cal-grid,
+  .cal-grid-weekdays {
+    gap: 4px;
+  }
+
+  .cal-cell {
+    min-height: 40px;
+  }
+
+  /* A lépősáv telefonon rács: a nyilak a dátum két oldalán maradnak, a „Ma”
+     gomb pedig alá kerül. Tördeléssel a bal nyíl külön sorba esne. */
+  .cal-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cal-bar > .btn {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .cal-bar-label {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .cal-bar-label strong {
+    font-size: 1rem;
+  }
+
+  .cal-item {
+    flex-wrap: wrap;
+  }
+
+  .cal-cancel {
+    margin-left: auto;
+  }
+
+  .cal-row .cal-field,
+  .cal-days {
+    flex-basis: 100%;
+  }
+
+  .cal-remove {
+    margin-left: auto;
+  }
+}

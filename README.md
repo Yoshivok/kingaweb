@@ -295,6 +295,125 @@ az egeret kattintás előtt, és a `pointerenter` már ott elindítja a betölt�
 /?fx=low
 ```
 
+## Időpontfoglalás és naptár
+
+Mindkét weboldal **valódi foglalást** ad le: a látogató által választott sáv
+abban a pillanatban elkel, és a másik látogató már nem kapja meg. Ugyanaz a
+naptár látszik az admin felületen, mindkét terület tetején.
+
+```
+                          server/lib/booking.js
+                     (nyitvatartás + szabály + tár)
+                                   │
+        ┌──────────────────────────┼──────────────────────────┐
+        │                          │                          │
+   /masszazs/                 /optika/                     /admins
+   szabad órák a           naptár + óralista            napi / heti / havi
+   legördülőben            a foglalási ablakban         nézet, szabadnapok,
+        │                          │                    állandó szünetek
+        └────────► POST /api/booking ◄──────┘                 │
+                          │                                   │
+                 server/data/bookings.json  ◄─────────────────┘
+                 server/data/schedule.json
+```
+
+### A szabály, ami az egészet összetartja
+
+Egy foglalás **nem** a kezelés hosszáig foglalja a naptárt, hanem annál
+**20 perccel tovább**. A masszázs és a látásvizsgálat is megterhelő, a
+következő vendég előtt pihenni kell:
+
+```
+elfoglalt sáv = [ kezdés ,  kezdés + hossz + pihenő )
+```
+
+Két foglalás akkor és csak akkor fér el egymás mellett, ha az elfoglalt
+sávjaik nem érnek össze. Ez az egyetlen szabály, és **mindkét irányt** megadja
+magától:
+
+| Helyzet | Következmény |
+|---|---|
+| 9:00-kor egy 45 perces kezelés | a sávja 9:00–10:05, a következő vendég 10:05-től jöhet |
+| 10:00-ra már van egy foglalás | elé 9:00-ra 45 perc **nem** fér be (10:05-ig érne), 30 perc **igen** (9:50-kor véget ér) |
+
+A pihenőnek a **nap végén nem kell beleférnie** a nyitvatartásba: a kezelésnek
+kell zárásig befejeződnie, a pihenő már a zárás után is lefuthat. A
+**szünetekkel** ugyanez: a szünet maga a pihenés, ezért elé és mögé nem kérünk
+még egy pihenőt — csak a kezelés nem lóghat bele.
+
+### Honnan jönnek a felkínált órák
+
+Nem fix órarácsból. A jelöltek három forrásból állnak össze — a nyitástól
+induló lépésköz (alapból 30 perc), minden meglévő foglalás elfoglalt sávjának
+a **vége**, és minden szünet vége —, majd mindegyik átmegy a fenti szabályon.
+Ezért jelenik meg a „közvetlenül az előző vendég után” kezdés (10:05), ami egy
+fix rácsra sosem esne rá.
+
+Ami nem megy át, arról a látogató nem is tud: a nyilvános végpontok **csak
+időpontokat** adnak vissza, vendégadatot soha.
+
+### Amit az admin naptárában lehet
+
+| Nézet | Mire jó |
+|---|---|
+| **Mai nap** | a nap menetrendje percre pontosan, a vendégek nevével, telefonszámával, e-mail címével és megjegyzésével; lemondás; foglalás felvétele |
+| **Ez a hét** | hét oszlop, naponként a foglalások rövid listája; a nap fejlécére kattintva a napi nézet nyílik |
+| **Hónap** | naptárrács a napi darabszámmal; napra kattintva a menetrend. A *Szabadnap kijelölése* kapcsolóval ugyanitt jelölhetők ki a szabadnapok |
+| **Nyitvatartás** | nyitás–zárás naponként, a pihenő hossza, a felkínált kezdések lépésköze, az előfoglalási idő, az állandó szünetek (ebéd, uzsonna) és a szabadnapok |
+
+A **foglalás felvétele** a telefonon egyeztetett időpontokhoz kell. Enélkül a
+telefonos vendég nem kerülne a naptárba, és a weboldal ugyanazt a sávot még
+egyszer felkínálná. Adminként a nyitvatartás nem korlátoz (kivételesen zárás
+után is fogadható valaki), az **ütközés viszont igen** — két embert a
+kiszolgáló akkor sem enged egymásra tenni.
+
+### Mit honnan tud a rendszer
+
+| Adat | Forrás |
+|---|---|
+| masszázs kezelések és hosszaik | `server/data/prices.json` — amihez nincs ár, az nem is foglalható |
+| optika vizsgálatai | a nevük a kódban (`server/lib/booking.js`), a **hosszuk** az adminban (alapból mind 30 perc) |
+| nyitvatartás, szünetek, szabadnapok | `server/data/schedule.json`, az admin *Nyitvatartás* fülén szerkesztve |
+| foglalások | `server/data/bookings.json` |
+
+Az alapértelmezett nyitvatartás a két weboldal szövegéből származik: masszázs
+H–P 8–19, Szo 9–13; optika H–P 9–19, Szo 10–15; vasárnap zárva. A lábléc és a
+kapcsolat szekció szövegét viszont **kézzel kell utánavezetni**, ha az admin
+átírja a nyitvatartást.
+
+### Végpontok
+
+| Végpont | Ki hívja |
+|---|---|
+| `GET /api/booking/options?site=` | a foglalható szolgáltatások, hosszak, nyitvatartás |
+| `GET /api/booking/availability?site=&date=&duration=` | egy nap szabad kezdései |
+| `GET /api/booking/month?site=&month=&duration=` | a hónap napjainak állapota (zárva / szabad / betelt) |
+| `POST /api/booking` | a foglalás leadása |
+| `GET /api/admin/agenda?site=&from=&to=` | napi menetrend vendégadattal *(bejelentkezve)* |
+| `GET,POST /api/admin/bookings` | lista, felvétel *(bejelentkezve)* |
+| `DELETE /api/admin/bookings/:id` | lemondás *(bejelentkezve)* |
+| `GET,PUT /api/admin/schedule` | nyitvatartás, szünetek, szabadnapok *(bejelentkezve)* |
+
+A `POST /api/booking` **azonos eredetet** követel (idegen oldal szkriptje nem
+foglalhat a nevünkben), és IP-nként óránként 10 foglalásra korlátozott. Az
+ellenőrzés és a mentés egyetlen sorosított lépésben fut, ezért két egyszerre
+érkező kérés nem foglalhatja le ugyanazt a sávot: a második „elkelt” hibát kap.
+
+A korábbi `POST /api/idopont` végpont **megszűnt**. Az addig csak levélben
+továbbított időpontKÉRÉS helyét a valódi foglalás vette át; a visszaigazoló
+levél szövege is ehhez igazodik (`server/mail-templates.js`).
+
+### Próba
+
+```
+npm test
+```
+
+A `server/test/booking.test.js` a fenti szabályt konkrét, kézzel kiszámolható
+eseteken járja körbe: a 10:05-ös láncot, a visszafelé ható korlátot, az
+ebédszünetet, a szabadnapot, a kétszer eladott sávot és azt, hogy a nyilvános
+végpontok nem adnak ki vendégadatot.
+
 ## Az admin felület és a termékkezelés
 
 A **Kiemelt Termékeink** szakasz tartalma már nem az `optika/index.html`-ben
@@ -452,14 +571,24 @@ Három, egymástól független réteg:
 
 ### Mentés
 
-A teljes termékkatalógus két helyen él, és egyik sincs a verziókövetésben:
+A teljes tartalom két helyen él, és egyik sincs a verziókövetésben:
 
 ```
-server/data/              products.json (termékek) + admin.json (jelszó-hash)
+server/data/              products.json  (termékek)
+                          prices.json    (árlista)
+                          schedule.json  (nyitvatartás, szünetek, szabadnapok)
+                          bookings.json  (FOGLALÁSOK — vendégadattal)
+                          admin.json     (jelszó-hash)
 optika/assets/products/   a feltöltött fotók
 ```
 
 Ezt a kettőt együtt érdemes rendszeresen félretenni a szerverről.
+
+A `bookings.json` **személyes adatot** tartalmaz: nevet, telefonszámot,
+e-mail címet és a vendég megjegyzését, ami egészségi állapotra is utalhat. A
+mentését ennek megfelelően kell kezelni (titkosított tároló, korlátozott
+hozzáférés). A kiszolgáló a 550 napnál régebbi foglalásokat mentéskor magától
+kihullatja.
 
 ## Üzembe helyezés
 

@@ -5,19 +5,18 @@
    A bal fél zsályazöld fénybe (Salvia), a jobb terrakottába (Lumina) hajlik.
    ─────────────────────────────────────────────────────────────────────────
    1.  Design tokenek
-   2.  Alapok és a háromsávos keret (stage / track / panel)
+   2.  Alapok és a kilépő animáció
    3.  A választó háttérrétegei
    4.  Díszek: áramvonalak, lencsegyűrűk, sugárkoszorú
    5.  Fénypászma a két fél között
    6.  A két választható fél
    7.  Középső logómedál
    8.  Súgó a lap alján
-   9.  Visszatérő fül
-   10. Váltás közbeni effektek
-   11. Belépő animáció
-   12. Reszponzív finomítás
-   13. Csökkentett mozgás
-   14. Önszabályozás gyengébb gépre
+   9.  Kilépés közbeni fénysöprés
+   10. Belépő animáció
+   11. Reszponzív finomítás
+   12. Csökkentett mozgás
+   13. Visszafogott változat gyengébb gépre
    ─────────────────────────────────────────────────────────────────────────
    TELJESÍTMÉNY: a mozgó rétegek szándékosan csak `transform`-ot és
    `opacity`-t animálnak — ezeket a compositor intézi, újrarajzolás nélkül.
@@ -25,21 +24,18 @@
    felületen, és SVG-n BELÜLI transform-animáció (az egész SVG-t újrarajzolja).
    Mért hatás: 8,6 → 60 kép/mp. Lásd a 3. és 4. blokk megjegyzéseit.
    ─────────────────────────────────────────────────────────────────────────
-   HÁROM SZINT. Az alapértelmezett stíluslap a TAKARÉKOS változat: minden
-   szabály, ami képkockánként újrarajzolást kérne, ki van hagyva belőle. Erre
-   jön két kapcsoló, amit a landing.js tesz a <body>-ra:
+   KÉT KAPCSOLÓ, amit a landing.js egyszer, induláskor tesz a <body>-ra — és
+   utána soha nem nyúl hozzájuk (nincs képkocka-mérés, nincs menet közbeni
+   átkapcsolás; az a gépezet maga is költség volt, és bőven okozott hibát):
 
-     body.fx-high   — csak erős gépen. Ide kerül minden olyan díszítés, ami
-                      szép, de rajzolással jár: a nyomáspontok lüktetése, a
-                      vonalak „megrajzolása” belépéskor, a cím fényudvara,
-                      a medál nagyítása, a pászma erősödő fénye, a fül üvege.
-     body.is-lowfx  — a padló: minden mozgás megáll, a vászon eltűnik.
+     body.fx-high   — az alapértelmezett, ha a gép nem vallja magát gyengének.
+                      Ide tartozik a nyomáspontok lüktetése, a vonalak
+                      „megrajzolása”, a cím fényudvara, a medál nagyítása.
+     body.is-lowfx  — a padló két magnál vagy 2 GB-nál kevesebb esetén:
+                      minden mozgás megáll, a fénypontok eltűnnek.
 
-   A szintet a gép adottságai döntik el MÉG AZ ELSŐ KIRAJZOLÁS ELŐTT, hogy a
-   gyenge gép egyetlen képkockán se fizesse meg a drága rétegeket; a mért
-   képkockaidő ezután már csak lefelé módosíthat. Így ugyanaz a kompozíció,
-   ugyanazok a színek és arányok jelennek meg mindenhol — csak a rajzolással
-   járó extrák maradnak el ott, ahol nincs rájuk fedezet.
+   Ugyanaz a kompozíció, ugyanazok a színek és arányok jelennek meg mindenhol
+   — csak a mozgás marad el ott, ahol nincs rá fedezet.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* A parallax két változója. Az `inherits: false` a lényeg: enélkül a `--px`
@@ -92,12 +88,15 @@
   /* Mozgás */
   --ease-slide: cubic-bezier(0.76, 0, 0.24, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-slide: 1.05s;
+  /* A kilépő animáció hossza. Rövidebb, mint a régi sávos csúszásé volt
+     (1,05 s): ott a valódi oldal úszott be, itt viszont ez az idő pusztán
+     várakozás az oldalváltás előtt — abból kevesebb a jobb. */
+  --dur-slide: 0.62s;
 
   --medallion: clamp(190px, 21vw, 310px);
 }
 
-/* ── 2. ALAPOK ÉS A HÁROMSÁVOS KERET ───────────────────────────────────── */
+/* ── 2. ALAPOK ÉS A KILÉPŐ ANIMÁCIÓ ────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -152,53 +151,37 @@ img {
   outline-offset: 4px;
 }
 
-/* A vízszintes sáv: [masszázs] [választó] [optika] */
+/* A lap egyetlen, képernyőt kitöltő réteg — a választó mindig pontosan egy
+   képernyő, görgetés nincs. Korábban itt egy 300% széles sáv ült három
+   panellel, kettőben a két teljes weboldal iframe-ben; a lassúság innen jött. */
 .stage {
   position: fixed;
   inset: 0;
   overflow: hidden;
 }
 
-.track {
-  display: flex;
-  width: 300%;
+.chooser-stage {
+  width: 100%;
   height: 100%;
-  transform: translate3d(-33.3333%, 0, 0);
-  /* alaphelyzet: a választó */
-  transition: transform var(--dur-slide) var(--ease-slide);
 }
 
-body[data-view="masszazs"] .track {
-  transform: translate3d(0, 0, 0);
-}
+/* KILÉPÉS a kiválasztott fél felé. A `data-view`-t a landing.js állítja be
+   kattintáskor, a valódi oldalváltás pedig az animáció végén történik.
 
-body[data-view="chooser"] .track {
-  transform: translate3d(-33.3333%, 0, 0);
-}
-
-body[data-view="optika"] .track {
-  transform: translate3d(-66.6667%, 0, 0);
-}
-
-/* Mélységérzet: a választó gyorsabban úszik ki, mint a sáv.
-   A kiúszás korábban `filter: blur(7px)`-szel is járt — ez a lap fejlécében
-   is tiltott minta. Egy egész képernyős blur be- és kikapcsolása külön
-   rajzfelület (render surface) létrehozását és eldobását kényszeríti ki a
-   böngészőre, épp abban a pillanatban, amikor a weboldal hero-ja belép a
-   képbe: gyengébb/integrált GPU-n ez egy-két fekete képkockaként villan be.
-   A mélységérzetet a transform + opacity önmagában is megadja, azt pedig a
-   kompozitor újrarajzolás nélkül intézi. */
-.panel--chooser .chooser {
+   Csak `transform` és `opacity` mozog — ezt a compositor újrarajzolás nélkül
+   intézi. Kerülendő itt a `filter: blur()`: egy egész képernyős blur be- és
+   kikapcsolása külön rajzfelület létrehozását és eldobását kényszeríti ki,
+   épp a legrosszabb pillanatban. */
+.chooser {
   transition: transform var(--dur-slide) var(--ease-slide),
     opacity var(--dur-slide) var(--ease-slide);
 }
 
 /* A választó háttere drága raszter: szemcsetextúra + öt színátmenet egymáson.
-   A kiúszás `scale(1.09)`-cel jár, és skálázáskor a böngésző alapból ÚJRA
-   rajzolja a réteget az új méretben — pont a váltás első képkockáin, amikor a
-   sáv is csúszik. A `will-change` csak a csúszás idejére kéri el a saját
-   rajzfelületet: onnantól a kompozitor a kész textúrát nagyítja. Utána
-   levesszük, hogy ne foglaljon feleslegesen GPU-memóriát. */
+   A kiúszás `scale(1.09)`-cel jár, skálázáskor pedig a böngésző alapból ÚJRA
+   rajzolja a réteget az új méretben. A `will-change` csak a kilépés idejére
+   kéri el a saját rajzfelületet: onnantól a compositor a kész textúrát
+   nagyítja. Utána levesszük, hogy ne foglaljon GPU-memóriát. */
 body.is-moving .chooser {
   will-change: transform, opacity;
 }
@@ -213,77 +196,10 @@ body[data-view="optika"] .chooser {
   opacity: 0;
 }
 
-/* Mélylinkre azonnal ugrunk, animáció nélkül */
-body.no-anim .track,
-body.no-anim .chooser {
-  transition: none !important;
-}
-
-.panel {
-  flex: 0 0 33.3333%;
-  width: 33.3333%;
-  height: 100%;
-  position: relative;
-}
-
-.panel[data-panel="masszazs"],
-.panel[data-panel="optika"] {
-  background: var(--linen);
-}
-
-.panel__frame {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  position: relative;
-  z-index: 1;
-  background: transparent;
-  /* amíg üres, átlátszik a panel töltésjelzője */
-}
-
-/* Csúszás közben az iframe ne fogjon el eseményt */
-body.is-moving .panel__frame {
-  pointer-events: none;
-}
-
-/* TELJESÍTMÉNY — a képen kívüli panel „leparkol”.
-   Enélkül a rejtett választó a weboldalak böngészése közben végig futtatta az
-   animációit: a masszázs panelen mérve MAGASABB volt a terhelés, mint magán a
-   választón. A parkolás csak a csúszás végén kapcsol be, hogy az átmenetet ne
-   vágja el, és a következő váltás indulásakor azonnal lekerül. A `visibility`
-   nem üríti ki az iframe-et — a weboldal betöltve marad, csak nem rajzolódik.
-
-   FONTOS: az alábbi szabályok a KERETRE vonatkoznak; az iframe-en BELÜLI
-   dokumentumba nem érnek el. A weboldalak leállítását a landing.js
-   `tellFrame()` üzenete intézi (`html.is-frame-idle` a másik oldalon). */
-.panel.is-parked {
-  visibility: hidden;
-}
-
-.panel.is-parked *,
+/* Kilépés közben a választó saját animációi megállnak: a maradék képkockákra
+   a kicsúszásnak van szüksége, nem a díszek lüktetésének. */
 body:not([data-view="chooser"]) .chooser * {
   animation-play-state: paused;
-}
-
-/* Töltésjelző: a weboldal saját háttérszíne + finom gyűrű, amíg megérkezik */
-.panel.is-pending {
-  background: var(--linen);
-}
-
-.panel.is-pending::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  margin: -22px 0 0 -22px;
-  border-radius: 50%;
-  border: 2px solid rgba(214, 123, 75, 0.22);
-  border-top-color: var(--terra);
-  animation: spin 0.9s linear infinite;
-  z-index: 0;
 }
 
 /* ── 3. A VÁLASZTÓ HÁTTÉRRÉTEGEI ───────────────────────────────────────── */
@@ -315,21 +231,58 @@ body:not([data-view="chooser"]) .chooser * {
   transform: translate3d(calc(var(--px) * 13px), calc(var(--py) * 10px), 0);
 }
 
-.particles {
+/* LEBEGŐ FÉNYPONTOK
+   Korábban <canvas> rajzolta őket: képkockánként az EGÉSZ vásznat törölni és
+   újrarajzolni kellett, ami egy 1920×1080-as kijelzőn milliós nagyságrendű
+   képpontművelet volt másodpercenként — a lap legdrágább eleme.
+
+   Most tizenhat elem, tisztán CSS-ből. A `transform` és az `opacity` a
+   compositoré: a fő szálon képkockánként NULLA munka történik, a hatás mégis
+   ugyanaz. Ez az a fajta csere, ami után nincs mit optimalizálni. */
+.motes {
   position: absolute;
   inset: 0;
-  /* A <canvas> helyettesített elem, saját belső mérettel (alapból 300×150).
-     Az `inset: 0` önmagában NEM feszíti ki — explicit méret kell hozzá,
-     különben a réteg a bal felső sarokban marad. */
-  width: 100%;
-  height: 100%;
   z-index: 1;
   pointer-events: none;
-  /* A vászon az első képkockától látszik (a landing.js egy álló képet rajzol
-     rá induláskor), de a MOZGÁSA csak a belépő animáció után indul: a
-     képkockánkénti törlés és újrarajzolás épp a legérzékenyebb két
-     másodpercben venné el a fő szálat. */
+  overflow: hidden;
 }
+
+.motes span {
+  position: absolute;
+  bottom: -8vh;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      rgba(250, 238, 214, 0.95) 0%,
+      rgba(226, 205, 162, 0.42) 34%,
+      rgba(226, 205, 162, 0) 70%);
+  opacity: 0;
+  animation: mote-rise linear infinite;
+}
+
+@keyframes mote-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(0.75); opacity: 0; }
+  14%  { opacity: 0.8; }
+  86%  { opacity: 0.5; }
+  100% { transform: translate3d(var(--drift), -116vh, 0) scale(1.1); opacity: 0; }
+}
+
+.motes span:nth-child(1) { left: 6%; width: 5px; height: 5px; animation-duration: 38s; animation-delay: -0s; --drift: 18px; }
+.motes span:nth-child(2) { left: 13%; width: 3px; height: 3px; animation-duration: 52s; animation-delay: -7s; --drift: -14px; }
+.motes span:nth-child(3) { left: 21%; width: 4px; height: 4px; animation-duration: 44s; animation-delay: -14s; --drift: 24px; }
+.motes span:nth-child(4) { left: 28%; width: 6px; height: 6px; animation-duration: 60s; animation-delay: -3s; --drift: -20px; }
+.motes span:nth-child(5) { left: 35%; width: 3px; height: 3px; animation-duration: 47s; animation-delay: -21s; --drift: 12px; }
+.motes span:nth-child(6) { left: 17%; width: 4px; height: 4px; animation-duration: 55s; animation-delay: -10s; --drift: -26px; }
+.motes span:nth-child(7) { left: 10%; width: 5px; height: 5px; animation-duration: 41s; animation-delay: -17s; --drift: 16px; }
+.motes span:nth-child(8) { left: 31%; width: 3px; height: 3px; animation-duration: 58s; animation-delay: -25s; --drift: -10px; }
+.motes span:nth-child(9) { left: 66%; width: 4px; height: 4px; animation-duration: 43s; animation-delay: -4s; --drift: -18px; }
+.motes span:nth-child(10) { left: 73%; width: 5px; height: 5px; animation-duration: 57s; animation-delay: -12s; --drift: 14px; }
+.motes span:nth-child(11) { left: 81%; width: 3px; height: 3px; animation-duration: 49s; animation-delay: -19s; --drift: -24px; }
+.motes span:nth-child(12) { left: 88%; width: 6px; height: 6px; animation-duration: 36s; animation-delay: -8s; --drift: 20px; }
+.motes span:nth-child(13) { left: 94%; width: 4px; height: 4px; animation-duration: 54s; animation-delay: -23s; --drift: -12px; }
+.motes span:nth-child(14) { left: 70%; width: 3px; height: 3px; animation-duration: 46s; animation-delay: -16s; --drift: 26px; }
+.motes span:nth-child(15) { left: 78%; width: 5px; height: 5px; animation-duration: 61s; animation-delay: -2s; --drift: -16px; }
+.motes span:nth-child(16) { left: 85%; width: 4px; height: 4px; animation-duration: 50s; animation-delay: -27s; --drift: 10px; }
+
 
 /* ── 4. DÍSZEK ─────────────────────────────────────────────────────────── */
 .orn {
@@ -399,37 +352,12 @@ body.fx-high:not(.is-booting) .orn__flow path {
   opacity: 0.5;
 }
 
-body.fx-high .orn__points circle {
-  animation: pulse-point 4.5s ease-in-out infinite;
-}
-
-.orn__points circle:nth-child(2) {
-  animation-delay: 0.9s;
-}
-
-.orn__points circle:nth-child(3) {
-  animation-delay: 1.8s;
-}
-
-.orn__points circle:nth-child(4) {
-  animation-delay: 2.7s;
-}
-
-.orn__points circle:nth-child(5) {
-  animation-delay: 3.6s;
-}
-
-@keyframes pulse-point {
-
-  0%,
-  100% {
-    opacity: 0.2;
-  }
-
-  50% {
-    opacity: 0.85;
-  }
-}
+/* A LÜKTETÉS ELMARADT — és ezt a fenti megjegyzés előre meg is jósolta.
+   Az `opacity` animálása SVG GYERMEKÉN olyan tulajdonság, amit a böngészők
+   nem visznek egységesen a kompozitorra: ahol nem, ott a teljes, képernyő
+   magasságú dísz-SVG újrarajzolódik 60-szor másodpercenként, örökké — öt apró
+   pont kedvéért. Ez volt az utolsó folyamatosan újrarajzoló elem a lapon.
+   A pontok állóban is ott vannak, ugyanazzal a fénnyel (`opacity: 0.5`). */
 
 /* Jobb: lencsegyűrűk */
 .orn__rings circle {
@@ -467,7 +395,7 @@ body.fx-high .orn__points circle {
    ilyenkor is lefoglal neki egy külön GPU-textúrát — pár ilyen fölösleges
    réteg épp azon a gépen fogyasztja el a videómemóriát, amelyiken kevés van,
    és onnantól a kompozitor rajzfelületeket dobál (ez a fekete villanás). */
-body:not(.canvas-lens):not(.is-lowfx) .orn--lens {
+body:not(.is-lowfx) .orn--lens {
   will-change: transform;
 }
 
@@ -483,16 +411,6 @@ body:not(.canvas-lens):not(.is-lowfx) .orn--lens {
 
 .orn--lens-b {
   animation: spin 78s linear infinite reverse;
-}
-
-body.canvas-lens .orn--lens,
-body.canvas-lens .seam__scan {
-  display: none;
-}
-
-body.canvas-lens.is-lowfx .orn--lens {
-  display: block;
-  animation: none;
 }
 
 .orn--lens ellipse {
@@ -1037,130 +955,7 @@ body[data-hover] .hint {
   opacity: 0;
 }
 
-/* ── 9. VISSZATÉRŐ FÜL ─────────────────────────────────────────────────── */
-.returntab {
-  position: fixed;
-  top: 50%;
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(226, 205, 162, 0.4);
-  border-radius: 999px;
-  /* Alapból tömör háttér, `backdrop-filter` nélkül. A fül a BEÁGYAZOTT
-     weboldal fölött lebeg, annak a hero-ja pedig saját vászonanimációt futtat:
-     az elmosott háttérképet ilyenkor képkockánként újra kell számolni, és az
-     egész iframe külön rajzfelületre kerül. Az üveg csak erős gépen kapcsol
-     be — a majdnem tömör kitöltés ugyanolyan jól olvasható. */
-  background: rgba(24, 18, 14, 0.93);
-  color: var(--cream);
-  font-family: var(--font-body);
-  font-size: 0.76rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.75);
-  transition: opacity 0.5s ease, transform 0.6s var(--ease-out),
-    background 0.4s ease, border-color 0.4s ease;
-}
-
-body.fx-high .returntab {
-  background: rgba(28, 21, 17, 0.82);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-}
-
-.returntab[hidden] {
-  display: none;
-}
-
-.returntab__arrow {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-}
-
-.returntab__arrow svg {
-  width: 100%;
-  height: 100%;
-}
-
-.returntab__label {
-  max-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  opacity: 0;
-  transition: max-width 0.6s var(--ease-out), opacity 0.4s ease;
-}
-
-.returntab:hover .returntab__label,
-.returntab:focus-visible .returntab__label {
-  max-width: 10rem;
-  opacity: 1;
-}
-
-/* Érintőképernyőn nincs hover, így a felirat sosem bukkant elő: a fülből csak
-   egy nyíl látszott. Ott eleve kinyitva hagyjuk. */
-@media (hover: none) {
-  .returntab__label {
-    max-width: 10rem;
-    opacity: 1;
-  }
-}
-
-/* A `body.fx-high .returntab` fentebb ugyanennyire specifikus, ezért a hover
-   állapotot is a szinttel együtt kell megadni, különben az felülírná. */
-.returntab:hover,
-body.fx-high .returntab:hover {
-  background: rgba(28, 21, 17, 0.97);
-  border-color: var(--gold);
-}
-
-/* A fül mindig a választó felé mutat */
-body[data-view="masszazs"] .returntab {
-  right: 16px;
-  left: auto;
-  flex-direction: row-reverse;
-  transform: translateY(-50%);
-}
-
-body[data-view="optika"] .returntab {
-  left: 16px;
-  right: auto;
-  transform: translateY(-50%);
-}
-
-body[data-view="optika"] .returntab__arrow {
-  transform: scaleX(-1);
-}
-
-body[data-view="masszazs"] .returntab:hover {
-  transform: translateY(-50%) translateX(-4px);
-}
-
-body[data-view="optika"] .returntab:hover {
-  transform: translateY(-50%) translateX(4px);
-}
-
-/* Váltás alatt elrejtjük */
-body.is-moving .returntab {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Csak a hero fölött látszik: amint a beágyazott weboldalon lejjebb
-   görgetnek, a fül elhalványul és kattinthatatlanná válik.
-   Az osztályt a landing.js teszi a body-ra (lásd syncReturntab). */
-body.is-frame-scrolled .returntab {
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
-}
-
-/* ── 10. VÁLTÁS KÖZBENI EFFEKTEK ───────────────────────────────────────── */
+/* ── 9. KILÉPÉS KÖZBENI FÉNYSÖPRÉS ─────────────────────────────────────── */
 .sweep {
   position: fixed;
   inset: 0;
@@ -1215,7 +1010,7 @@ body.is-moving[data-dir="right"] .sweep {
   }
 }
 
-/* ── 11. BELÉPŐ ANIMÁCIÓ ───────────────────────────────────────────────── */
+/* ── 10. BELÉPŐ ANIMÁCIÓ ───────────────────────────────────────────────── */
 .medallion,
 .half__eyebrow,
 .half__title,
@@ -1251,7 +1046,7 @@ body.is-moving[data-dir="right"] .sweep {
 
 .is-booting .half__wash,
 .is-booting .seam__scan,
-.is-booting .particles,
+.is-booting .motes,
 .is-booting .orn {
   opacity: 0;
 }
@@ -1265,7 +1060,7 @@ body:not(.is-booting) .medallion {
   transition: transform 1.15s var(--ease-out) 0.35s, opacity 0.9s ease 0.35s;
 }
 
-body:not(.is-booting) .particles,
+body:not(.is-booting) .motes,
 body:not(.is-booting) .orn {
   transition: opacity 1.6s ease 0.6s;
 }
@@ -1316,7 +1111,7 @@ body.is-live .hint {
   transition: opacity 0.35s ease;
 }
 
-/* ── 12. RESZPONZÍV FINOMÍTÁS ──────────────────────────────────────────── */
+/* ── 11. RESZPONZÍV FINOMÍTÁS ──────────────────────────────────────────── */
 
 /* Ultra-széles és 4K kijelzők (2000px felett) */
 @media (min-width: 2000px) {
@@ -1514,12 +1309,12 @@ body.is-live .hint {
 
 /* Nagyon alacsony ablak: a választó belül görgethető marad */
 @media (max-height: 420px) {
-  .panel--chooser {
+  .chooser-stage {
     overflow-y: auto;
   }
 }
 
-/* ── 13. CSÖKKENTETT MOZGÁS ────────────────────────────────────────────── */
+/* ── 12. CSÖKKENTETT MOZGÁS ────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
 
   *,
@@ -1531,17 +1326,13 @@ body.is-live .hint {
     scroll-behavior: auto !important;
   }
 
-  .track {
-    transition: none;
-  }
-
   body[data-view="masszazs"] .chooser,
   body[data-view="optika"] .chooser {
     transform: none;
     filter: none;
   }
 
-  .particles {
+  .motes {
     display: none;
   }
 
@@ -1556,7 +1347,7 @@ body.is-live .hint {
   .is-booting .half__desc,
   .is-booting .half__cta,
   .is-booting .hint,
-  .is-booting .particles,
+  .is-booting .motes,
   .is-booting .orn,
   .is-booting .half__wash {
     opacity: 1;
@@ -1576,7 +1367,7 @@ body.is-live .hint {
   }
 }
 
-/* ── 14. ÖNSZABÁLYOZÁS GYENGÉBB GÉPRE ──────────────────────────────────────
+/* ── 13. VISSZAFOGOTT VÁLTOZAT GYENGÉBB GÉPRE ──────────────────────────────────────
    A padló. Ide akkor jutunk, ha a gép adottságai (magok, memória, felbontás)
    eleve gyengék, VAGY a landing.js mért képkockaideje szerint nem bírja.
    Minden mozgó réteg megáll; a kompozíció, a színek és az elrendezés
@@ -1601,7 +1392,7 @@ body.is-lowfx .seam__scan {
   display: none;
 }
 
-body.is-lowfx .particles {
+body.is-lowfx .motes {
   display: none;
 }
 
@@ -1609,4 +1400,62 @@ body.is-lowfx .particles {
    videómemória a szűk keresztmetszet, nem a raszterezés. */
 body.is-lowfx.is-moving .chooser {
   will-change: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAPVÁLTÁS — böngészőre bízott átmenet (View Transitions)
+   ─────────────────────────────────────────────────────────────────────────
+   A választó és a két weboldal között valódi oldalváltás történik. Enélkül a
+   régi lap egyszerűen eltűnik, és a fehér villanás után betoppan az új — ez
+   az, ami darabosnak érződik.
+
+   Az `@view-transition` átadja ezt a böngészőnek: pillanatképet készít a régi
+   lapról, betölti az újat, és a kettőt ÖSSZEÚSZTATJA. Az egész a kompozitoron
+   fut, tehát nem a fő szálat terheli — pont ezért simább, mint bármi, amit
+   JavaScriptből időzítenénk.
+
+   Két dolgot érdemes tudni róla:
+   • MINDKÉT lapnak be kell jelentkeznie rá, különben nincs átmenet — ezért
+     szerepel ez a blokk a választó, a masszázs és az optika stíluslapjában is.
+   • Az animációt a CÉLOLDAL stíluslapja határozza meg, nem a távozóé.
+
+   Ahol a böngésző nem ismeri (ma még a Firefox), egyszerűen elmarad az
+   átmenet: a lapváltás a szokásos módon történik, semmi nem törik el.
+   ═══════════════════════════════════════════════════════════════════════ */
+@view-transition {
+  navigation: auto;
+}
+
+/* A távozó lap hátralép és elhalványul, az érkező előrejön — a mozgás iránya
+   így „befelé” mutat, akár oldalra lépünk be, akár vissza a választóra. */
+::view-transition-old(root) {
+  animation: vt-leave 240ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: vt-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes vt-leave {
+  to {
+    opacity: 0;
+    transform: scale(1.035);
+  }
+}
+
+@keyframes vt-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+}
+
+/* Csökkentett mozgásnál marad a puszta áttűnés, nagyítás nélkül. */
+@media (prefers-reduced-motion: reduce) {
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 120ms;
+    transform: none;
+  }
 }

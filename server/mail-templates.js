@@ -1,22 +1,57 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Levélsablonok — az oldal arculatával (terrakotta / homok / espresso).
+   Levélsablonok — VISSZAIGAZOLT foglalásokhoz
+   ─────────────────────────────────────────────────────────────────────────
+   Két arculat, egy sablon. A masszázs terrakotta, az optika sötétzöld-arany
+   — ugyanaz a szerkezet, csak a színek, a név és az elérhetőség cserélődik.
+   Így nem kell két, egymástól lassan elcsúszó levélsablont karbantartani.
+
    Táblázatos elrendezés és beágyazott stílusok: a levelezőkliensek (Gmail,
    Outlook) nem támogatják megbízhatóan a modern CSS-t.
+
+   FONTOS SZÖVEGI KÜLÖNBSÉG A KORÁBBI VÁLTOZATHOZ KÉPEST. Régen a beküldés
+   csak időpontKÉRÉS volt („1 munkanapon belül visszahívjuk”). Most a naptár
+   valódi: a vendég egy szabad sávot foglal le, és az a sáv abban a
+   pillanatban el is kel. A levél ezért visszaigazolás, nem ígéret.
    ═══════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const C = {
-  bg: '#faf8f5',
-  card: '#ffffff',
-  dark: '#1c1511',
-  ink: '#241c18',
-  muted: '#6b5d54',
-  accent: '#d67b4b',
-  accentDeep: '#a85832',
-  gold: '#c9a96e',
-  border: '#ebdcd0',
-  cream: '#f7efe9'
+/* ── Arculatok ────────────────────────────────────────────────────────────
+   A `dark` a fejléc alapja, az `accent` a kiemelés, a `cream` a kiemelt
+   dobozok háttere. A két készlet a két weboldal saját színeiből származik. */
+const BRANDS = {
+  masszazs: {
+    name: 'Salvia',
+    tagline: 'Gyógymasszázs',
+    fullName: 'Salvia Gyógymasszázs',
+    address: '1111 Budapest, Karinthy Frigyes út 20.',
+    phone: '06 20 501 7453',
+    phoneRaw: '+36205017453',
+    colors: {
+      bg: '#faf8f5', card: '#ffffff', dark: '#1c1511', ink: '#241c18',
+      muted: '#6b5d54', accent: '#d67b4b', accentDeep: '#a85832',
+      gold: '#c9a96e', border: '#ebdcd0', cream: '#f7efe9'
+    },
+    arrive: 'Kérjük, néhány perccel a kezdés előtt érkezzen — az időpont a foglalt idővel indul.',
+    consent: 'A vendég nyilatkozott arról, hogy megismerte az ellenjavallatokat, és hozzájárult az adatkezeléshez.'
+  },
+  optika: {
+    name: 'Lumina',
+    tagline: 'Optika',
+    fullName: 'Lumina Optika',
+    address: '1111 Budapest, Karinthy Frigyes út 20.',
+    phone: '06 20 972 9122',
+    phoneRaw: '+36209729122',
+    colors: {
+      bg: '#faf8f5', card: '#ffffff', dark: '#1c2321', ink: '#241c18',
+      muted: '#6b5d54', accent: '#b8976b', accentDeep: '#8d7048',
+      gold: '#d8c39c', border: '#e6ded2', cream: '#f6f1e9'
+    },
+    arrive: 'Kérjük, néhány perccel a vizsgálat előtt érkezzen, és hozza magával a jelenlegi szemüvegét.',
+    consent: 'A vendég elfogadta a Házirendet és az ÁSZF-et, és hozzájárult az adatkezeléshez.'
+  }
 };
+
+function brandOf(site) { return BRANDS[site] || BRANDS.masszazs; }
 
 /* A vendég szövege sosem kerül nyersen a HTML-be */
 function esc(value) {
@@ -28,7 +63,25 @@ function esc(value) {
     .replace(/'/g, '&#39;');
 }
 
-function row(label, value, opts) {
+/* ── Idő emberi alakban ───────────────────────────────────────────────────
+   A dátum ÉÉÉÉ-HH-NN alakban érkezik. UTC-ként olvassuk be és UTC-ként
+   formázzuk: így a kiszolgáló időzónája nem tolhatja el egy nappal. */
+function longDate(day) {
+  try {
+    return new Date(day + 'T12:00:00Z').toLocaleDateString('hu-HU', {
+      timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+    });
+  } catch (err) {
+    return day;
+  }
+}
+
+/** '09:00' → '9:00' — az oldalon is vezető nulla nélkül írjuk az órákat. */
+function shortTime(clock) {
+  return String(clock || '').replace(/^0/, '');
+}
+
+function row(C, label, value, opts) {
   const o = opts || {};
   return `
     <tr>
@@ -37,7 +90,8 @@ function row(label, value, opts) {
     </tr>`;
 }
 
-function shell(opts) {
+function shell(brand, opts) {
+  const C = brand.colors;
   return `<!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -54,15 +108,15 @@ function shell(opts) {
         <!-- fejléc -->
         <tr><td style="background:${C.dark};padding:26px 30px">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td style="font:700 22px/1.2 Georgia,'Times New Roman',serif;color:#ffffff;letter-spacing:.3px">Salvia</td>
-            <td align="right" style="font:400 11px/1.4 Arial,Helvetica,sans-serif;color:${C.gold};letter-spacing:.18em;text-transform:uppercase">Gyógymasszázs</td>
+            <td style="font:700 22px/1.2 Georgia,'Times New Roman',serif;color:#ffffff;letter-spacing:.3px">${esc(brand.name)}</td>
+            <td align="right" style="font:400 11px/1.4 Arial,Helvetica,sans-serif;color:${C.gold};letter-spacing:.18em;text-transform:uppercase">${esc(brand.tagline)}</td>
           </tr></table>
         </td></tr>
 
         <!-- tartalom -->
         <tr><td style="padding:32px 30px 26px">
           ${opts.badge ? `<div style="display:inline-block;padding:6px 12px;background:${C.cream};border-radius:999px;font:700 11px/1 Arial,Helvetica,sans-serif;color:${C.accentDeep};letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px">${esc(opts.badge)}</div>` : ''}
-          <h1 style="margin:0 0 14px;font:400 26px/1.25 Georgia,'Times New Roman',serif;color:${C.ink}">${esc(opts.title)}</h1>
+          <h1 style="margin:0 0 14px;font:400 26px/1.25 Georgia,'Times New Roman',serif;color:${C.ink}">${opts.title}</h1>
           <p style="margin:0 0 22px;font:400 15px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">${opts.lead}</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid ${C.border}">
@@ -75,8 +129,8 @@ function shell(opts) {
         <!-- lábléc -->
         <tr><td style="background:${C.cream};padding:22px 30px;border-top:1px solid ${C.border}">
           <p style="margin:0 0 6px;font:400 13px/1.6 Arial,Helvetica,sans-serif;color:${C.muted}">
-            <strong style="color:${C.ink}">Salvia Gyógymasszázs</strong><br>
-            1111 Budapest, Karinthy Frigyes út 20. &middot; 06 20 501 7453
+            <strong style="color:${C.ink}">${esc(brand.fullName)}</strong><br>
+            ${esc(brand.address)} &middot; ${esc(brand.phone)}
           </p>
           <p style="margin:0;font:400 12px/1.6 Arial,Helvetica,sans-serif;color:${C.muted}">
             ${esc(opts.footerNote)}
@@ -85,7 +139,7 @@ function shell(opts) {
 
       </table>
       <p style="margin:16px 0 0;font:400 11px/1.5 Arial,Helvetica,sans-serif;color:${C.muted};max-width:600px">
-        Ez az üzenet a weboldalon leadott időpontkérés alapján készült.
+        Ez az üzenet a weboldalon leadott foglalás alapján készült.
       </p>
     </td></tr>
   </table>
@@ -93,79 +147,97 @@ function shell(opts) {
 </html>`;
 }
 
-function button(href, label) {
+function button(C, href, label) {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px"><tr>
     <td style="background:${C.accentDeep};border-radius:999px">
       <a href="${esc(href)}" style="display:inline-block;padding:13px 26px;font:700 14px/1 Arial,Helvetica,sans-serif;color:#ffffff;text-decoration:none">${esc(label)}</a>
     </td></tr></table>`;
 }
 
+/** A foglalás közös sorai — mindkét levélben ugyanaz a sorrend. */
+function slotRows(C, data) {
+  return (
+    row(C, 'Szolgáltatás', data.serviceName, { strong: true }) +
+    row(C, 'Időtartam', data.duration + ' perc') +
+    row(C, 'Nap', longDate(data.date), { strong: true }) +
+    row(C, 'Időpont', shortTime(data.start) + ' – ' + shortTime(data.end), { strong: true })
+  );
+}
+
 /* ── 1. Visszaigazolás a vendégnek ────────────────────────────────────────── */
 function customerMail(data, cfg) {
-  const subject = 'Megkaptuk az időpontkérését — Salvia Gyógymasszázs';
-  const rows =
-    row('Kezelés', data.treatment, { strong: true }) +
-    row('Időtartam', data.duration) +
-    row('Preferált nap', data.date) +
-    row('Preferált időpont', data.time) +
-    (data.message ? row('Megjegyzése', `<span style="white-space:pre-wrap">${esc(data.message)}</span>`, { raw: `<span style="white-space:pre-wrap">${esc(data.message)}</span>` }) : '');
+  const brand = brandOf(data.site);
+  const C = brand.colors;
+  const subject = `Foglalása visszaigazolva — ${longDate(data.date)} ${shortTime(data.start)} · ${brand.fullName}`;
+
+  const rows = slotRows(C, data) +
+    (data.message
+      ? row(C, 'Megjegyzése', '', { raw: `<span style="white-space:pre-wrap">${esc(data.message)}</span>` })
+      : '');
 
   const after = `
     <div style="margin:26px 0 0;padding:18px 20px;background:${C.cream};border-left:3px solid ${C.accent};border-radius:0 10px 10px 0">
-      <p style="margin:0 0 6px;font:700 12px/1 Arial,Helvetica,sans-serif;color:${C.accentDeep};letter-spacing:.1em;text-transform:uppercase">Mi történik most</p>
+      <p style="margin:0 0 6px;font:700 12px/1 Arial,Helvetica,sans-serif;color:${C.accentDeep};letter-spacing:.1em;text-transform:uppercase">Jó tudni</p>
       <p style="margin:0;font:400 14px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">
-        <strong style="color:${C.ink}">1 munkanapon belül</strong> visszahívjuk a megadott számon
-        (${esc(data.phone)}), és egyeztetjük a pontos időpontot. Ez a levél
-        <strong style="color:${C.ink}">még nem foglalás</strong>, és nem jár fizetési kötelezettséggel.
+        ${esc(brand.arrive)}
+        Ha mégsem tud jönni, kérjük, <strong style="color:${C.ink}">jelezze legalább 24 órával előre</strong>
+        a ${esc(brand.phone)} számon — így másnak fel tudjuk ajánlani a felszabaduló időt.
       </p>
     </div>
-    ${button('tel:' + (cfg.phoneRaw || '+36205017453'), 'Inkább telefonálok')}
+    ${button(C, 'tel:' + brand.phoneRaw, 'Hívás: ' + brand.phone)}
     <p style="margin:18px 0 0;font:400 13px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">
       Ha bármelyik adat téves, egyszerűen válaszoljon erre a levélre.
+      Foglalás azonosítója: <strong style="color:${C.ink}">${esc(data.id || '—')}</strong>
     </p>`;
 
-  const html = shell({
+  const html = shell(brand, {
     subject,
-    preheader: 'Megkaptuk az időpontkérését. 1 munkanapon belül visszahívjuk.',
-    badge: 'Időpontkérés fogadva',
+    preheader: `${longDate(data.date)} ${shortTime(data.start)} — ${data.serviceName}`,
+    badge: 'Foglalás visszaigazolva',
     title: `Köszönjük, ${esc(data.name)}!`,
-    lead: 'Az alábbi kéréssel jelentkezett be nálunk. Kérjük, ellenőrizze az adatokat.',
+    lead: 'Időpontját rögzítettük a naptárunkban. Az alábbi adatokat mentettük el — kérjük, ellenőrizze őket.',
     rows,
     after,
-    footerNote: 'Adatait kizárólag az időpont-egyeztetéshez használjuk. Az adatkezelésről a weboldal „Adatkezelési tájékoztató” oldalán olvashat.'
+    footerNote: 'Adatait kizárólag a foglalás teljesítéséhez használjuk. Az adatkezelésről a weboldal „Adatkezelési tájékoztató” oldalán olvashat.'
   });
 
   const text = [
     `Köszönjük, ${data.name}!`,
     '',
-    'Megkaptuk az időpontkérését:',
-    `- Kezelés: ${data.treatment}`,
-    `- Időtartam: ${data.duration}`,
-    `- Preferált nap: ${data.date}`,
-    `- Preferált időpont: ${data.time}`,
+    'Foglalását rögzítettük:',
+    `- Szolgáltatás: ${data.serviceName}`,
+    `- Időtartam: ${data.duration} perc`,
+    `- Nap: ${longDate(data.date)}`,
+    `- Időpont: ${shortTime(data.start)} – ${shortTime(data.end)}`,
     data.message ? `- Megjegyzés: ${data.message}` : null,
     '',
-    `1 munkanapon belül visszahívjuk a megadott számon (${data.phone}), és egyeztetjük a pontos időpontot.`,
-    'Ez a levél még nem foglalás, és nem jár fizetési kötelezettséggel.',
+    brand.arrive,
+    `Ha mégsem tud jönni, kérjük, jelezze legalább 24 órával előre a ${brand.phone} számon.`,
     '',
-    'Salvia Gyógymasszázs · 1111 Budapest, Karinthy Frigyes út 20. · 06 20 501 7453'
+    `Foglalás azonosítója: ${data.id || '—'}`,
+    '',
+    `${brand.fullName} · ${brand.address} · ${brand.phone}`
   ].filter(Boolean).join('\n');
 
   return { subject, html, text };
 }
 
-/* ── 2. Értesítés a masszőrnek ────────────────────────────────────────────── */
+/* ── 2. Értesítés a szolgáltatónak ────────────────────────────────────────── */
 function ownerMail(data, cfg) {
-  const subject = `Új időpontkérés — ${data.name} (${data.treatment}, ${data.duration})`;
+  const brand = brandOf(data.site);
+  const C = brand.colors;
+  const subject = `Új foglalás — ${longDate(data.date)} ${shortTime(data.start)} · ${data.name} (${data.serviceName})`;
+
+  const tel = String(data.phone || '').replace(/\s+/g, '');
   const rows =
-    row('Név', data.name, { strong: true }) +
-    row('Telefon', data.phone, { raw: `<a href="tel:${esc(data.phone.replace(/\s+/g, ''))}" style="color:${C.accentDeep};font-weight:700;text-decoration:none">${esc(data.phone)}</a>` }) +
-    row('E-mail', data.email, { raw: `<a href="mailto:${esc(data.email)}" style="color:${C.accentDeep};text-decoration:none">${esc(data.email)}</a>` }) +
-    row('Kezelés', data.treatment, { strong: true }) +
-    row('Időtartam', data.duration) +
-    row('Preferált nap', data.date) +
-    row('Preferált időpont', data.time) +
-    row('Beérkezett', new Date().toLocaleString('hu-HU', { timeZone: cfg.timeZone || 'Europe/Budapest' }));
+    slotRows(C, data) +
+    row(C, 'Név', data.name, { strong: true }) +
+    row(C, 'Telefon', data.phone, { raw: `<a href="tel:${esc(tel)}" style="color:${C.accentDeep};font-weight:700;text-decoration:none">${esc(data.phone)}</a>` }) +
+    (data.email
+      ? row(C, 'E-mail', data.email, { raw: `<a href="mailto:${esc(data.email)}" style="color:${C.accentDeep};text-decoration:none">${esc(data.email)}</a>` })
+      : '') +
+    row(C, 'Pihenőig foglalt', shortTime(data.restEnd || data.end)) +
+    row(C, 'Beérkezett', new Date().toLocaleString('hu-HU', { timeZone: (cfg && cfg.timeZone) || 'Europe/Budapest' }));
 
   const after = `
     ${data.message ? `
@@ -173,37 +245,40 @@ function ownerMail(data, cfg) {
       <p style="margin:0 0 6px;font:700 12px/1 Arial,Helvetica,sans-serif;color:${C.accentDeep};letter-spacing:.1em;text-transform:uppercase">A vendég megjegyzése</p>
       <p style="margin:0;font:400 14px/1.7 Arial,Helvetica,sans-serif;color:${C.ink};white-space:pre-wrap">${esc(data.message)}</p>
     </div>` : `
-    <p style="margin:22px 0 0;font:400 14px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">A vendég nem írt megjegyzést — az egészségi állapotot a visszahíváskor kell tisztázni.</p>`}
-    ${button('tel:' + data.phone.replace(/\s+/g, ''), 'Visszahívás: ' + data.phone)}
+    <p style="margin:22px 0 0;font:400 14px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">A vendég nem írt megjegyzést.</p>`}
+    ${data.phone ? button(C, 'tel:' + tel, 'Hívás: ' + data.phone) : ''}
     <p style="margin:14px 0 0;font:400 13px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">
-      A levélre válaszolva közvetlenül a vendégnek írhat.
+      A foglalás az admin felület naptárában is megjelent, és onnan mondható le.
     </p>`;
 
-  const html = shell({
+  const html = shell(brand, {
     subject,
-    preheader: `${data.name} · ${data.treatment} · ${data.date}`,
-    badge: 'Új időpontkérés',
-    title: 'Időpontkérés érkezett',
-    lead: 'A weboldal űrlapján keresztül új megkeresés jött. A vendég visszaigazolást kapott.',
+    preheader: `${data.name} · ${data.serviceName} · ${longDate(data.date)} ${shortTime(data.start)}`,
+    badge: 'Új foglalás',
+    title: 'Lefoglaltak egy időpontot',
+    lead: 'A weboldal naptárán keresztül új foglalás érkezett. A vendég visszaigazolást kapott.',
     rows,
     after,
-    footerNote: 'A vendég nyilatkozott arról, hogy megismerte az ellenjavallatokat, és hozzájárult az adatkezeléshez.'
+    footerNote: brand.consent
   });
 
   const text = [
-    'Új időpontkérés érkezett a weboldalról:',
+    'Új foglalás érkezett a weboldalról:',
+    '',
+    `Nap: ${longDate(data.date)}`,
+    `Időpont: ${shortTime(data.start)} – ${shortTime(data.end)} (pihenővel ${shortTime(data.restEnd || data.end)}-ig)`,
+    `Szolgáltatás: ${data.serviceName} (${data.duration} perc)`,
     '',
     `Név: ${data.name}`,
     `Telefon: ${data.phone}`,
-    `E-mail: ${data.email}`,
-    `Kezelés: ${data.treatment} (${data.duration})`,
-    `Preferált nap: ${data.date} — ${data.time}`,
+    data.email ? `E-mail: ${data.email}` : null,
     data.message ? `Megjegyzés: ${data.message}` : 'Megjegyzés: —',
     '',
-    `Beérkezett: ${new Date().toLocaleString('hu-HU', { timeZone: cfg.timeZone || 'Europe/Budapest' })}`
-  ].join('\n');
+    `Azonosító: ${data.id || '—'}`,
+    `Beérkezett: ${new Date().toLocaleString('hu-HU', { timeZone: (cfg && cfg.timeZone) || 'Europe/Budapest' })}`
+  ].filter(Boolean).join('\n');
 
   return { subject, html, text };
 }
 
-module.exports = { customerMail, ownerMail };
+module.exports = { customerMail, ownerMail, BRANDS, brandOf, longDate, shortTime };

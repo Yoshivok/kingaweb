@@ -61,6 +61,9 @@
         <a href="#products-section" class="nav-link">Termékek</a>
         <a href="#contact-section" class="nav-link">Kapcsolat</a>
         <a href="rolam.html" class="nav-link">Rólam</a>
+        <!-- Vissza a szolgáltatásválasztóhoz: mióta ez az oldal önálló lapként
+             nyílik meg, a visszaút a menübe került. -->
+        <a href="../index.html" class="nav-link">Választó</a>
       </nav>
 
       <div class="header-actions">
@@ -84,6 +87,7 @@
       <a href="#products-section" class="mobile-nav-link">Termékek</a>
       <a href="#contact-section" class="mobile-nav-link">Kapcsolat</a>
       <a href="rolam.html" class="mobile-nav-link">Rólam</a>
+      <a href="../index.html" class="mobile-nav-link">Vissza a választóhoz</a>
       <button class="btn btn-primary btn-book" id="mobile-booking-btn">Időpontfoglalás</button>
     </nav>
   </div>
@@ -330,7 +334,7 @@
             </div>
 
             <div class="eye-stage__inner" id="eye-stage-inner">
-              <img src="assets/eye-cutaway.webp?v=2" id="eye-img" class="eye-img" alt="A szem belső anatómiai metszete"
+              <img src="assets/eye-cutaway.webp?v=3" id="eye-img" class="eye-img" alt="A szem belső anatómiai metszete"
                 width="800" height="800" loading="lazy">
 
               <!-- SVG Interactive Hotspots & Leader Lines Overlay -->
@@ -755,7 +759,7 @@
               <div class="option-card-content">
                 <span class="option-title">Komplett Látásvizsgálat</span>
                 <span class="option-desc">Computeress és szubjektív vizsgálat felnőtteknek.</span>
-                <span class="option-meta">45 perc | 12 000 Ft</span>
+                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 12 000 Ft</span>
               </div>
             </label>
 
@@ -764,7 +768,7 @@
               <div class="option-card-content">
                 <span class="option-title">Kontaktlencse Illesztés</span>
                 <span class="option-desc">Mérések, illesztés és betanítás mintalencsével.</span>
-                <span class="option-meta">60 perc | 15 000 Ft</span>
+                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 15 000 Ft</span>
               </div>
             </label>
 
@@ -773,7 +777,7 @@
               <div class="option-card-content">
                 <span class="option-title">Szemüvegkészítés Tanácsadás</span>
                 <span class="option-desc">Keret és lencseválasztás optometrista segítségével.</span>
-                <span class="option-meta">30 perc | Ingyenes *</span>
+                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; Ingyenes *</span>
               </div>
             </label>
 
@@ -782,7 +786,7 @@
               <div class="option-card-content">
                 <span class="option-title">Szemüveg Javítás</span>
                 <span class="option-desc">Keret- és szárjavítás, csavarcsere, lencsevisszahelyezés.</span>
-                <span class="option-meta">15-30 perc | 2 500 Ft-tól</span>
+                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 2 500 Ft-tól</span>
               </div>
             </label>
 
@@ -795,6 +799,8 @@
         <!-- LÉPÉS 2: Dátum és Időpont választás -->
         <div class="booking-step-panel" data-step="2" id="step-panel-2">
           <h3 class="step-panel-title">Válasszon egy Önnek megfelelő időpontot</h3>
+          <p class="step-panel-note">A naptár a valóban szabad kezdéseket mutatja: két vizsgálat között
+            20 perc szünetet tartunk, ezért a betelt és a zárva tartó napok nem választhatók.</p>
           <div class="datetime-grid">
 
             <!-- Naptár modul -->
@@ -890,6 +896,8 @@
             </div>
           </div>
 
+          <p class="booking-submit-error" id="booking-submit-error" role="alert" hidden></p>
+
           <div class="step-actions">
             <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step2">Vissza</button>
             <button type="submit" class="btn btn-primary" id="btn-submit-booking">Foglalás Véglegesítése</button>
@@ -905,8 +913,7 @@
             </svg>
           </div>
           <h3 class="success-title">Sikeres Foglalás!</h3>
-          <p class="success-text">Köszönjük bizalmát! Időpontját sikeresen rögzítettük a rendszerünkben. A részletekről
-            megerősítő e-mailt küldtünk az Ön által megadott címre.</p>
+          <p class="success-text">Köszönjük bizalmát! Időpontját rögzítettük a naptárunkban.</p>
 
           <div class="summary-card" id="booking-summary-card">
             <!-- JavaScript tölti ki az elmentett adatokkal -->
@@ -997,7 +1004,7 @@
   <!-- A termékkártyák és a részletes nézet felépítése. Ugyanezt a fájlt
        használja az admin felület előnézete is, hogy a kettő ne csússzon el. -->
   <script src="assets/js/product-render.js?v=1"></script>
-  <script src="index.js?v=46"></script>
+  <script src="index.js?v=47"></script>
   <script src="assets/js/consent.js" defer></script>
 </body>
 

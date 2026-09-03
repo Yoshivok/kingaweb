@@ -17,6 +17,7 @@ const path = require('node:path');
 const sec = require('./security');
 const store = require('./store');
 const prices = require('./prices');
+const booking = require('./booking');
 const { Uploads, MAX_BYTES } = require('./uploads');
 
 const JSON_BODY_LIMIT = 128 * 1024;   /* egy termék bőven belefér */
@@ -30,6 +31,16 @@ const loginByUser = sec.createLimiter({ windowMs: 60 * 60e3, max: 15, blockMs: 3
 const adminApi = sec.createLimiter({ windowMs: 5 * 60e3, max: 400, blockMs: 5 * 60e3, name: 'admin-api' });
 const uploadApi = sec.createLimiter({ windowMs: 60 * 60e3, max: 120, blockMs: 30 * 60e3, name: 'upload' });
 const publicApi = sec.createLimiter({ windowMs: 60e3, max: 120, blockMs: 60e3, name: 'public-api' });
+/* A foglalás valódi helyet foglal a naptárban, ezért szűkebb a kapu, mint a
+   lekérdezéseknél: egy családnak egymás után még bőven elég, gépi foglalásra
+   nem. Nem lehet túl szűk: közös internetkapcsolat mögül (iroda, kollégium,
+   mobilhálózat) sokan ugyanazzal az IP-vel érkeznek.
+
+   A `BOOKING_RATE_MAX` a DATA_DIR-hez hasonlóan a TESZTHEZ van: a próbafutás
+   percek alatt tucatnyi foglalást ad le, amit élesben joggal zárnánk ki.
+   Éles indításkor a változó nincs beállítva, tehát a korlát 10 marad. */
+const bookingMax = Number(process.env.BOOKING_RATE_MAX) > 0 ? Number(process.env.BOOKING_RATE_MAX) : 10;
+const bookingApi = sec.createLimiter({ windowMs: 60 * 60e3, max: bookingMax, blockMs: 60 * 60e3, name: 'booking' });
 
 /* ── Válaszsegédek ────────────────────────────────────────────────────────── */
 function sendJson(res, status, payload, extraHeaders) {
@@ -120,10 +131,15 @@ function readJsonBody(req) {
 
 /* ── Az API osztálya ──────────────────────────────────────────────────────── */
 class Api {
-  constructor({ root, trustProxy, defaultAdmin, log }) {
+  constructor({ root, trustProxy, defaultAdmin, log, notify }) {
     this.trustProxy = !!trustProxy;
     this.defaultAdmin = defaultAdmin;
     this.log = log || (() => {});
+    /* A visszaigazoló és értesítő levél kiküldése. A levelezés a
+       `server.js`-ben él (ott van a beállítás és az SMTP), ezért csak egy
+       függvényt kapunk — így az API nem függ a levélküldéstől, és a levél
+       elakadása sem viheti magával a már elmentett foglalást. */
+    this.notify = typeof notify === 'function' ? notify : null;
     this.uploads = new Uploads(
       path.join(root, 'optika', 'assets', 'products'),
       '/optika/assets/products/'
@@ -175,6 +191,10 @@ class Api {
 
     if (p === '/api/products') return this.publicProducts(req, res);
     if (p === '/api/prices') return this.publicPrices(req, res);
+    if (p === '/api/booking') return this.publicBooking(req, res);
+    if (p === '/api/booking/options') return this.publicBookingOptions(req, res, url);
+    if (p === '/api/booking/availability') return this.publicAvailability(req, res, url);
+    if (p === '/api/booking/month') return this.publicMonth(req, res, url);
     if (p.startsWith('/api/admin/')) return this.admin(req, res, p);
 
     return false;
@@ -269,9 +289,15 @@ class Api {
     if (p === '/api/admin/upload') return this.adminUpload(req, res);
     if (p === '/api/admin/password') return this.adminPassword(req, res);
     if (p === '/api/admin/prices') return this.adminPrices(req, res);
+    if (p === '/api/admin/schedule') return this.adminSchedule(req, res);
+    if (p === '/api/admin/bookings') return this.adminBookings(req, res);
+    if (p === '/api/admin/agenda') return this.adminAgenda(req, res);
 
     const single = /^\/api\/admin\/products\/(p_[a-f0-9]{18})$/.exec(p);
     if (single) return this.adminProductById(req, res, single[1]);
+
+    const oneBooking = /^\/api\/admin\/bookings\/(bk_[a-f0-9]{16})$/.exec(p);
+    if (oneBooking) return this.adminBookingById(req, res, oneBooking[1]);
 
     fail(res, 404, 'Ismeretlen végpont.');
     return true;
@@ -563,6 +589,331 @@ class Api {
         notes: r.data.notes,
         updatedAt: r.data.updatedAt
       });
+      return true;
+    }
+
+    fail(res, 405, 'Nem támogatott metódus.');
+    return true;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     FOGLALÁS — nyilvános végpontok
+     ────────────────────────────────────────────────────────────────────
+     Mindhárom OLVASÓ végpont ugyanazt a motort kérdezi, amit a mentés is
+     (`booking.slotsFor`). Ezért nem tud elcsúszni a felkínált óra attól,
+     amit a kiszolgáló elfogad: nincs olyan időpont, amit a naptár mutat,
+     de a mentés visszautasít — kivéve, ha közben tényleg elkelt.
+
+     Vendégadat SOHA nem megy ki ezeken: a látogató csak azt látja, hogy
+     egy sáv szabad-e, azt nem, hogy ki foglalta le.
+     ══════════════════════════════════════════════════════════════════ */
+
+  /** Közös bejárat az olvasó végpontoknak: metódus + sebességkorlát. */
+  readGate(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      fail(res, 405, 'Csak GET.');
+      return false;
+    }
+    const gate = publicApi.check(this.ip(req));
+    if (!gate.ok) {
+      sendJson(res, 429, { ok: false, error: 'Túl sok kérés.' }, { 'Retry-After': String(gate.retryAfter) });
+      return false;
+    }
+    return true;
+  }
+
+  /** A lekérdezés `site` paramétere, vagy `null`. */
+  static siteOf(url) {
+    const site = url.searchParams.get('site');
+    return booking.SITES.includes(site) ? site : null;
+  }
+
+  /** A kért időtartam, a szolgáltatáshoz igazítva. */
+  static durationOf(url, site) {
+    const service = booking.findService(site, url.searchParams.get('service') || '');
+    const asked = Number(url.searchParams.get('duration'));
+
+    if (service) {
+      if (service.durations.includes(asked)) return { service, duration: asked };
+      /* Hossz nélkül (vagy hibás hosszal) a szolgáltatás legrövidebb
+         változatát nézzük — így a naptár akkor sem üres, ha a látogató még
+         nem választott hosszt. */
+      return { service, duration: Math.min.apply(null, service.durations) };
+    }
+    if (Number.isInteger(asked) && asked >= booking.LIMITS.minDuration && asked <= booking.LIMITS.maxDuration) {
+      return { service: null, duration: asked };
+    }
+    return { service: null, duration: null };
+  }
+
+  /** Foglalható szolgáltatások, hosszak és a nyitvatartás — egy kérésben. */
+  async publicBookingOptions(req, res, url) {
+    if (!this.readGate(req, res)) return true;
+
+    const site = Api.siteOf(url);
+    if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+    const cfg = booking.schedule(site);
+    sendJson(res, 200, {
+      ok: true,
+      site,
+      services: booking.services(site),
+      buffer: cfg.buffer,
+      horizonDays: cfg.horizonDays,
+      leadMinutes: cfg.leadMinutes,
+      /* A nyitvatartás a naptár szürkítéséhez kell: a zárva tartó napokra
+         a látogató rá se tudjon kattintani. */
+      hours: cfg.hours,
+      today: booking.today()
+    });
+    return true;
+  }
+
+  /** Egy nap szabad kezdései a megadott hosszhoz. */
+  async publicAvailability(req, res, url) {
+    if (!this.readGate(req, res)) return true;
+
+    const site = Api.siteOf(url);
+    if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+    const date = url.searchParams.get('date');
+    if (!booking.isDay(date)) { fail(res, 400, 'Hibás dátum.'); return true; }
+
+    const { duration } = Api.durationOf(url, site);
+    if (duration === null) { fail(res, 400, 'Hibás időtartam.'); return true; }
+
+    const result = booking.slotsFor(site, date, duration);
+    sendJson(res, 200, {
+      ok: true,
+      site,
+      date,
+      duration,
+      closed: !!result.closed,
+      reason: result.reason || '',
+      slots: result.slots
+    });
+    return true;
+  }
+
+  /** Egy hónap napjainak állapota (zárva / szabad / betelt). */
+  async publicMonth(req, res, url) {
+    if (!this.readGate(req, res)) return true;
+
+    const site = Api.siteOf(url);
+    if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+    const month = url.searchParams.get('month');
+    if (!booking.MONTH_RE.test(String(month || ''))) { fail(res, 400, 'Hibás hónap.'); return true; }
+
+    const { duration } = Api.durationOf(url, site);
+    if (duration === null) { fail(res, 400, 'Hibás időtartam.'); return true; }
+
+    sendJson(res, 200, {
+      ok: true, site, month, duration,
+      days: booking.monthOverview(site, month, duration),
+      today: booking.today()
+    });
+    return true;
+  }
+
+  /** Új foglalás a weboldalról. */
+  async publicBooking(req, res) {
+    if (req.method !== 'POST') { fail(res, 405, 'Csak POST.'); return true; }
+
+    /* Nem admin végpont, de ugyanúgy csak a saját lapunkról fogadjuk el:
+       idegen oldal beágyazott szkriptje ne tudjon a nevünkben foglalni. */
+    if (!sec.sameOrigin(req, this.trustProxy)) { fail(res, 403, 'Érvénytelen kérés.'); return true; }
+
+    const gate = bookingApi.check(this.ip(req));
+    if (!gate.ok) {
+      sendJson(res, 429, {
+        ok: false,
+        error: 'Túl sok foglalás érkezett erről a gépről. Kérjük, hívjon minket telefonon.'
+      }, { 'Retry-After': String(gate.retryAfter) });
+      return true;
+    }
+
+    const body = await bodyOrFail(req, res);
+    if (!body) return true;
+
+    /* A két jelölőnégyzet a jogi feltétel: enélkül nincs mit tárolni. */
+    if (body.terms !== true || body.gdpr !== true) {
+      fail(res, 400, 'A Házirend, az ÁSZF és az adatkezelési tájékoztató elfogadása kötelező.');
+      return true;
+    }
+
+    const result = await booking.create(body);
+    if (!result.ok) { fail(res, 409, result.error); return true; }
+
+    const saved = result.booking;
+    this.log(`  ✓ foglalás (${saved.site}): ${saved.date} ${saved.start} · ${saved.name} · ${saved.serviceName}`);
+
+    /* A levél MÁR MENTETT foglalásról szól. Ha a küldés elakad, a foglalás
+       akkor is áll — a vendég a képernyőn megkapja a visszaigazolást, a
+       naptárban pedig ott a sáv. Ezért nem várunk rá válasszal. */
+    let mailed = false;
+    if (this.notify) {
+      try {
+        mailed = await this.notify(saved);
+      } catch (err) {
+        this.log('  ! a visszaigazoló levél nem ment ki: ' + (err && err.message));
+      }
+    }
+
+    sendJson(res, 201, {
+      ok: true,
+      mailed: mailed === true,
+      booking: {
+        id: saved.id,
+        site: saved.site,
+        date: saved.date,
+        start: saved.start,
+        end: booking.toClock(booking.toMinutes(saved.start) + saved.duration),
+        duration: saved.duration,
+        serviceKey: saved.serviceKey,
+        serviceName: saved.serviceName,
+        name: saved.name
+      }
+    });
+    return true;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     FOGLALÁS — admin végpontok
+     ══════════════════════════════════════════════════════════════════ */
+
+  /** A nap menetrendje: foglalások vendégadattal, szünetek, zárás. */
+  async adminAgenda(req, res) {
+    if (req.method !== 'GET') { fail(res, 405, 'Csak GET.'); return true; }
+    const s = this.session(req);
+    if (!s) { fail(res, 401, 'Nincs bejelentkezve.'); return true; }
+
+    const url = new URL(req.url, 'http://localhost');
+    const site = Api.siteOf(url);
+    if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+    /* Egy nap vagy egy időszak — a heti és a havi nézet ugyanezt kéri le
+       több napra, egyetlen kérésben. */
+    const from = booking.isDay(url.searchParams.get('from')) ? url.searchParams.get('from') : booking.today();
+    const to = booking.isDay(url.searchParams.get('to')) ? url.searchParams.get('to') : from;
+
+    const span = booking.daysBetween(from, to);
+    if (span < 0 || span > 45) { fail(res, 400, 'Legfeljebb 45 napot kérhet le egyszerre.'); return true; }
+
+    const days = [];
+    for (let i = 0; i <= span; i++) days.push(booking.agenda(site, booking.addDays(from, i)));
+
+    sendJson(res, 200, { ok: true, site, from, to, days, today: booking.today() });
+    return true;
+  }
+
+  /** Foglalások listája és felvétele. */
+  async adminBookings(req, res) {
+    const url = new URL(req.url, 'http://localhost');
+
+    if (req.method === 'GET') {
+      const s = this.session(req);
+      if (!s) { fail(res, 401, 'Nincs bejelentkezve.'); return true; }
+
+      const site = Api.siteOf(url);
+      const from = url.searchParams.get('from');
+      const to = url.searchParams.get('to');
+      sendJson(res, 200, {
+        ok: true,
+        bookings: booking.list({ site, from, to }),
+        today: booking.today()
+      });
+      return true;
+    }
+
+    if (req.method === 'POST') {
+      const g = this.guard(req);
+      if (!g.ok) { fail(res, g.status, g.error); return true; }
+
+      const body = await bodyOrFail(req, res);
+      if (!body) return true;
+
+      /* Adminként a nyitvatartás nem korlátoz (telefonos vendég bármikor
+         bejöhet), az ütközés viszont igen — két embert nem tehetünk
+         egymásra. Lásd `booking.create`. */
+      const result = await booking.create(body, { admin: true });
+      if (!result.ok) { fail(res, 409, result.error); return true; }
+
+      this.log(`  + foglalás felvéve (${result.booking.site}): ${result.booking.date} ${result.booking.start}`);
+
+      /* Ha az admin megadta a vendég e-mail címét, ő is kap visszaigazolást —
+         ugyanazt, amit a weboldalon foglaló kapna. Cím nélkül csak a
+         szolgáltató értesítése megy ki. A levél elakadása a már felvett
+         foglaláson nem változtat. */
+      let mailed = false;
+      if (this.notify) {
+        try {
+          mailed = await this.notify(result.booking);
+        } catch (err) {
+          this.log('  ! a visszaigazoló levél nem ment ki: ' + (err && err.message));
+        }
+      }
+
+      sendJson(res, 201, { ok: true, mailed: mailed === true, booking: result.booking });
+      return true;
+    }
+
+    fail(res, 405, 'Nem támogatott metódus.');
+    return true;
+  }
+
+  /** Foglalás lemondása. */
+  async adminBookingById(req, res, id) {
+    const g = this.guard(req);
+    if (!g.ok) { fail(res, g.status, g.error); return true; }
+
+    if (req.method !== 'DELETE') { fail(res, 405, 'Nem támogatott metódus.'); return true; }
+
+    const result = await booking.remove(id);
+    if (!result.ok) { fail(res, 404, result.error); return true; }
+
+    this.log(`  − foglalás lemondva: ${result.booking.date} ${result.booking.start} · ${result.booking.name}`);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  /** Nyitvatartás, szünetek, szabadnapok. */
+  async adminSchedule(req, res) {
+    if (req.method === 'GET') {
+      const s = this.session(req);
+      if (!s) { fail(res, 401, 'Nincs bejelentkezve.'); return true; }
+
+      const url = new URL(req.url, 'http://localhost');
+      const site = Api.siteOf(url);
+      if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+      sendJson(res, 200, {
+        ok: true,
+        site,
+        schedule: booking.schedule(site),
+        services: booking.services(site),
+        optikaServices: booking.OPTIKA_SERVICES,
+        limits: booking.LIMITS,
+        today: booking.today()
+      });
+      return true;
+    }
+
+    if (req.method === 'PUT') {
+      const g = this.guard(req);
+      if (!g.ok) { fail(res, g.status, g.error); return true; }
+
+      const body = await bodyOrFail(req, res);
+      if (!body) return true;
+
+      const site = booking.SITES.includes(body.site) ? body.site : null;
+      if (!site) { fail(res, 400, 'Ismeretlen terület.'); return true; }
+
+      const result = await booking.saveSchedule(site, body.schedule);
+      if (!result.ok) { fail(res, 400, result.error); return true; }
+
+      this.log(`  ~ nyitvatartás mentve (${site})`);
+      sendJson(res, 200, { ok: true, site, schedule: result.schedule });
       return true;
     }
 

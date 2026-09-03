@@ -2,9 +2,10 @@
    MANULA-OPTIC MED. — helyi kiszolgáló
    ─────────────────────────────────────────────────────────────────────────
    • kiszolgálja a statikus oldalt (választó, masszázs, optika, jogi aloldalak)
-   • POST /api/idopont       — masszázs időpontkérés e-mailben
    • GET  /api/products      — a nyilvános terméklista (az optika oldalhoz)
-   • /admins                 — admin felület (bejelentkezés után termékkezelés)
+   • GET  /api/prices        — a masszázs árlistája
+   • /api/booking/*          — szabad időpontok és foglalás (mindkét oldal)
+   • /admins                 — admin felület (termékek, árak, naptár)
    • /api/admin/*            — védett admin végpontok
    • nincs külső csomag: minden a Node beépített moduljaiból
 
@@ -22,6 +23,7 @@ const path = require('node:path');
 const zlib = require('node:zlib');
 const { sendMail, buildMessage } = require('./smtp');
 const { customerMail, ownerMail } = require('./mail-templates');
+const booking = require('./lib/booking');
 const { Api } = require('./lib/api');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -82,7 +84,11 @@ const api = new Api({
   root: ROOT,
   trustProxy: config.trustProxy,
   defaultAdmin: { username: config.adminUser, password: config.adminPassword },
-  log: (line) => console.log(line)
+  log: (line) => console.log(line),
+  /* Az API menti a foglalást, a levelezés viszont itt él (itt van a
+     beállítás és az SMTP). A visszatérési érték csak annyit mond, sikerült-e
+     — a foglalás sorsát nem befolyásolja. */
+  notify: (saved) => deliver(saved)
 });
 
 /* ── Statikus kiszolgálás ─────────────────────────────────────────────────
@@ -445,158 +451,89 @@ const ADMIN_ROUTES = new Map([
   ['/admins/app.css', 'app.css'],
   ['/admins/app.js', 'app.js'],
   ['/admins/products.js', 'products.js'],
-  ['/admins/prices.js', 'prices.js']
+  ['/admins/prices.js', 'prices.js'],
+  ['/admins/booking.js', 'booking.js']
 ]);
 
 async function serveAdmin(req, res, name) {
   await sendFile(req, res, path.join(ROOT, 'admin', name), { admin: true });
 }
 
-/* ── Egyszerű sebességkorlát az időpontkéréshez: IP-nként 5 kérés / óra ──── */
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  const list = (hits.get(ip) || []).filter((t) => now - t < 3600000);
-  list.push(now);
-  hits.set(ip, list);
-  if (hits.size > 5000) hits.clear();
-  return list.length > 5;
-}
+/* ── Levélküldés a foglalásról (vagy száraz futás fájlba) ─────────────────
+   A foglalás EKKOR MÁR EL VAN MENTVE. Ez a lépés csak értesít: visszaigazolás
+   a vendégnek, jelzés a szolgáltatónak. Ha nincs SMTP-beállítás, a levelek a
+   `server/outbox/` mappába íródnak — így fejlesztés közben is látszik, mi
+   ment volna ki, és a foglalás akkor sem vész el.
 
-/* ── Az űrlap adatainak ellenőrzése ───────────────────────────────────────── */
-function validate(data) {
-  const problems = [];
-  const str = (v) => (typeof v === 'string' ? v.trim() : '');
-
-  if (str(data.name).length < 2) problems.push('név');
-  if (str(data.phone).replace(/\D/g, '').length < 9) problems.push('telefonszám');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str(data.email))) problems.push('e-mail cím');
-  if (!str(data.treatment)) problems.push('kezelés');
-
-  /* Fejlécinjektálás elleni védelem: sortörés nem kerülhet fejlécbe */
-  for (const key of ['name', 'email', 'phone']) {
-    if (/[\r\n]/.test(str(data[key]))) problems.push(key);
-  }
-  if (str(data.message).length > 4000) problems.push('megjegyzés (túl hosszú)');
-
-  return problems;
-}
-
-function clean(data) {
-  const take = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
-  return {
-    name: take(data.name, 120),
-    phone: take(data.phone, 40),
-    email: take(data.email, 160),
-    treatment: take(data.treatment, 80),
-    treatmentKey: take(data.treatmentKey, 40),
-    duration: take(data.duration, 40),
-    date: take(data.date, 60),
-    dateRaw: take(data.dateRaw, 20),
-    time: take(data.time, 20),
-    message: take(data.message, 4000)
+   Hitelesítő adatok nélkül a `dryRun` igaz; ilyenkor a válasz `mailed: false`,
+   és a weboldal ennek megfelelően fogalmaz. */
+async function deliver(saved) {
+  const startMin = booking.toMinutes(saved.start);
+  const data = {
+    id: saved.id,
+    site: saved.site,
+    name: saved.name,
+    phone: saved.phone,
+    email: saved.email,
+    serviceName: saved.serviceName,
+    duration: saved.duration,
+    date: saved.date,
+    start: saved.start,
+    end: booking.toClock(startMin + saved.duration),
+    restEnd: booking.toClock(startMin + saved.duration + saved.buffer),
+    message: saved.message
   };
-}
 
-/* ── Levélküldés (vagy száraz futás fájlba) ───────────────────────────────── */
-async function deliver(data) {
   const forCustomer = customerMail(data, config);
   const forOwner = ownerMail(data, config);
-
-  const messages = [
-    {
-      label: 'vendeg',
-      msg: buildMessage({
-        from: { address: config.from, name: config.fromName },
-        to: [{ address: data.email, name: data.name }],
-        replyTo: { address: config.to || config.from, name: config.fromName },
-        subject: forCustomer.subject,
-        html: forCustomer.html,
-        text: forCustomer.text
-      })
-    },
-    {
-      label: 'masszor',
-      msg: buildMessage({
-        from: { address: config.from, name: config.fromName },
-        to: [{ address: config.to || config.from, name: 'Salvia — időpontkérések' }],
-        /* válaszra egyből a vendégnek megy */
-        replyTo: { address: data.email, name: data.name },
-        subject: forOwner.subject,
-        html: forOwner.html,
-        text: forOwner.text
-      })
-    }
-  ];
+  const brand = require('./mail-templates').brandOf(saved.site);
 
   if (config.dryRun) {
     await fsp.mkdir(OUTBOX, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    await fsp.writeFile(path.join(OUTBOX, `${stamp}-vendeg.html`), forCustomer.html);
-    await fsp.writeFile(path.join(OUTBOX, `${stamp}-masszor.html`), forOwner.html);
+    await fsp.writeFile(path.join(OUTBOX, `${stamp}-${saved.site}-vendeg.html`), forCustomer.html);
+    await fsp.writeFile(path.join(OUTBOX, `${stamp}-${saved.site}-szolgaltato.html`), forOwner.html);
     console.log(`  ✎ száraz futás — a levelek a server/outbox/ mappába kerültek (${stamp})`);
-    return { sent: false, dryRun: true };
+    return false;
   }
+
+  const messages = [];
+
+  /* E-mail cím nélküli (telefonon felvett) foglalásnál nincs kinek írni. */
+  if (data.email) {
+    messages.push({
+      label: 'vendeg',
+      msg: buildMessage({
+        from: { address: config.from, name: brand.fullName },
+        to: [{ address: data.email, name: data.name }],
+        replyTo: { address: config.to || config.from, name: brand.fullName },
+        subject: forCustomer.subject,
+        html: forCustomer.html,
+        text: forCustomer.text
+      })
+    });
+  }
+
+  messages.push({
+    label: 'szolgaltato',
+    msg: buildMessage({
+      from: { address: config.from, name: brand.fullName },
+      to: [{ address: config.to || config.from, name: brand.fullName + ' — foglalások' }],
+      /* válaszra egyből a vendégnek megy */
+      replyTo: data.email
+        ? { address: data.email, name: data.name }
+        : { address: config.to || config.from, name: brand.fullName },
+      subject: forOwner.subject,
+      html: forOwner.html,
+      text: forOwner.text
+    })
+  });
 
   for (const item of messages) {
     await sendMail(config.smtp, item.msg);
     console.log(`  ✓ elküldve (${item.label}) → ${item.msg.envelopeTo.join(', ')}`);
   }
-  return { sent: true, dryRun: false };
-}
-
-/* ── Kérések ──────────────────────────────────────────────────────────────── */
-function readBody(req, limit = 64 * 1024) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on('data', (chunk) => {
-      size += chunk.length;
-      if (size > limit) { reject(new Error('túl nagy kérés')); req.destroy(); return; }
-      chunks.push(chunk);
-    });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
-}
-
-async function handleAppointment(req, res) {
-  if (req.method !== 'POST') {
-    res.writeHead(405, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: false, error: 'csak POST' }));
-    return;
-  }
-
-  const ip = req.socket.remoteAddress || 'ismeretlen';
-  if (rateLimited(ip)) {
-    console.warn(`  ! sebességkorlát: ${ip}`);
-    res.writeHead(429, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: false, error: 'Túl sok kérés. Kérjük, próbálja később.' }));
-    return;
-  }
-
-  try {
-    const raw = await readBody(req);
-    const data = clean(JSON.parse(raw));
-    const problems = validate(data);
-
-    if (problems.length) {
-      console.warn('  ! hiányos űrlap:', problems.join(', '));
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'Hiányos vagy hibás adat: ' + problems.join(', ') }));
-      return;
-    }
-
-    console.log(`\n→ időpontkérés: ${data.name} · ${data.treatment} · ${data.duration}`);
-    const result = await deliver(data);
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, dryRun: result.dryRun }));
-  } catch (err) {
-    console.error('  ✗ hiba:', err.message);
-    res.writeHead(502, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: false, error: 'A levelet nem sikerült elküldeni.' }));
-  }
+  return true;
 }
 
 const server = http.createServer(async (req, res) => {
@@ -626,13 +563,7 @@ const server = http.createServer(async (req, res) => {
     /* 2. Az API (nyilvános terméklista + admin végpontok) */
     if (await api.handle(req, res, url)) return;
 
-    /* 3. A masszázs időpontkérése */
-    if (url.pathname === '/api/idopont') {
-      await handleAppointment(req, res);
-      return;
-    }
-
-    /* 4. Statikus fájlok */
+    /* 3. Statikus fájlok */
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' }).end('405');
       return;

@@ -1270,79 +1270,79 @@ const EYE_HOTSPOTS = [
   // ── BAL FELSŐ SAROK (Top-Left) ──────────────────────────
   {
     id: 'cornea',
-    target: { x: 120, y: 460 },
+    target: { x: 76, y: 460 },
     label: { x: 95, y: 45 },
     side: 'left',
-    svgPath: 'M 195 45 L 85 45 L 85 460 L 120 460'
+    svgPath: 'M 195 45 L 35 45 L 35 460 L 76 460'
   },
   {
     id: 'ciliary',
-    target: { x: 290, y: 310 },
+    target: { x: 266, y: 310 },
     label: { x: 25, y: 130 },
     side: 'left',
-    svgPath: 'M 145 130 L 220 130 L 290 310'
+    svgPath: 'M 145 130 L 205 130 L 266 310'
   },
   {
     id: 'aqueous',
-    target: { x: 175, y: 430 },
+    target: { x: 138, y: 430 },
     label: { x: 25, y: 215 },
     side: 'left',
-    svgPath: 'M 150 215 L 205 215 L 175 430'
+    svgPath: 'M 150 215 L 170 215 L 138 430'
   },
 
   // ── BAL ALSÓ SAROK (Bottom-Left) ────────────────────────
   {
     id: 'iris',
-    target: { x: 215, y: 395 },
+    target: { x: 182, y: 395 },
     label: { x: 25, y: 755 },
     side: 'left',
-    svgPath: 'M 185 755 L 220 755 L 215 395'
+    svgPath: 'M 185 755 L 195 755 L 182 395'
   },
   {
     id: 'pupil',
-    target: { x: 245, y: 495 },
+    target: { x: 216, y: 495 },
     label: { x: 25, y: 840 },
     side: 'left',
-    svgPath: 'M 130 840 L 245 840 L 245 495'
+    svgPath: 'M 130 840 L 216 840 L 216 495'
   },
   {
     id: 'lens',
-    target: { x: 335, y: 485 },
+    target: { x: 316, y: 485 },
     label: { x: 105, y: 925 },
     side: 'left',
-    svgPath: 'M 240 925 L 335 925 L 335 485'
+    svgPath: 'M 240 925 L 316 925 L 316 485'
   },
 
   // ── JOBB FELSŐ SAROK (Top-Right) ────────────────────────
   {
     id: 'sclera',
-    target: { x: 530, y: 125 },
+    target: { x: 533, y: 125 },
     label: { x: 895, y: 45 },
     side: 'right',
-    svgPath: 'M 785 45 L 530 45 L 530 125'
+    svgPath: 'M 785 45 L 533 45 L 533 125'
   },
   {
     id: 'choroid',
-    target: { x: 620, y: 220 },
+    target: { x: 634, y: 220 },
     label: { x: 975, y: 130 },
     side: 'right',
-    svgPath: 'M 870 130 L 710 130 L 620 220'
+    svgPath: 'M 870 130 L 720 130 L 634 220'
   },
   {
     id: 'retina',
-    target: { x: 685, y: 300 },
+    target: { x: 706, y: 300 },
     label: { x: 975, y: 215 },
     side: 'right',
-    svgPath: 'M 855 215 L 760 215 L 685 300'
+    svgPath: 'M 855 215 L 775 215 L 706 300'
   },
 
   // ── JOBB ALSÓ SAROK (Bottom-Right) ──────────────────────
   {
     id: 'macula',
-    target: { x: 720, y: 505 },
+    target: { x: 745, y: 505 },
     label: { x: 975, y: 755 },
     side: 'right',
-    svgPath: 'M 870 755 L 780 755 L 720 505'
+    svgPath: 'M 870 755 L 800 755 L 745 505'
   },
   {
     id: 'vitreous',
@@ -1353,10 +1353,10 @@ const EYE_HOTSPOTS = [
   },
   {
     id: 'optic',
-    target: { x: 840, y: 640 },
+    target: { x: 879, y: 640 },
     label: { x: 885, y: 925 },
     side: 'right',
-    svgPath: 'M 765 925 L 840 925 L 840 640'
+    svgPath: 'M 765 925 L 879 925 L 879 640'
   }
 ];
 
@@ -2192,6 +2192,8 @@ function initBookingSystem() {
   const btnToStep3 = document.getElementById('btn-to-step3');
   const btnBackToStep2 = document.getElementById('btn-back-to-step2');
   const btnCloseBooking = document.getElementById('btn-close-booking');
+  const btnSubmit = document.getElementById('btn-submit-booking');
+  const submitError = document.getElementById('booking-submit-error');
 
   // Naptár elemei
   const prevMonthBtn = document.getElementById('prev-month');
@@ -2218,10 +2220,105 @@ function initBookingSystem() {
   // Aktuálisan megjelenített naptári hónap/év
   let currentCalDate = new Date();
 
+  /* ── A kiszolgáló naptára ───────────────────────────────────────────────
+     Korábban itt egy képlet találta ki, mely órák „foglaltak” — a nap
+     számából és az index háromszorosából. Jól nézett ki, de semmi köze nem
+     volt a valósághoz: ugyanaz az óra két látogatónál is szabadnak látszott,
+     és a foglalás sehol nem jelent meg.
+
+     Most a lista a kiszolgálótól jön. Az összes szabály ott dől el (nyitva
+     tartás, szünetek, szabadnapok, és a két vizsgálat közé kötelezően
+     beszámított 20 perc pihenő), így a felkínált óra ugyanaz, amit a mentés
+     is elfogad. */
+  const OPTIONS = {
+    services: {},        // kulcs → { name, durations }
+    horizonDays: 120,
+    loaded: false
+  };
+
+  const monthCache = new Map();   // 'ÉÉÉÉ-HH|hossz' → napok állapota
+  let slotRequest = 0;            // az elavult válaszok kiszűrésére
+
+  /** A kiválasztott vizsgálat hossza percben. */
+  function currentDuration() {
+    const service = OPTIONS.services[bookingState.service];
+    return service && service.durations.length ? service.durations[0] : 30;
+  }
+
+  /** Date → 'ÉÉÉÉ-HH-NN' helyi idő szerint (a toISOString UTC-re csúsztatna). */
+  function isoDay(date) {
+    const p = (n) => (n < 10 ? '0' : '') + n;
+    return date.getFullYear() + '-' + p(date.getMonth() + 1) + '-' + p(date.getDate());
+  }
+
+  function isoMonth(date) {
+    const p = (n) => (n < 10 ? '0' : '') + n;
+    return date.getFullYear() + '-' + p(date.getMonth() + 1);
+  }
+
+  /** '09:00' + 30 perc → '09:30' */
+  function addMinutes(clock, minutes) {
+    const [h, m] = clock.split(':').map(Number);
+    const total = h * 60 + m + minutes;
+    const p = (n) => (n < 10 ? '0' : '') + n;
+    return p(Math.floor(total / 60) % 24) + ':' + p(total % 60);
+  }
+
+  function apiGet(path) {
+    return fetch(path, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => (data && data.ok ? data : null));
+  }
+
+  /** Vizsgálatok és hosszaik. A kártyák „30 perc” felirata is ebből frissül. */
+  function loadOptions() {
+    if (!window.fetch) return Promise.resolve();
+    return apiGet('/api/booking/options?site=optika')
+      .then((data) => {
+        if (!data || !Array.isArray(data.services)) return;
+        data.services.forEach((service) => {
+          OPTIONS.services[service.key] = { name: service.name, durations: service.durations };
+        });
+        OPTIONS.horizonDays = data.horizonDays || OPTIONS.horizonDays;
+        OPTIONS.loaded = true;
+
+        // A szolgáltatáskártyák időtartama a beállításból, nem kézzel írva
+        document.querySelectorAll('.booking-option-card').forEach((card) => {
+          const input = card.querySelector('input[name="booking-service"]');
+          const label = card.querySelector('.option-duration');
+          const service = input && OPTIONS.services[input.value];
+          if (label && service && service.durations.length) {
+            label.textContent = service.durations[0] + ' perc';
+          }
+        });
+      })
+      .catch(() => { /* marad a HTML-ben lévő alapérték */ });
+  }
+
+  /** Egy hónap napjainak állapota (zárva / szabad / betelt). */
+  function loadMonth(monthKey) {
+    const cacheKey = monthKey + '|' + currentDuration();
+    if (monthCache.has(cacheKey)) return Promise.resolve(monthCache.get(cacheKey));
+    if (!window.fetch) return Promise.resolve(null);
+
+    return apiGet('/api/booking/month?site=optika&month=' + encodeURIComponent(monthKey) +
+      '&service=' + encodeURIComponent(bookingState.service) + '&duration=' + currentDuration())
+      .then((data) => {
+        if (!data || !data.days) return null;
+        monthCache.set(cacheKey, data.days);
+        return data.days;
+      })
+      .catch(() => null);
+  }
+
   // Dialog megnyitása gombokkal
   openButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
+
+      // Lassú induláskor a hosszak még nem érkeztek meg — a naptár egy
+      // rossz sávméretet kérdezne le. Nyitáskor pótoljuk.
+      if (!OPTIONS.loaded) loadOptions().then(() => { if (dialog.open) renderCalendar(); });
 
       resetBooking();
 
@@ -2231,6 +2328,7 @@ function initBookingSystem() {
       if (serviceValue) {
         const radios = form.elements['booking-service'];
         if (radios) radios.value = serviceValue;
+        bookingState.service = serviceValue;
       }
 
       dialog.showModal();
@@ -2259,10 +2357,20 @@ function initBookingSystem() {
 
     // Form errorok levétele
     document.querySelectorAll('.form-group, .form-check-group').forEach(grp => grp.classList.remove('invalid'));
+    showSubmitError('');
 
+    // A naptárat nem itt rajzoljuk: a 2. lépésre lépés úgyis megteszi, és
+    // bezáráskor fölösleges lekérdezést indítana.
     goToStep(1);
-    renderCalendar();
   }
+
+  /* BEZÁRÁSKOR állítunk alaphelyzetbe, nem csak nyitáskor. Az ablakot nem
+     csak a fenti gombok nyitják: a színlátás-teszt eredménye, a
+     szolgáltatásrészletek és a tartalék termékkártyák közvetlenül hívják a
+     `showModal()`-t. Enélkül a következő látogató a LEGUTÓBBI foglalás
+     „Sikeres foglalás!” panelját kapná — most, hogy a foglalás valódi, ez
+     különösen félrevezető lenne. */
+  dialog.addEventListener('close', resetBooking);
 
   // Lépésváltó fő funkció
   function goToStep(stepNum) {
@@ -2308,8 +2416,11 @@ function initBookingSystem() {
   btnToStep2.addEventListener('click', () => {
     // Mentjük a kiválasztott szolgáltatást
     const selectedRadio = form.querySelector('input[name="booking-service"]:checked');
-    if (selectedRadio) {
+    if (selectedRadio && selectedRadio.value !== bookingState.service) {
       bookingState.service = selectedRadio.value;
+      // Más hossz → más szabad órák: a korábbi választás nem vihető át
+      bookingState.date = null;
+      bookingState.time = null;
     }
     goToStep(2);
   });
@@ -2333,14 +2444,26 @@ function initBookingSystem() {
   }
 
   // --- Naptár Generálás ---
+  // A naptár fejlécében önálló címke, ezért nagy kezdőbetűs. Mondat közben
+  // („Szabad időpontok: 2026. október 1.”) a magyar helyesírás kisbetűt kér,
+  // ezért oda a monthLower() alak megy.
   const hungarianMonths = [
     'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
     'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
   ];
 
+  /** A hónap neve mondat közepére: kis kezdőbetűvel. */
+  function monthLower(index) { return hungarianMonths[index].toLowerCase(); }
+
+  /** 'ÉÉÉÉ. hónap N.' — a kiválasztott nap emberi alakja. */
+  function longDay(date) {
+    return date.getFullYear() + '. ' + monthLower(date.getMonth()) + ' ' + date.getDate() + '.';
+  }
+
   function renderCalendar() {
     const year = currentCalDate.getFullYear();
     const month = currentCalDate.getMonth();
+    const monthKey = isoMonth(currentCalDate);
 
     // Hónap és év kiírása
     monthYearLabel.textContent = `${year}. ${hungarianMonths[month]}`;
@@ -2367,34 +2490,28 @@ function initBookingSystem() {
     // 1. Előző hónap utolsó napjai halványan
     for (let i = firstDayIndex; i > 0; i--) {
       const dayNum = prevMonthTotalDays - i + 1;
-      const btn = createDayButton(dayNum, true, true);
-      daysGrid.appendChild(btn);
+      daysGrid.appendChild(createDayButton(dayNum, true, true));
     }
 
     // Aktuális dátum adatai az inaktív napok szűréséhez
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const dayButtons = [];
+
     // 2. Aktuális hónap napjai
     for (let day = 1; day <= totalDays; day++) {
       const thisDayDate = new Date(year, month, day);
-      const dayOfWeek = thisDayDate.getDay(); // 0: Vasárnap
+      const dayIso = isoDay(thisDayDate);
 
-      // Korábbi napok letiltása
-      const isPast = thisDayDate < today;
-
-      // Vasárnap le van tiltva (zárva vagyunk)
-      const isSunday = dayOfWeek === 0;
-
-      const isDisabled = isPast || isSunday;
-
-      const btn = createDayButton(day, false, isDisabled);
+      // A múlt mindenképp kizárt; a többit a kiszolgáló válasza dönti el.
+      // Amíg az meg nem jön, a nap kattintható marad — így lassú hálózaton
+      // sem áll meg a foglalás.
+      const btn = createDayButton(day, false, thisDayDate < today);
+      btn.dataset.date = dayIso;
 
       // Ha ez a nap van kiválasztva, adjuk hozzá a kijelölést
-      if (bookingState.date &&
-        bookingState.date.getDate() === day &&
-        bookingState.date.getMonth() === month &&
-        bookingState.date.getFullYear() === year) {
+      if (bookingState.date && isoDay(bookingState.date) === dayIso) {
         btn.classList.add('selected');
       }
 
@@ -2411,6 +2528,7 @@ function initBookingSystem() {
         validateStep2Button();
       });
 
+      dayButtons.push(btn);
       daysGrid.appendChild(btn);
     }
 
@@ -2418,9 +2536,20 @@ function initBookingSystem() {
     const totalRendered = firstDayIndex + totalDays;
     const remainingCells = 42 - totalRendered;
     for (let day = 1; day <= remainingCells; day++) {
-      const btn = createDayButton(day, true, true);
-      daysGrid.appendChild(btn);
+      daysGrid.appendChild(createDayButton(day, true, true));
     }
+
+    // A zárva tartó és a betelt napok letiltása, amint megjön a válasz
+    loadMonth(monthKey).then((days) => {
+      if (!days || isoMonth(currentCalDate) !== monthKey) return;
+      dayButtons.forEach((btn) => {
+        const info = days[btn.dataset.date];
+        if (!info || info.state === 'free') return;
+        btn.disabled = true;
+        btn.title = info.state === 'closed' ? 'Ezen a napon zárva tartunk' : 'Erre a napra betelt a naptár';
+        btn.classList.add(info.state === 'closed' ? 'is-closed' : 'is-full');
+      });
+    });
 
     // Finom animációs tranzíció befejezése
     requestAnimationFrame(() => {
@@ -2452,20 +2581,37 @@ function initBookingSystem() {
     const today = new Date();
     if (currentCalDate.getFullYear() > today.getFullYear() ||
       (currentCalDate.getFullYear() === today.getFullYear() && currentCalDate.getMonth() > today.getMonth())) {
+      currentCalDate.setDate(1);
       currentCalDate.setMonth(currentCalDate.getMonth() - 1);
       renderCalendar();
     }
   });
 
   nextMonthBtn.addEventListener('click', () => {
+    // A napot előbb 1-re állítjuk: a 31-edikéről a következő hónapra lépés
+    // egyébként átugorhatna egy hónapot (pl. január 31. → március 3.).
+    currentCalDate.setDate(1);
     currentCalDate.setMonth(currentCalDate.getMonth() + 1);
     renderCalendar();
   });
 
-  // --- Idősávok Generálása ---
-  const standardTimeSlots = [
-    '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
-  ];
+  // --- Idősávok: a kiszolgáló szabad kezdései ---
+
+  function slotPlaceholder(message) {
+    slotsContainer.innerHTML = '';
+    const note = document.createElement('p');
+    note.className = 'time-placeholder';
+    note.textContent = message;
+    slotsContainer.appendChild(note);
+  }
+
+  function revealSlots() {
+    requestAnimationFrame(() => {
+      slotsContainer.style.transition = 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      slotsContainer.style.opacity = '1';
+      slotsContainer.style.transform = 'translateY(0)';
+    });
+  }
 
   function renderTimeSlots() {
     // Átmeneti effekt az idősávokhoz
@@ -2473,64 +2619,81 @@ function initBookingSystem() {
     slotsContainer.style.transform = 'translateY(8px)';
     slotsContainer.style.transition = 'none';
 
-    slotsContainer.innerHTML = '';
-
     if (!bookingState.date) {
       selectedDayLabel.textContent = 'Válasszon egy napot';
-      slotsContainer.innerHTML = '<p class="time-placeholder">Kérjük, először kattintson egy napra a naptárban!</p>';
-      
-      requestAnimationFrame(() => {
-        slotsContainer.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
-        slotsContainer.style.opacity = '1';
-        slotsContainer.style.transform = 'translateY(0)';
-      });
+      slotPlaceholder('Kérjük, először kattintson egy napra a naptárban!');
+      revealSlots();
       return;
     }
 
-    const formattedDate = `${bookingState.date.getFullYear()}. ${hungarianMonths[bookingState.date.getMonth()]} ${bookingState.date.getDate()}.`;
-    selectedDayLabel.textContent = `Szabad időpontok: ${formattedDate}`;
+    selectedDayLabel.textContent = 'Szabad időpontok: ' + longDay(bookingState.date);
 
-    // Szimulált véletlenszerű foglalt órák generálása a realisztikusságért
-    // (A nap számából generálunk egy magot, hogy konzisztens maradjon az újrakattintáskor)
-    const daySeed = bookingState.date.getDate();
+    if (!window.fetch) {
+      slotPlaceholder('Az időpontokat nem tudjuk lekérdezni — kérjük, hívjon minket.');
+      revealSlots();
+      return;
+    }
 
-    standardTimeSlots.forEach((slot, index) => {
-      // Pl. a nap száma + az index alapján minden 3. vagy 4. óra foglalt
-      const isBooked = (daySeed + index * 7) % 3 === 0;
+    slotPlaceholder('Szabad időpontok keresése…');
+    revealSlots();
 
-      const label = document.createElement('label');
-      label.className = 'time-slot-label';
+    const dayIso = isoDay(bookingState.date);
+    const duration = currentDuration();
+    const token = ++slotRequest;
 
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'booking-time-slot';
-      input.value = slot;
-      if (isBooked) input.disabled = true;
+    apiGet('/api/booking/availability?site=optika&date=' + encodeURIComponent(dayIso) +
+      '&service=' + encodeURIComponent(bookingState.service) + '&duration=' + duration)
+      .then((data) => {
+        if (token !== slotRequest) return;   // közben másik napra kattintottak
+        if (!data) throw new Error('nincs válasz');
 
-      // Ha ez az idősáv volt kiválasztva
-      if (bookingState.time === slot) {
-        input.checked = true;
-      }
+        slotsContainer.style.opacity = '0';
+        slotsContainer.style.transform = 'translateY(8px)';
+        slotsContainer.style.transition = 'none';
+        slotsContainer.innerHTML = '';
 
-      input.addEventListener('change', () => {
-        bookingState.time = slot;
-        validateStep2Button();
+        if (!data.slots.length) {
+          slotPlaceholder(data.reason || 'Erre a napra nincs szabad időpont.');
+          revealSlots();
+          return;
+        }
+
+        data.slots.forEach((slot) => {
+          const label = document.createElement('label');
+          label.className = 'time-slot-label';
+
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = 'booking-time-slot';
+          input.value = slot;
+          if (bookingState.time === slot) input.checked = true;
+
+          input.addEventListener('change', () => {
+            bookingState.time = slot;
+            validateStep2Button();
+          });
+
+          const inner = document.createElement('div');
+          inner.className = 'time-slot-inner';
+          inner.textContent = slot;
+
+          label.appendChild(input);
+          label.appendChild(inner);
+          slotsContainer.appendChild(label);
+        });
+
+        // A korábban választott óra eltűnhetett a lista frissítésekor
+        if (bookingState.time && data.slots.indexOf(bookingState.time) === -1) {
+          bookingState.time = null;
+          validateStep2Button();
+        }
+        revealSlots();
+      })
+      .catch(() => {
+        if (token !== slotRequest) return;
+        slotPlaceholder('Az időpontokat most nem tudjuk lekérdezni — kérjük, hívjon minket.');
+        revealSlots();
       });
-
-      const inner = document.createElement('div');
-      inner.className = 'time-slot-inner';
-      inner.textContent = slot;
-
-      label.appendChild(input);
-      label.appendChild(inner);
-      slotsContainer.appendChild(label);
-    });
-
-    requestAnimationFrame(() => {
-      slotsContainer.style.transition = 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-      slotsContainer.style.opacity = '1';
-      slotsContainer.style.transform = 'translateY(0)';
-    });
   }
 
   // 2. Lépés Gomb Validáció (Dátum + Idő megléte kell a továbbhaladáshoz)
@@ -2540,6 +2703,13 @@ function initBookingSystem() {
   }
 
   // --- Lépés 3: Form Submit és Validáció ---
+
+  function showSubmitError(message) {
+    if (!submitError) return;
+    submitError.textContent = message;
+    submitError.hidden = !message;
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -2604,14 +2774,75 @@ function initBookingSystem() {
     bookingState.phone = phoneInput.value.trim();
     bookingState.message = messageInput.value.trim();
 
-    // Mentés LocalStorage-ba
-    saveBookingToLocalStorage(bookingState);
+    if (!bookingState.date || !bookingState.time) {
+      showSubmitError('Hiányzik a nap vagy az időpont — kérjük, lépjen vissza és válasszon.');
+      return;
+    }
 
-    // Kártya összesítő kiírása
-    renderSummaryCard();
+    if (!window.fetch) {
+      showSubmitError('Ez a böngésző nem tudja elküldeni a foglalást. Kérjük, hívjon minket: 06 20 972 9122.');
+      return;
+    }
 
-    // Lépés a sikeres panelre
-    goToStep(4);
+    showSubmitError('');
+    btnSubmit.disabled = true;
+    const originalLabel = btnSubmit.textContent;
+    btnSubmit.textContent = 'Foglalás…';
+
+    fetch('/api/booking', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        site: 'optika',
+        serviceKey: bookingState.service,
+        duration: currentDuration(),
+        date: isoDay(bookingState.date),
+        start: bookingState.time,
+        name: bookingState.name,
+        phone: bookingState.phone,
+        email: bookingState.email,
+        message: bookingState.message,
+        terms: true,
+        gdpr: true
+      })
+    })
+      .then((response) => response.json().catch(() => null).then((body) => ({ ok: response.ok, body })))
+      .then((result) => {
+        if (result.body && result.body.ok) {
+          const saved = result.body.booking;
+          bookingState.id = saved.id;
+          bookingState.end = saved.end;
+          bookingState.mailed = result.body.mailed === true;
+
+          // A hónap gyorsítótára elavult: a most lefoglalt sáv már nem szabad
+          monthCache.clear();
+
+          saveBookingToLocalStorage(bookingState);
+          renderSummaryCard();
+          goToStep(4);
+          return;
+        }
+
+        /* Elkelt időpont: nem állítjuk, hogy sikerült. Vissza a naptárhoz,
+           friss listával — így a látogató egy kattintással újra próbálhatja. */
+        const message = (result.body && result.body.error)
+          || 'A foglalást nem sikerült rögzíteni. Kérjük, próbálja újra.';
+        monthCache.clear();
+        bookingState.time = null;
+        showSubmitError(message);
+        goToStep(2);
+        renderTimeSlots();
+        validateStep2Button();
+      })
+      .catch(() => {
+        showSubmitError('Nem értük el a foglalási rendszert, ezért az időpont NINCS lefoglalva. ' +
+          'Kérjük, hívjon minket: 06 20 972 9122.');
+      })
+      .then(() => {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = originalLabel;
+      });
   });
 
   // Élő hibatörlés
@@ -2634,53 +2865,80 @@ function initBookingSystem() {
     }
   }
 
-  // Szolgáltatásnevek magyarítása a visszaigazoláshoz
-  const serviceNames = {
-    'general-exam': 'Komplett Látásvizsgálat',
-    'contact-lens': 'Kontaktlencse Illesztés',
-    'glasses-fitting': 'Szemüvegkészítés Tanácsadás',
-    'glasses-repair': 'Szemüveg Javítás'
-  };
+  function serviceLabel(key) {
+    const known = OPTIONS.services[key];
+    if (known) return known.name;
+    const input = form.querySelector(`input[name="booking-service"][value="${CSS.escape(key)}"]`);
+    const title = input && input.closest('.booking-option-card').querySelector('.option-title');
+    return title ? title.textContent : key;
+  }
 
+  /* Az összegzőkártya kizárólag textContent-tel épül: a vendég által beírt
+     név vagy telefonszám így soha nem értelmeződhet HTML-ként. */
   function renderSummaryCard() {
     const summaryCard = document.getElementById('booking-summary-card');
     if (!summaryCard) return;
 
-    const formattedDate = `${bookingState.date.getFullYear()}. ${hungarianMonths[bookingState.date.getMonth()]} ${bookingState.date.getDate()}.`;
+    const formattedDate = longDay(bookingState.date);
+    const endTime = bookingState.end || addMinutes(bookingState.time, currentDuration());
 
-    summaryCard.innerHTML = `
-      <h4 class="summary-title">Foglalási Adatok</h4>
-      <div class="summary-row">
-        <span class="summary-label">Név:</span>
-        <span class="summary-value">${bookingState.name}</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">Vizsgálat típusa:</span>
-        <span class="summary-value">${serviceNames[bookingState.service]}</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">Időpont:</span>
-        <span class="summary-value">${formattedDate} - ${bookingState.time}</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">Telefonszám:</span>
-        <span class="summary-value">${bookingState.phone}</span>
-      </div>
-    `;
+    summaryCard.innerHTML = '';
+    const title = document.createElement('h4');
+    title.className = 'summary-title';
+    title.textContent = 'Foglalási adatok';
+    summaryCard.appendChild(title);
+
+    [
+      ['Név', bookingState.name],
+      ['Vizsgálat', serviceLabel(bookingState.service)],
+      ['Időpont', `${formattedDate} ${bookingState.time} – ${endTime}`],
+      ['Telefonszám', bookingState.phone],
+      ['Azonosító', bookingState.id || '—']
+    ].forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.className = 'summary-row';
+
+      const key = document.createElement('span');
+      key.className = 'summary-label';
+      key.textContent = label + ':';
+
+      const val = document.createElement('span');
+      val.className = 'summary-value';
+      val.textContent = value;
+
+      row.appendChild(key);
+      row.appendChild(val);
+      summaryCard.appendChild(row);
+    });
+
+    // A visszaigazoló levél csak akkor ígérhető meg, ha tényleg kiment
+    const successText = document.querySelector('#step-panel-4 .success-text');
+    if (successText) {
+      successText.textContent = bookingState.mailed
+        ? 'Köszönjük bizalmát! Időpontját rögzítettük a naptárunkban, a részletekről megerősítő e-mailt küldtünk a megadott címre.'
+        : 'Köszönjük bizalmát! Időpontját rögzítettük a naptárunkban. Kérjük, jegyezze fel az alábbi adatokat.';
+    }
   }
 
   function saveBookingToLocalStorage(state) {
-    const dataToSave = {
-      service: state.service,
-      dateString: state.date.toISOString(),
-      time: state.time,
-      name: state.name,
-      email: state.email,
-      phone: state.phone,
-      message: state.message
-    };
-    localStorage.setItem('lumina_booking', JSON.stringify(dataToSave));
+    try {
+      localStorage.setItem('lumina_booking', JSON.stringify({
+        id: state.id || null,
+        service: state.service,
+        dateString: isoDay(state.date),
+        time: state.time,
+        end: state.end || null,
+        name: state.name,
+        email: state.email,
+        phone: state.phone,
+        message: state.message
+      }));
+    } catch (err) {
+      /* Privát böngészés vagy tele tároló — a foglalás ettől még megvan. */
+    }
   }
+
+  loadOptions();
 }
 
 /* ==========================================================================

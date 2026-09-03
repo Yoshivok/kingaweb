@@ -19,16 +19,20 @@
 
   /* ── 1. KONFIGURÁCIÓ ──────────────────────────────────────────────────── */
 
-  /* Az űrlap ide küldi az adatokat. A projekt saját kiszolgálója
-     (`node server/server.js`) ezen a végponton fogadja, és két levelet küld:
-     visszaigazolást a vendégnek, értesítést a masszőrnek.
-     Ha a végpont nem érhető el (pl. statikus tárhelyen, szerver nélkül),
-     az oldal automatikusan visszaesik a levelezőprogramos útra. */
-  var FORM_ENDPOINT = '/api/idopont';
+  /* Az űrlap ide küldi a foglalást. A projekt saját kiszolgálója
+     (`node server/server.js`) ezen a végponton veszi fel a naptárba, és két
+     levelet küld: visszaigazolást a vendégnek, értesítést a masszőrnek.
+     Ha a végpont nem érhető el (pl. statikus tárhelyen, szerver nélkül), az
+     oldal a levelezőprogramos útra vált — de akkor EGYÉRTELMŰEN közli, hogy
+     az időpont még nincs lefoglalva. */
+  var FORM_ENDPOINT = '/api/booking';
 
   var CONTACT_EMAIL = 'kgmomed@gmail.com';
 
-  /* Szakmailag indokolt kezelési hosszak (szolgaltatasok.md alapján) */
+  /* Szakmailag indokolt kezelési hosszak — TARTALÉK. Élesben a kiszolgáló
+     `/api/booking/options` válasza írja felül (az árlistából származik), így
+     az adminban felvett vagy törölt kezelés azonnal itt is látszik. Ez a
+     lista csak addig él, amíg a válasz megérkezik — és akkor is, ha nem. */
   var TREATMENTS = {
     gyogymasszazs: { name: 'Gyógymasszázs', durations: [30, 45, 60, 90] },
     svedmasszazs: { name: 'Svédmasszázs', durations: [30, 45, 60, 90] },
@@ -43,27 +47,14 @@
     tanacs: { name: 'Nem tudom, kérek javaslatot', durations: [] }
   };
 
-  /* NYITVATARTÁS — az időpontválasztó óralistája EBBŐL készül, tehát csak itt
-     kell átírni (a lábléc, a kapcsolat szekció és a foglalási doboz szövegét
-     viszont kézzel kell utánavezetni).
-       open:  az első felkínált kezdés órája
-       close: a zárás órája — az utolsó felkínált kezdés az ezt megelőző egész
-              óra, mert a záráskor indított kezelés semmiképp nem férne bele
-     EGYELŐRE a nyitvatartáson belül MINDEN egész óra választható: sem a
-     kezelés hossza (30–90 perc), sem a már lefoglalt sávok nem szűkítik a
-     listát. Ezért marad a beküldés időpontKÉRÉS, amit visszahíváskor
-     véglegesítünk — a foglaltság kezelése külön lépés lesz. */
-  var OPENING = {
-    0: null,                   /* vasárnap — zárva */
-    1: { open: 8, close: 19 },
-    2: { open: 8, close: 19 },
-    3: { open: 8, close: 19 },
-    4: { open: 8, close: 19 },
-    5: { open: 8, close: 19 },
-    6: { open: 9, close: 13 }  /* szombat */
-  };
-  /* Amíg nincs dátum kiválasztva, a legbővebb (hétköznapi) lista áll ott. */
-  var OPENING_DEFAULT = OPENING[1];
+  /* A NYITVATARTÁST már nem itt tartjuk. Korábban egy `OPENING` állandó
+     sorolta fel a nyitást és a zárást, és abból készült az óralista — de az
+     nem tudott a foglalt sávokról, a szünetekről és a szabadnapokról, ezért
+     olyan órát is felkínált, ami valójában nem volt szabad. Most a
+     kiszolgáló `/api/booking/availability` válasza adja a listát, ami mind a
+     négyet figyelembe veszi. A nyitvatartás az admin felületen szerkeszthető
+     (a lábléc és a kapcsolat szekció szövegét viszont kézzel kell
+     utánavezetni). */
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) {
@@ -483,7 +474,15 @@
   var yearEl = $('#year');
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
-  /* ── 7–9. IDŐPONTFOGLALÁSI ŰRLAP ──────────────────────────────────────── */
+  /* ── 7–9. IDŐPONTFOGLALÁSI ŰRLAP ────────────────────────────────────────
+     Az űrlap VALÓDI foglalást ad le: a felkínált órák a kiszolgáló naptárából
+     jönnek (`/api/booking/availability`), és a beküldés lefoglalja a sávot.
+     Két időpont közé a kiszolgáló mindig beszámítja a pihenőt — a lista
+     ezért nem óránként lépked, hanem ott kínál kezdést, ahol tényleg van
+     hely (pl. egy 9:00-kor induló 45 perces kezelés után 10:05-kor).
+
+     A SORREND KÖTÖTT: kezelés → hossz → nap → óra. Hossz nélkül nem lehet
+     tudni, mekkora sáv kell, ezért az óralista addig zárva marad. */
   var form = $('#booking-form');
   var result = $('#form-result');
   var treatmentSel = $('#f-treatment');
@@ -492,74 +491,143 @@
 
   var timeSel = $('#f-time');
 
+  /* Az utoljára megkapott naptárválasz — az ellenőrzés is ebből dolgozik,
+     hogy a beküldés ne kínálhasson mást, mint amit a látogató látott. */
+  var slotState = { date: '', duration: 0, slots: [], closed: false, reason: '' };
+  var slotRequest = 0;
+
   /* Helyi (nem UTC) dátum ÉÉÉÉ-HH-NN alakban — a <input type="date"> ezt várja */
   function isoDay(d) {
     var p = function (n) { return (n < 10 ? '0' : '') + n; };
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
   }
 
-  /* A dátumválasztó nem engedi a mai nap előtti dátumot */
+  /* A dátumválasztó nem engedi a mai nap előtti dátumot. A felső határt a
+     kiszolgáló mondja meg (`horizonDays`), amint megjön a beállítás. */
   if (dateInput) {
     var today = new Date();
     dateInput.min = isoDay(today);
-    dateInput.max = isoDay(new Date(today.getTime() + 1000 * 60 * 60 * 24 * 180));
+    dateInput.max = isoDay(new Date(today.getTime() + 1000 * 60 * 60 * 24 * 120));
   }
 
-  /* ── 8b. DÁTUM → VÁLASZTHATÓ IDŐPONTOK ────────────────────────────────────
-     Az óralista a kiválasztott nap nyitvatartásából áll össze (OPENING).
-     A mai napra a már elmúlt órák kimaradnak, vasárnapra pedig nincs mit
-     felkínálni. Dátum nélkül a hétköznapi lista marad. */
-  function hoursFor(dateVal) {
-    var conf = OPENING_DEFAULT;
-
-    if (dateVal) {
-      var day = new Date(dateVal + 'T00:00:00').getDay();
-      conf = OPENING[day];
-    }
-    if (!conf) return [];
-
-    var first = conf.open;
-    /* Mai napra csak a következő egész órától kezdve van értelme kérni */
-    if (dateVal && dateVal === isoDay(new Date())) {
-      first = Math.max(first, new Date().getHours() + 1);
-    }
-
-    var list = [];
-    for (var h = first; h < conf.close; h++) list.push(h);
-    return list;
+  /* A választott hossz percben, vagy 0, ha még nincs. */
+  function chosenDuration() {
+    if (!durationSel) return 0;
+    var value = parseInt(durationSel.value, 10);
+    return isFinite(value) && value > 0 ? value : 0;
   }
 
-  /* '08:00' — a mező értéke; a megjelenő címke vezető nulla nélkül: '8:00' */
-  function hourValue(h) { return (h < 10 ? '0' : '') + h + ':00'; }
+  /* '09:00' → '9:00' — az oldal mindenhol vezető nulla nélkül írja az órákat. */
+  function shortTime(clock) {
+    return String(clock || '').replace(/^0/, '');
+  }
 
-  function fillTimes(keep) {
+  /* A kezdéshez tartozó befejezés: „9:00 – 9:45” */
+  function slotLabel(clock, minutes) {
+    var parts = clock.split(':');
+    var end = (parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)) + minutes;
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return shortTime(clock) + ' – ' + shortTime(p(Math.floor(end / 60)) + ':' + p(end % 60));
+  }
+
+  function setTimePlaceholder(text, disabled) {
+    if (!timeSel) return;
+    timeSel.innerHTML = '';
+    timeSel.appendChild(new Option(text, ''));
+    timeSel.disabled = disabled !== false;
+  }
+
+  /* ── 8b. SZABAD IDŐPONTOK A KISZOLGÁLÓRÓL ────────────────────────────────
+     Minden kérésnek sorszáma van: ha a látogató gyorsan másik napra vált, a
+     korábbi, lassabban megérkező válasz nem írhatja felül a frissebbet. */
+  function loadSlots(keep) {
     if (!timeSel) return;
 
     var previous = keep ? timeSel.value : '';
     var dateVal = dateInput && dateInput.value ? dateInput.value : '';
-    var list = hoursFor(dateVal);
+    var minutes = chosenDuration();
 
+    if (!minutes) {
+      slotState = { date: '', duration: 0, slots: [], closed: false, reason: '' };
+      setTimePlaceholder('Először válasszon kezelést és hosszt');
+      return;
+    }
+    if (!dateVal) {
+      slotState = { date: '', duration: minutes, slots: [], closed: false, reason: '' };
+      setTimePlaceholder('Először válasszon napot');
+      return;
+    }
+
+    if (!window.fetch) {
+      setTimePlaceholder('Az időpontokat nem tudjuk lekérdezni — kérjük, hívjon minket');
+      return;
+    }
+
+    setTimePlaceholder('Szabad időpontok keresése…');
+    var token = ++slotRequest;
+
+    fetch('/api/booking/availability?site=masszazs&date=' + encodeURIComponent(dateVal) +
+      '&duration=' + minutes, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (token !== slotRequest) return;          /* közben másik nap jött */
+        if (!data || !data.ok) throw new Error('rossz válasz');
+
+        slotState = {
+          date: data.date,
+          duration: data.duration,
+          slots: data.slots || [],
+          closed: !!data.closed,
+          reason: data.reason || ''
+        };
+        renderSlots(previous);
+      })
+      .catch(function () {
+        if (token !== slotRequest) return;
+        slotState = { date: dateVal, duration: minutes, slots: [], closed: false, reason: '' };
+        setTimePlaceholder('Az időpontokat most nem tudjuk lekérdezni — kérjük, hívjon minket');
+      });
+  }
+
+  function renderSlots(previous) {
+    if (!timeSel) return;
     timeSel.innerHTML = '';
-    timeSel.appendChild(new Option(
-      list.length
-        ? 'Mindegy / egyeztetés szerint'
-        : 'Erre a napra nem tudunk órát felkínálni — egyeztetés szerint',
-      ''));
 
-    timeSel.disabled = !list.length;
-    list.forEach(function (h) {
-      timeSel.appendChild(new Option(h + ':00', hourValue(h)));
+    if (!slotState.slots.length) {
+      timeSel.appendChild(new Option(
+        slotState.reason || 'Erre a napra nincs szabad időpont', ''));
+      timeSel.disabled = true;
+      var hint = $('#hint-time');
+      if (hint && slotState.reason) hint.textContent = slotState.reason;
+      return;
+    }
+
+    timeSel.disabled = false;
+    timeSel.appendChild(new Option('Válasszon időpontot…', ''));
+    slotState.slots.forEach(function (clock) {
+      timeSel.appendChild(new Option(slotLabel(clock, slotState.duration), clock));
     });
 
-    /* A korábbi választás csak akkor marad meg, ha az új napon is létezik */
-    timeSel.value = previous;
+    /* A korábbi választás csak akkor marad meg, ha még mindig szabad. */
+    timeSel.value = previous || '';
     if (timeSel.selectedIndex < 0) timeSel.value = '';
+
+    var hintEl = $('#hint-time');
+    if (hintEl) {
+      hintEl.textContent = 'A kiválasztott időpont azonnal lefoglalódik. ' +
+        'Két kezelés között 20 perc szünetet tartunk, ezért csak a valóban szabad kezdések látszanak.';
+    }
   }
 
   if (dateInput) {
-    dateInput.addEventListener('change', function () { fillTimes(true); });
+    dateInput.addEventListener('change', function () {
+      clearError(dateInput);
+      loadSlots(true);
+    });
   }
-  fillTimes(true);
 
   /* 8. Kezelés → választható időtartamok */
   function fillDurations(key, keep) {
@@ -572,15 +640,15 @@
       durationSel.appendChild(new Option('Először válasszon kezelést', ''));
       durationSel.disabled = true;
       durationSel.required = true;
+      loadSlots(false);
       return;
     }
 
     if (!conf.durations.length) {
-      /* „Nem tudom, kérek javaslatot” — a hosszt közösen választjuk ki */
-      durationSel.appendChild(new Option('Egyeztetés alapján', 'egyeztetes'));
+      durationSel.appendChild(new Option('Ez a kezelés jelenleg nem foglalható', ''));
       durationSel.disabled = true;
-      durationSel.required = false;
-      durationSel.value = 'egyeztetes';
+      durationSel.required = true;
+      loadSlots(false);
       return;
     }
 
@@ -599,6 +667,7 @@
     if (previous && conf.durations.indexOf(parseInt(previous, 10)) !== -1) {
       durationSel.value = previous;
     }
+    loadSlots(keep === true);
   }
 
   if (treatmentSel) {
@@ -608,6 +677,13 @@
       clearError(treatmentSel);
     });
     fillDurations(treatmentSel.value, false);
+  }
+
+  if (durationSel) {
+    durationSel.addEventListener('change', function () {
+      clearError(durationSel);
+      loadSlots(true);
+    });
   }
 
   /* 7. „Időpontot kérek — …” gombok */
@@ -691,32 +767,21 @@
       'Kérjük, adjon meg egy érvényes e-mail címet.');
     check(treatmentSel, treatmentSel && treatmentSel.value !== '',
       'Válassza ki a kívánt kezelést.');
-    check(durationSel, !durationSel || durationSel.disabled || durationSel.value !== '',
+    check(durationSel, durationSel && !durationSel.disabled && durationSel.value !== '',
       'Válassza ki a kezelés hosszát.');
 
-    if (dateInput && dateInput.value) {
-      var picked = new Date(dateInput.value + 'T00:00:00');
-      var now = new Date(); now.setHours(0, 0, 0, 0);
-      check(dateInput, picked >= now, 'A dátum nem lehet korábbi a mai napnál.');
-      if (picked >= now && picked.getDay() === 0) {
-        setError(dateInput, 'Vasárnap zárva vagyunk — kérjük, válasszon másik napot.');
-        problems.push(dateInput);
-      }
-    } else if (dateInput) {
-      clearError(dateInput);
+    /* A nap és az óra MOST már kötelező: valódi sávot foglalunk le. */
+    check(dateInput, dateInput && dateInput.value !== '',
+      'Válassza ki, melyik napra szeretne jönni.');
+
+    if (dateInput && dateInput.value && slotState.date === dateInput.value && slotState.closed) {
+      setError(dateInput, slotState.reason || 'Ezen a napon zárva tartunk.');
+      problems.push(dateInput);
     }
 
-    /* A listát a fillTimes() már a naphoz igazította; ez az ellenőrzés arra
-       az esetre való, ha a mező értéke mégis kilógna (pl. a böngésző
-       visszaállítja egy régebbi kitöltésből, vagy közben átfordult az óra). */
-    if (timeSel && timeSel.value) {
-      var offered = hoursFor(dateInput && dateInput.value ? dateInput.value : '')
-        .map(hourValue);
-      check(timeSel, offered.indexOf(timeSel.value) !== -1,
-        'Ez az időpont a választott napon kívül esik a nyitvatartáson — kérjük, válasszon másikat.');
-    } else if (timeSel) {
-      clearError(timeSel);
-    }
+    check(timeSel, timeSel && timeSel.value !== '' &&
+      slotState.slots.indexOf(timeSel.value) !== -1,
+      'Válasszon egy szabad időpontot a listából.');
 
     check(contra, contra && contra.checked,
       'A Házirend, az ÁSZF és az egészségügyi feltételek elfogadása a foglalás kötelező feltétele.');
@@ -736,75 +801,78 @@
     });
   }
 
-  /* Összegzés összeállítása */
+  /* A kiszolgálónak küldött foglalás. */
   function collect() {
     var key = treatmentSel ? treatmentSel.value : '';
-    var conf = TREATMENTS[key];
-    var durVal = durationSel ? durationSel.value : '';
-    var duration = (!durVal || durVal === 'egyeztetes')
-      ? 'egyeztetés alapján'
-      : durVal + ' perc';
-
-    var dateVal = dateInput && dateInput.value ? dateInput.value : '';
-    var dateText = 'nincs megadva';
-    if (dateVal) {
-      try {
-        dateText = new Date(dateVal + 'T00:00:00')
-          .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
-      } catch (e) { dateText = dateVal; }
-    }
-
-    /* A mező értéke '08:00'; a levelekbe és az összegzésbe vezető nulla
-       nélkül kerül, ahogy az oldal máshol is írja az órákat. */
-    var timeVal = timeSel && timeSel.value ? timeSel.value.replace(/^0/, '') : '';
-
     return {
+      site: 'masszazs',
+      serviceKey: key,
+      duration: chosenDuration(),
+      date: dateInput && dateInput.value ? dateInput.value : '',
+      start: timeSel && timeSel.value ? timeSel.value : '',
       name: $('#f-name') ? $('#f-name').value.trim() : '',
       phone: $('#f-phone') ? $('#f-phone').value.trim() : '',
       email: $('#f-email') ? $('#f-email').value.trim() : '',
-      treatmentKey: key,
-      treatment: conf ? conf.name : key,
-      duration: duration,
-      date: dateText,
-      dateRaw: dateVal,
-      time: timeVal || 'egyeztetés szerint',
-      message: $('#f-message') ? $('#f-message').value.trim() : ''
+      message: $('#f-message') ? $('#f-message').value.trim() : '',
+      terms: true,
+      gdpr: true
     };
   }
 
-  function buildMailto(data) {
+  /* Az összegzés emberi alakja — ugyanaz a beküldés előtt és után. */
+  function describe(data) {
+    var conf = TREATMENTS[data.serviceKey];
+    var dateText = data.date;
+    try {
+      dateText = new Date(data.date + 'T00:00:00')
+        .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    } catch (e) { /* marad a nyers dátum */ }
+
+    return {
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      treatment: conf ? conf.name : data.serviceKey,
+      duration: data.duration + ' perc',
+      date: dateText,
+      time: data.duration ? slotLabel(data.start, data.duration) : shortTime(data.start),
+      message: data.message
+    };
+  }
+
+  function buildMailto(view) {
     var lines = [
       'Időpontkérés a weboldalról',
       '',
-      'Név: ' + data.name,
-      'Telefon: ' + data.phone,
-      'E-mail: ' + data.email,
-      'Kezelés: ' + data.treatment,
-      'Kezelés hossza: ' + data.duration,
-      'Preferált dátum: ' + data.date,
-      'Preferált időpont: ' + data.time,
+      'Név: ' + view.name,
+      'Telefon: ' + view.phone,
+      'E-mail: ' + view.email,
+      'Kezelés: ' + view.treatment,
+      'Kezelés hossza: ' + view.duration,
+      'Kért nap: ' + view.date,
+      'Kért időpont: ' + view.time,
       '',
       'Megjegyzés:',
-      data.message || '—',
+      view.message || '—',
       '',
       'Az ellenjavallatokat elolvastam és tudomásul vettem.',
       'Az adatkezeléshez hozzájárultam.'
     ];
     return 'mailto:' + CONTACT_EMAIL +
-      '?subject=' + encodeURIComponent('Időpontkérés — ' + data.treatment + ' (' + data.name + ')') +
+      '?subject=' + encodeURIComponent('Időpontkérés — ' + view.treatment + ' (' + view.name + ')') +
       '&body=' + encodeURIComponent(lines.join('\n'));
   }
 
-  function renderSummary(data) {
+  function renderSummary(view) {
     var box = $('#form-result-summary');
     if (!box) return;
     var rows = [
-      ['Név', data.name],
-      ['Telefon', data.phone],
-      ['E-mail', data.email],
-      ['Kezelés', data.treatment],
-      ['Hossz', data.duration],
-      ['Időpont', data.date + ' · ' + data.time]
+      ['Név', view.name],
+      ['Telefon', view.phone],
+      ['E-mail', view.email],
+      ['Kezelés', view.treatment],
+      ['Hossz', view.duration],
+      ['Időpont', view.date + ' · ' + view.time]
     ];
     box.innerHTML = rows.map(function (r) {
       return '<div><span class="k">' + r[0] + '</span><span class="v"></span></div>';
@@ -813,33 +881,38 @@
     $$('.v', box).forEach(function (cell, i) { cell.textContent = rows[i][1]; });
   }
 
-  function showResult(data, sent) {
+  /**
+   * @param {object} view a megjelenítendő összegzés
+   * @param {boolean} booked igaz, ha a kiszolgáló tényleg lefoglalta a sávot
+   * @param {boolean} mailed igaz, ha a visszaigazoló levél is kiment
+   */
+  function showResult(view, booked, mailed) {
     if (!result) return;
     var title = $('#form-result-title');
     var text = $('#form-result-text');
     var actions = $('#form-result-actions');
 
-    if (sent) {
-      if (title) title.textContent = 'Köszönjük, megkaptuk az időpontkérését';
+    if (booked) {
+      if (title) title.textContent = 'Az időpontját lefoglaltuk';
       if (text) {
-        text.textContent = 'Visszaigazoló levelet küldtünk a megadott e-mail címre. ' +
-          'Egy munkanapon belül felvesszük Önnel a kapcsolatot a megadott telefonszámon ' +
-          'vagy e-mailben, és egyeztetjük a pontos időpontot. ' +
-          'Ez a kérés nem jár fizetési kötelezettséggel.';
+        text.textContent = mailed
+          ? 'Visszaigazoló levelet küldtünk a megadott e-mail címre. Az időpont a naptárunkban rögzítve van — ' +
+            'kérjük, néhány perccel a kezdés előtt érkezzen. Ha mégsem tud jönni, hívjon minket legalább 24 órával előre.'
+          : 'Az időpont a naptárunkban rögzítve van. Kérjük, néhány perccel a kezdés előtt érkezzen. ' +
+            'Ha mégsem tud jönni, hívjon minket legalább 24 órával előre.';
       }
       if (actions) actions.innerHTML = '';
     } else {
-      if (title) title.textContent = 'Már csak egy lépés';
+      if (title) title.textContent = 'A foglalást most nem tudtuk rögzíteni';
       if (text) {
-        text.textContent = 'Összeállítottuk az időpontkérését. Kattintson a küldés gombra — ' +
-          'a levelezőprogramja a kitöltött levéllel nyílik meg. Ha inkább telefonon egyeztetne, ' +
-          'hívjon minket nyitvatartási időben.';
+        text.textContent = 'Nem értük el a foglalási rendszert, ezért ez az időpont NINCS lefoglalva. ' +
+          'Küldje el az alábbi levelet, vagy hívjon minket — az időpontot telefonon azonnal rögzítjük.';
       }
       if (actions) {
         actions.innerHTML = '';
         var mail = document.createElement('a');
         mail.className = 'btn btn--primary';
-        mail.href = buildMailto(data);
+        mail.href = buildMailto(view);
         mail.textContent = 'Küldés e-mailben';
         var tel = document.createElement('a');
         tel.className = 'btn btn--ghost';
@@ -850,7 +923,7 @@
       }
     }
 
-    renderSummary(data);
+    renderSummary(view);
     if (form) form.hidden = true;
     result.hidden = false;
     result.focus();
@@ -870,37 +943,73 @@
       }
 
       var data = collect();
+      var view = describe(data);
 
-      if (!FORM_ENDPOINT) {
-        showResult(data, false);
+      if (!window.fetch) {
+        showResult(view, false, false);
         return;
       }
 
       var submitBtn = $('button[type="submit"]', form);
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Küldés…'; }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Foglalás…'; }
 
       fetch(FORM_ENDPOINT, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(data)
       })
         .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          showResult(data, true);
+          return res.json().catch(function () { return null; })
+            .then(function (body) { return { status: res.status, body: body }; });
+        })
+        .then(function (res) {
+          if (res.body && res.body.ok) {
+            showResult(view, true, res.body.mailed === true);
+            return;
+          }
+
+          /* Elkelt időpont vagy visszautasított adat: NEM állítjuk, hogy
+             sikerült. A listát frissítjük, hogy a látogató a friss
+             kínálatból választhasson újra. */
+          var message = (res.body && res.body.error)
+            || 'Ezt az időpontot időközben lefoglalták. Kérjük, válasszon másikat.';
+          setError(timeSel, message);
+          loadSlots(false);
+          if (timeSel) {
+            timeSel.focus();
+            timeSel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+          }
         })
         .catch(function () {
-          /* Ha a szerver nem érhető el, nem állítjuk, hogy elküldtük:
-             átváltunk az e-mailes útra. */
-          showResult(data, false);
+          /* Nincs kapcsolat a kiszolgálóval — átváltunk az e-mailes útra,
+             de egyértelműen közöljük, hogy ez még nem foglalás. */
+          showResult(view, false, false);
         })
         .then(function () {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Időpontkérés elküldése';
+            submitBtn.textContent = 'Időpont lefoglalása';
           }
         });
     });
   }
+
+  /* „Új foglalás indítása” — a visszajelzésből vissza az űrlaphoz. A vendég
+     adatait meghagyjuk (gyakori, hogy ugyanaz a személy foglal még egy
+     időpontot), a napot és az órát viszont nem: azok időközben elkelhettek. */
+  var resetBtn = $('#form-reset');
+  if (resetBtn && form && result) {
+    resetBtn.addEventListener('click', function () {
+      result.hidden = true;
+      form.hidden = false;
+      if (dateInput) dateInput.value = '';
+      loadSlots(false);
+      form.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      if (treatmentSel) treatmentSel.focus({ preventScroll: true });
+    });
+  }
+
 
   /* ── 10. INTERAKTÍV ANATÓMIA & PANASZTÉRKÉP (2-LÉPCSŐS DRILLDOWN) ────────── */
   var FULL_BODY_MAIN_REGIONS = {
@@ -2000,23 +2109,66 @@
     }
   }
 
-  /* A foglalási űrlap választható hosszai: egy kezeléshez pontosan azok a
-     hosszak kérhetők, amelyekhez ár tartozik. */
-  function applyDurations(data) {
-    data.treatments.forEach(function (treatment) {
-      var conf = TREATMENTS[treatment.key];
-      if (!conf) return;
-      conf.durations = data.durations.filter(function (min) {
-        return treatment.prices[min] != null;
-      });
-      conf.prices = treatment.prices;
+  /* ── A foglalási űrlap kínálata ─────────────────────────────────────────
+     Egy kezeléshez pontosan azok a hosszak kérhetők, amelyekhez ár tartozik
+     — és csak azok a kezelések jelennek meg, amelyek egyáltalán szerepelnek
+     az árlistában. Ezt a listát a kiszolgáló állítja össze
+     (`/api/booking/options`), ugyanabból az adatból, amiből a foglalást is
+     ellenőrzi. Korábban a `TREATMENTS` állandó és az árlista két külön
+     karbantartott lista volt: előbb-utóbb olyan kezelést kínált volna az
+     űrlap, amit a naptár nem fogad el. */
+  function applyServices(services) {
+    var byKey = {};
+    services.forEach(function (service) {
+      byKey[service.key] = {
+        name: service.name,
+        durations: service.durations.slice(),
+        prices: service.prices || null
+      };
     });
 
-    /* A hosszválasztó már felépült az induláskori adatokból — újratöltjük,
-       megtartva a látogató esetleges választását. */
-    if (typeof fillDurations === 'function' && treatmentSel) {
-      fillDurations(treatmentSel.value, true);
-    }
+    /* A régi kulcsokat is eldobjuk: ami már nincs az árlistában, az ne
+       maradjon ott a listában sem. */
+    Object.keys(TREATMENTS).forEach(function (key) { delete TREATMENTS[key]; });
+    Object.keys(byKey).forEach(function (key) { TREATMENTS[key] = byKey[key]; });
+
+    if (!treatmentSel) return;
+
+    /* A kezelésválasztó újraépítése. A látogató esetleges választását
+       megtartjuk, ha még mindig létezik. */
+    var previous = treatmentSel.value;
+    treatmentSel.innerHTML = '';
+    treatmentSel.appendChild(new Option('Válasszon kezelést…', ''));
+    services.forEach(function (service) {
+      treatmentSel.appendChild(new Option(service.name, service.key));
+    });
+
+    treatmentSel.value = previous;
+    if (treatmentSel.selectedIndex < 0) treatmentSel.value = '';
+    fillDurations(treatmentSel.value, true);
+  }
+
+  function loadBookingOptions() {
+    if (!window.fetch) return;
+    fetch('/api/booking/options?site=masszazs', {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (!data || !data.ok || !Array.isArray(data.services) || !data.services.length) return;
+        applyServices(data.services);
+
+        /* Meddig lehet előre foglalni — a kiszolgáló mondja meg. */
+        if (dateInput && data.horizonDays) {
+          dateInput.max = isoDay(new Date(Date.now() + data.horizonDays * 86400000));
+        }
+      })
+      .catch(function () {
+        /* Nincs kiszolgáló: marad a HTML-ben lévő lista és a beépített
+           hosszak. Foglalni ilyenkor úgysem lehet — a beküldés az
+           e-mailes útra vált, és ezt meg is mondja a látogatónak. */
+      });
   }
 
   function loadPrices() {
@@ -2026,7 +2178,6 @@
       .then(function (data) {
         if (!data || !data.ok || !Array.isArray(data.treatments) || !data.treatments.length) return;
         renderPriceTable(data);
-        applyDurations(data);
       })
       .catch(function () {
         /* Nincs kiszolgáló vagy nincs hálózat — a HTML-ben lévő tartalék
@@ -2034,6 +2185,7 @@
       });
   }
 
+  loadBookingOptions();
   loadPrices();
 
   // Initialize Anatomy Module

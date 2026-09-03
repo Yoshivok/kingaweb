@@ -12,13 +12,20 @@
   <!-- ═══════════════════════════════════════════════════════════════════════
      MANULA-OPTIC MED. — összekötő (választó) oldal
      ─────────────────────────────────────────────────────────────────────
-     Ez a dokumentum egyben a „keret”, amely három panelt tart egy vízszintes
-     sávban:   [ masszazs/ ]  [ VÁLASZTÓ ]  [ optika/ ]
-     A két kész weboldal <iframe>-ben, külön dokumentumként fut a saját
-     mappájából; a választás csak elcsúsztatja a sávot — nincs újratöltés.
-     A két oldal önmagában is elérhető: /masszazs/ és /optika/
-     ═══════════════════════════════════════════════════════════════════════ -->
+     Egyetlen könnyű lap: kiválasztod az egyik szolgáltatást, és átvisz rá.
 
+     KORÁBBAN ez a lap MINDKÉT teljes weboldalt <iframe>-ben futtatta egy
+     300%-os sávban, hogy a váltás újratöltés nélkül menjen. Ez elvben szép,
+     a gyakorlatban viszont három dokumentumot tartott életben egy fülben,
+     és egy egész gépezetet igényelt hozzá: parkolás, postMessage-hidak,
+     előtöltés-ütemezés, teljesítményszintek, képkocka-mérés. A lassúság és
+     az akadások innen jöttek — nem a díszekből.
+
+     Most a két oldal SAJÁT lapként nyílik meg (/masszazs/, /optika/). A
+     kiválasztott fél felé kicsúszó animáció megmarad, csak utána valódi
+     oldalváltás következik. Nincs iframe, nincs háttérben betöltött oldal,
+     nincs mit szinkronban tartani.
+     ═══════════════════════════════════════════════════════════════════════ -->
   <link rel="canonical" href="https://www.manulaopticmed.hu/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="hu_HU">
@@ -68,21 +75,12 @@
 </script>
 </head>
 
-<body data-view="chooser" class="is-booting">
+<body class="is-booting" data-view="chooser">
 
   <a class="skip-link" href="#valaszto">Ugrás a választóhoz</a>
 
   <div class="stage">
-    <div class="track" id="track">
-
-      <!-- ── BAL PANEL: MASSZÁZS ─────────────────────────────────────────── -->
-      <section class="panel" data-panel="masszazs" aria-label="Salvia Gyógymasszázs">
-        <iframe class="panel__frame" id="frame-masszazs" data-src="masszazs/index.html"
-          title="Salvia Gyógymasszázs — teljes weboldal" tabindex="-1"></iframe>
-      </section>
-
-      <!-- ── KÖZÉPSŐ PANEL: A VÁLASZTÓ ───────────────────────────────────── -->
-      <main class="panel panel--chooser" id="valaszto" data-panel="chooser">
+    <main class="chooser-stage" id="valaszto">
         <div class="chooser">
 
           <!-- Háttérrétegek -->
@@ -92,7 +90,26 @@
              önmagában 26 kép/mp-et vitt el egy alig észrevehető sodródásért.
              Állóként egyszer rajzolódik meg, és utána ingyen van. -->
 
-          <canvas class="particles" id="particles" aria-hidden="true"></canvas>
+          <!-- Lebegő fénypontok. Korábban <canvas> rajzolta őket képkockánként;
+               most tizenhat elem, amit a compositor mozgat — a fő szálon nulla munka. -->
+          <div class="motes" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
 
           <!-- Bal oldali dísz: áramló, testet követő vonalak + nyomáspontok -->
           <svg class="orn orn--left" viewBox="0 0 620 900" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
@@ -196,28 +213,10 @@
           <p class="hint"><span>Válasszon szolgáltatást</span></p>
 
         </div>
-      </main>
-
-      <!-- ── JOBB PANEL: OPTIKA ──────────────────────────────────────────── -->
-      <section class="panel" data-panel="optika" aria-label="Lumina Optika">
-        <iframe class="panel__frame" id="frame-optika" data-src="optika/index.html"
-          title="Lumina Optika — teljes weboldal" tabindex="-1"></iframe>
-      </section>
-
-    </div>
+    </main>
   </div>
 
-  <!-- Visszatérés a választóhoz: mindig a választó felé mutat -->
-  <button class="returntab" id="returntab" type="button" hidden aria-label="Vissza a szolgáltatásválasztóhoz">
-    <span class="returntab__arrow" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-        <path d="M4 12h16M20 12l-6-6M20 12l-6 6" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </span>
-    <span class="returntab__label">Választó</span>
-  </button>
-
-  <!-- Irányított fénysöprés a váltás alatt -->
+  <!-- Irányított fénysöprés a kiválasztott fél felé, kilépéskor -->
   <div class="sweep" id="sweep" aria-hidden="true"></div>
 
   <script src="assets/landing.js"></script>

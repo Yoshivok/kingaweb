@@ -57,7 +57,11 @@ async function startServer() {
       ADMIN_USER: ADMIN.user,
       ADMIN_PASSWORD: ADMIN.pass,
       /* Közvetlen kiszolgálás: a sebességkorlát a valódi IP-t lássa. */
-      TRUST_PROXY: 'false'
+      TRUST_PROXY: 'false',
+      /* A foglalási korlát élesben 10/óra IP-nként. A teszt egyetlen IP-ről
+         adja le az összes próbafoglalást, ezért itt feloldjuk — a korlátot
+         külön vizsgálat nézi, nem az összes többinek kell beleütköznie. */
+      BOOKING_RATE_MAX: '500'
     })
   });
 

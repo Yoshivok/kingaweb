@@ -150,9 +150,9 @@
               </svg>
             </span>
             <span class="chooser-card-name">Lumina Optika</span>
-            <span class="chooser-card-desc">Kiemelt termékek: keretek, napszemüvegek, lencsék,
-              kiegészítők. Fotók, leírások, árak, sorrend.</span>
-            <span class="chooser-card-go">Termékek kezelése &rarr;</span>
+            <span class="chooser-card-desc">Naptár és foglalások, nyitvatartás, szabadnapok —
+              valamint a kiemelt termékek: keretek, napszemüvegek, lencsék, kiegészítők.</span>
+            <span class="chooser-card-go">Naptár és termékek &rarr;</span>
           </a>
 
           <a class="chooser-card" href="#masszazs">
@@ -165,9 +165,9 @@
               </svg>
             </span>
             <span class="chooser-card-name">Salvia Gyógymasszázs</span>
-            <span class="chooser-card-desc">Áraink és időtartamok. A táblázat összegei és a
-              foglalási űrlap választható hosszai.</span>
-            <span class="chooser-card-go">Árak kezelése &rarr;</span>
+            <span class="chooser-card-desc">Naptár és foglalások, nyitvatartás, szabadnapok —
+              valamint az áraink és időtartamaink.</span>
+            <span class="chooser-card-go">Naptár és árak &rarr;</span>
           </a>
         </div>
       </div>
@@ -176,6 +176,11 @@
     <!-- ══════════════════ LUMINA OPTIKA — TERMÉKEK ══════════════════ -->
     <main class="admin-main" id="section-optika" hidden>
       <div class="admin-container">
+
+        <!-- A naptárat az `admin/booking.js` rajzolja ide: foglalások,
+             szabadnapok, állandó szünetek, nyitvatartás. Ugyanez a modul ül a
+             masszázs szekció tetején is, külön példányban. -->
+        <div class="cal-mount" data-site="optika"></div>
 
         <div class="admin-page-head">
           <span class="admin-eyebrow">Exkluzív Választék</span>
@@ -245,6 +250,8 @@
          görgetve — kártyánként viszont minden hossz elfér egymás mellett. -->
     <main class="admin-main" id="section-masszazs" hidden>
       <div class="admin-container">
+
+        <div class="cal-mount" data-site="masszazs"></div>
 
         <div class="admin-page-head">
           <span class="admin-eyebrow">Salvia Gyógymasszázs</span>
@@ -599,7 +606,86 @@
     </form>
   </dialog>
 
-  <!-- ══════════════════ 5. MEGERŐSÍTÉS ══════════════════ -->
+  <!-- ══════════════════ 5. FOGLALÁS FELVÉTELE ══════════════════
+       Telefonon egyeztetett időpont rögzítése. A naptár csak akkor mond
+       igazat, ha a telefonos foglalások is benne vannak — különben a
+       weboldal ugyanazt a sávot még egyszer felkínálná. -->
+  <dialog class="editor-dialog editor-dialog--narrow" id="new-booking-dialog" aria-labelledby="new-booking-title">
+    <form class="editor-form" id="new-booking-form" novalidate>
+      <header class="editor-header">
+        <div>
+          <h2 class="editor-title" id="new-booking-title">Foglalás felvétele</h2>
+          <p class="editor-subtitle">Telefonon egyeztetett időpont rögzítése a naptárban.</p>
+        </div>
+        <button class="icon-btn" type="button" id="new-booking-close" aria-label="Bezárás">&times;</button>
+      </header>
+
+      <div class="editor-body">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="nb-service">Szolgáltatás <span class="required">*</span></label>
+            <select class="field-input" id="nb-service"></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="nb-duration">Hossz <span class="required">*</span></label>
+            <select class="field-input" id="nb-duration"></select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="nb-date">Nap <span class="required">*</span></label>
+            <input class="field-input" type="date" id="nb-date" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="nb-start">Kezdés <span class="required">*</span></label>
+            <input class="field-input" type="time" id="nb-start" step="300" required>
+            <span class="field-hint" id="nb-slot-hint"></span>
+          </div>
+        </div>
+
+        <p class="field-hint">
+          A nyitvatartáson kívülre is felvehet időpontot &mdash; a rendszer csak azt
+          nem engedi, hogy két vendég egymásra kerüljön (a pihenőt is beleszámítva).
+        </p>
+
+        <div class="field">
+          <label class="field-label" for="nb-name">Vendég neve <span class="required">*</span></label>
+          <input class="field-input" type="text" id="nb-name" maxlength="120" required
+            placeholder="Teljes név">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="nb-phone">Telefonszám <span class="required">*</span></label>
+            <input class="field-input" type="tel" id="nb-phone" maxlength="40" placeholder="+36 30 000 0000"
+              required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="nb-email">E-mail cím</label>
+            <input class="field-input" type="email" id="nb-email" maxlength="160" placeholder="Nem kötelező">
+            <span class="field-hint">Ha megadja, a vendég visszaigazoló levelet kap.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="nb-message">Megjegyzés</label>
+          <textarea class="field-input field-textarea" id="nb-message" rows="3" maxlength="2000"
+            placeholder="Panasz, korábbi kezelés, bármi, amit érdemes tudni."></textarea>
+        </div>
+      </div>
+
+      <footer class="editor-footer">
+        <p class="editor-error" id="new-booking-error" role="alert" hidden></p>
+        <div class="editor-footer-actions">
+          <button class="btn btn-ghost" type="button" id="new-booking-cancel">Mégse</button>
+          <button class="btn btn-primary" type="submit">Felvétel a naptárba</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ══════════════════ 6. MEGERŐSÍTÉS ══════════════════ -->
   <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title">
     <div class="confirm-inner">
       <h2 class="confirm-title" id="confirm-title">Biztosan törli?</h2>
@@ -622,6 +708,9 @@
   <script src="/admins/app.js?v=2"></script>
   <script src="/admins/products.js?v=1"></script>
   <script src="/admins/prices.js?v=1"></script>
+  <!-- A naptár mindkét terület tetején megjelenik; nem szekció, hanem kísérő
+       modul: az `admin:section` eseményre ébred. -->
+  <script src="/admins/booking.js?v=1"></script>
 </body>
 
 </html>

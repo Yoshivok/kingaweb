@@ -151,6 +151,8 @@
 
     var field = $('login-username');
     if (field && !field.value) field.focus();
+
+    announceSection('');
   }
 
   function showAdmin(session) {
@@ -270,6 +272,7 @@
       show(back, false);
       document.title = 'Manula-Optic Med. — Adminisztráció';
       window.scrollTo(0, 0);
+      announceSection('');
       return;
     }
 
@@ -288,6 +291,19 @@
         toast('A szerkesztő betöltése nem sikerült.', 'error');
       }
     }
+
+    announceSection(target);
+  }
+
+  /* Szekcióváltás jelzése a KÍSÉRŐ moduloknak.
+     A naptár mindkét területen ott van, de egyik szekciónak sem a
+     „szerkesztője”: nem regisztrálhatja magát `Admin.register`-rel, mert azt
+     már a termékek és az árak foglalják. Ezért esemény: aki érdekelt, arra
+     iratkozik fel, és a váznak nem kell tudnia róla. */
+  function announceSection(id) {
+    document.dispatchEvent(new CustomEvent('admin:section', {
+      detail: { id: id || '', csrf: !!state.csrf }
+    }));
   }
 
   function goTo(id) {
