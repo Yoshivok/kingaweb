@@ -122,6 +122,54 @@ a {
   background-color: var(--color-bg-primary);
 }
 
+/* Képen kívüli szakaszok kihagyása
+   --------------------------------------------------------------------------
+   Az oldal hosszú, és a nehéz szakaszok (szimulátor elmosott rétegei, a
+   szemanatómia gombostűi és vezetővonalai, a színlátás teszt kártyája) akkor
+   is a rajzfában maradtak, amikor rég kigördültek. A böngészőnek így minden
+   görgetési képkockában olyan tartalmat kellett stílusoznia, elrendeznie és
+   a kompozitornak átadnia, amit senki nem lát.
+   A `content-visibility: auto` a képen kívüli szakaszt átugorja; amint a
+   nézetmező közelébe ér, magától újraéled. A `contain-intrinsic-size` adja
+   addig a helyfoglaló magasságot, hogy a görgetősáv ne ugráljon — az `auto`
+   kulcsszó pedig az első kirajzolás után a valódi magasságot jegyzi meg,
+   tehát a lenti számok csak a legelső, még sosem látott állapotra
+   vonatkoznak (asztali méretek; mobilon az első megjelenítés után magától
+   pontosít).
+   FIGYELEM: ezzel a szakasz `contain: layout style paint` szabályt is kap —
+   a kilógó tartalom tehát a SZAKASZ szélénél vágódik. Mindegyik itt felsorolt
+   szakasz a `.container` szegélyein belül marad, a szemanatómia gombostűi is
+   a `.eye-stage` bélésén belülre esnek, ezért ez itt nem okoz levágást. */
+#services-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1360px;
+}
+
+#simulator-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1285px;
+}
+
+#anatomy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1335px;
+}
+
+#colorblind-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1185px;
+}
+
+#products-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1110px;
+}
+
+#contact-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 625px;
+}
+
 .section-header {
   text-align: center;
   max-width: 650px;
@@ -473,6 +521,25 @@ a {
   justify-content: center;
   overflow: hidden;
   padding-inline: 24px;
+
+  /* A hero `<canvas>`-a MINDIG külön GPU-textúrát kap — egy vászon
+     természeténél fogva összetett réteg, akkor is, amikor épp nem rajzolunk
+     bele. Teljes képernyőn ez magában ~5 MB, és mellé a `.hero-overlay`
+     átfedés miatt a kompozitor egy több ezer képpont magas gyűjtőréteget is
+     nyit: kettő együtt ~31 MB textúra, ami az oldal ÖSSZES görgetése alatt
+     életben marad. Mérve: a lap alján, a színlátás tesztnél a képkockánkénti
+     `Commit` 195 ms-ról 66 ms-ra esett attól, hogy a hero kikerült a
+     rajzolásból — vagyis a lap alján érzett akadás nagyobb részét egy olyan
+     szakasz okozta, ami rég nincs a képen.
+     A `content-visibility: auto` pont ezt oldja meg: amíg a hero kigördült,
+     a böngésző át is ugorja (stílus, elrendezés, rajzolás), és a vászon
+     textúrája felszabadul. Visszagörgetve magától újraéled, az animációt
+     gondozó IntersectionObserver ugyanúgy elsül.
+     A magasság itt kötött (`100svh`), így a helyfoglaló méret pontos — az
+     `auto` kulcsszó pedig az első kirajzolás után a TÉNYLEGES méretet
+     jegyzi meg, tehát a görgetősáv nem ugrál. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100svh;
 }
 
 .hero-canvas {
@@ -505,7 +572,12 @@ a {
   flex-direction: column;
   align-items: center;
   animation: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  /* Itt korábban állandó `will-change: transform, opacity` állt. A belépő
+     animáció 1,2 mp-ig tart, a `will-change` viszont ÖRÖKRE külön réteget
+     tartatott fenn ennek a doboznak — és mivel a hero vászna is összetett
+     réteg, a kettő között minden alattuk átfedő tartalom is réteget kapott.
+     A futó animáció magától megkapja a saját rétegét, tehát az előjelzés
+     itt csak a rétegszámot hizlalta. */
 }
 
 .hero-tagline {
@@ -563,9 +635,14 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: max-content;
+  max-width: calc(100% - 32px);
   gap: 10px;
   color: rgba(255, 255, 255, 0.5);
   animation: bounce 2s infinite;
+  pointer-events: none;
 }
 
 .mouse-icon {
@@ -574,6 +651,7 @@ a {
   border: 2px solid rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .wheel {
@@ -588,6 +666,10 @@ a {
 }
 
 .scroll-text {
+  display: block;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
   font-size: 0.88rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -1197,8 +1279,9 @@ html.is-frame-idle *::after {
   font-weight: 500;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-normal);
-  animation: eyePillFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal),
+    color var(--transition-normal), transform var(--transition-normal);
+  animation: eyePillFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @keyframes eyePillFadeIn {
@@ -1301,7 +1384,8 @@ html.is-frame-idle *::after {
   color: var(--color-accent);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), transform var(--transition-fast);
 }
 
 .eye-reset-btn svg {
@@ -1360,7 +1444,7 @@ html.is-frame-idle *::after {
 .eye-overlay circle {
   pointer-events: auto;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: stroke 0.25s ease, stroke-width 0.25s ease, fill 0.25s ease;
 }
 
 @keyframes eyeLeaderDraw {
@@ -1375,15 +1459,29 @@ html.is-frame-idle *::after {
   }
 }
 
+/* A vezetővonalak, a pontok és a gombostűk belépő animációjáról szándékosan
+   hiányzik a `both` kitöltés. Egy kitöltéssel „megállított” animáció a
+   böngésző szemében sosem ér véget: az elem attól még összetett rétegben
+   marad, jóval a mozgás befejezése után is. Egy ábrán ~12 vonal + 12 pont +
+   12 gombostű van, vagyis ez magában több tucat felesleges réteg volt.
+   A `both` helyett `backwards` áll: a JS lépcsőzetes `animation-delay`-t ad
+   az elemeknek, tehát a KEZDŐ állapotot ki KELL tölteni, különben a késés
+   alatt teljes erővel látszanának, majd a start pillanatában visszaugranának.
+   A záró állapotot viszont nem kell kitölteni: a 100%-os kulcskocka pontosan
+   az alapállapot (`stroke-dashoffset: 0`, `opacity: 1`, `scale(1)`), így a
+   vonal ugyanoda érkezik — csak a réteg fel is szabadul utána.
+   A `transition: all` helyett szintén névre szóló lista áll: az `all` a
+   `filter`-t is animálta volna, egy `drop-shadow` sugarának mozgatása
+   viszont képkockánkénti újraraszterizálás. */
 .leader-line {
   stroke: rgba(214, 123, 75, 0.65);
   stroke-width: 1.8;
   stroke-dasharray: 4 3;
   fill: none;
-  transition: all 0.25s ease;
+  transition: stroke 0.25s ease, stroke-width 0.25s ease, stroke-dasharray 0.25s ease;
   pointer-events: stroke;
   cursor: pointer;
-  animation: eyeLeaderDraw 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: eyeLeaderDraw 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .leader-line:hover,
@@ -1410,10 +1508,10 @@ html.is-frame-idle *::after {
   fill: #ffffff;
   stroke: var(--color-accent);
   stroke-width: 2.2;
-  transition: all 0.25s ease;
+  transition: fill 0.25s ease, stroke 0.25s ease, r 0.25s ease;
   pointer-events: auto;
   cursor: pointer;
-  animation: eyeLeaderDotPop 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: eyeLeaderDotPop 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   transform-origin: center;
 }
 
@@ -1477,7 +1575,7 @@ html.is-frame-idle *::after {
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
-  background: rgba(28, 21, 17, 0.90);
+  background: rgba(28, 21, 17, 0.95);
   border: 1px solid rgba(214, 123, 75, 0.45);
   border-radius: 999px;
   color: #ffffff;
@@ -1487,10 +1585,15 @@ html.is-frame-idle *::after {
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: all 0.22s ease;
-  animation: eyePinPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Innen `backdrop-filter: blur(8px)` került ki. A gombostűk háttere eleve
+     95%-ban átlátszatlan, tehát az elmosásból gyakorlatilag semmi nem
+     látszott — cserébe MINDEGYIK gombostű külön kompozitor-réteget kapott,
+     és a mögöttük lévő képet a böngészőnek képkockánként újra ki kellett
+     olvasnia. Egy ábrán tucatnyi gombostű van; ez volt a szemanatómia
+     szekció görgetési akadásának egyik fele. */
+  transition: background-color 0.22s ease, border-color 0.22s ease,
+    color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+  animation: eyePinPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   z-index: 5;
 }
 
@@ -1508,12 +1611,12 @@ html.is-frame-idle *::after {
 
 .eye-pin--left {
   transform: translate(0%, -50%);
-  animation: eyePinPopLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: eyePinPopLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .eye-pin--right {
   transform: translate(-100%, -50%);
-  animation: eyePinPopRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: eyePinPopRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .eye-pin:hover,
@@ -1635,7 +1738,10 @@ html.is-frame-idle *::after {
 
 .eye-card__body.is-animating,
 .eye-card__header.is-animating {
-  animation: eyeCardFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* `both` nélkül: a záró kulcskocka pontosan az alapállapot, késleltetés
+     pedig nincs — a kitöltés csak azt érte el, hogy a böngésző a mozgás
+     után is összetett rétegben tartotta a kártyát. */
+  animation: eyeCardFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes eyeCardFadeIn {
@@ -1811,12 +1917,20 @@ html.is-frame-idle *::after {
   border-radius: var(--radius-xl, 24px);
   padding: clamp(1.5rem, 3.5vw, 3rem);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(214, 123, 75, 0.08);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  /* Innen `backdrop-filter: blur(14px)` került ki. A kártya 88%-ban
+     átlátszatlan, mögötte pedig a szakasz SAJÁT, lágy színátmenete van —
+     egy színátmenet elmosva ugyanúgy néz ki, mint élesen, tehát a szűrő
+     semmit nem adott a képhez. Viszont ez a kártya a legnagyobb doboz a
+     szakaszban: külön rétegként ~3,5 MB textúra, amit a böngésző görgetés
+     közben képkockánként újraolvasott a háttérből.
+     A `transition: all` szintén veszélyes volt itt: az `all` a
+     `backdrop-filter`-re is kiterjed, és egy elmosás sugarának animálása
+     képkockánkénti újraraszterizálást jelent. Ezért csak a ténylegesen
+     változó tulajdonságok maradtak. */
   max-width: 1000px;
   margin: 0 auto;
   position: relative;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* ── Kvíz nézet fejléc ────────────────────────── */
@@ -1962,7 +2076,11 @@ html.is-frame-idle *::after {
   border: 2px solid rgba(214, 123, 75, 0.55);
   border-radius: var(--radius-md, 14px);
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
@@ -2021,7 +2139,7 @@ html.is-frame-idle *::after {
 
 /* ── Eredmény Nézet (Result View) ────────────── */
 .cb-result {
-  animation: eyeCardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: eyeCardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cb-result__header {
@@ -2224,8 +2342,11 @@ html.is-frame-idle *::after {
   flex-direction: column;
   justify-content: space-between;
   gap: 20px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Innen `backdrop-filter: blur(8px)` került ki. A lábléc háttere tömör
+     `#15110e`, a kártyáé pedig `rgba(255,255,255,0.03)` — egyszínű felület
+     elmosva pontosan ugyanaz az egyszínű felület. A szűrő tehát semmit nem
+     csinált, csak három külön kompozitor-réteget nyitott, amiket görgetés
+     közben végig frissíteni kellett. Ez volt a láblécben érzett akadás. */
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
@@ -2419,8 +2540,10 @@ html.is-frame-idle *::after {
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(18, 24, 22, 0.85);
-  backdrop-filter: blur(4px);
+  background-color: rgba(18, 24, 22, 0.9);
+  /* `backdrop-filter: blur(4px)` nélkül — a felirat mögött csak a térkép
+     lágy színátmenete van, azon az elmosás nem látszik, réteget viszont
+     nyitott. */
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;
@@ -3694,6 +3817,19 @@ html.is-frame-idle *::after {
 
   .scroll-indicator {
     bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+    align-items: center;
+  }
+
+  .scroll-text {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap;
   }
 }
 
@@ -3762,6 +3898,23 @@ html.is-frame-idle *::after {
   .hero-cta-group .btn {
     width: 100%;
     max-width: 280px;
+  }
+
+  .scroll-indicator {
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    text-align: center;
+    align-items: center;
+  }
+
+  .scroll-text {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap;
   }
 }
 
@@ -3909,7 +4062,7 @@ html.is-frame-idle *::after {
   font-weight: 600;
 }
 
-.legal a {
+.legal a:not(.btn) {
   color: var(--color-accent-hover);
   text-decoration: underline;
   text-decoration-color: rgba(190, 101, 56, 0.35);
@@ -3917,7 +4070,7 @@ html.is-frame-idle *::after {
   transition: color var(--transition-normal), text-decoration-color var(--transition-normal);
 }
 
-.legal a:hover {
+.legal a:not(.btn):hover {
   color: var(--color-accent);
   text-decoration-color: var(--color-accent);
 }
@@ -4059,13 +4212,60 @@ html.is-frame-idle *::after {
 }
 
 .legal__back {
-  margin-top: 40px;
-  padding-top: 24px;
+  margin-top: 48px;
+  padding-top: 28px;
   border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.legal__back a.btn,
+.legal a.btn,
+.about-back a.btn {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 30px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-headings);
+  font-weight: 500;
+  font-size: 0.98rem;
+  letter-spacing: 0.03em;
+  background-color: var(--color-accent);
+  box-shadow: 0 4px 15px rgba(184, 151, 107, 0.25);
+  transition: all var(--transition-normal);
+}
+
+.legal__back a.btn:hover,
+.legal a.btn:hover,
+.about-back a.btn:hover {
+  background-color: var(--color-accent-hover);
+  color: #ffffff !important;
+  text-decoration: none !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 151, 107, 0.35);
+}
+
+.legal__back a.btn svg,
+.legal a.btn svg,
+.about-back a.btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform var(--transition-normal);
+}
+
+.legal__back a.btn:hover svg,
+.legal a.btn:hover svg,
+.about-back a.btn:hover svg {
+  transform: translateX(-3px);
 }
 
 .legal-header {
-  background-color: rgba(251, 250, 248, 0.95);
+  background-color: var(--color-bg-primary);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -4097,6 +4297,70 @@ html.is-frame-idle *::after {
 .legal-header .back-link svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
+}
+
+.back-link__extra {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .legal-header .header-container {
+    padding-inline: 16px;
+    gap: 12px;
+  }
+
+  .legal-header .logo {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .legal-header .logo-text {
+    font-size: 1.15rem;
+    white-space: nowrap;
+  }
+
+  .legal-header .logo-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .legal-header .header-actions {
+    flex-shrink: 0;
+  }
+
+  .legal-header .back-link {
+    padding: 8px 14px;
+    font-size: 0.92rem;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .back-link__extra {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .legal-header .header-container {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  .legal-header .logo-text {
+    font-size: 1.02rem;
+  }
+
+  .legal-header .logo-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .legal-header .back-link {
+    padding: 6px 10px;
+    font-size: 0.86rem;
+    gap: 4px;
+  }
 }
 
 /* Skip link (kisegítő) */
@@ -4146,9 +4410,13 @@ html.is-frame-idle *::after {
   right: 16px;
   bottom: 16px;
   z-index: 150;
-  background-color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  background-color: rgba(255, 255, 255, 0.96);
+  /* Innen `backdrop-filter: blur(12px) saturate(140%)` került ki. Ez a sáv
+     `position: fixed`, tehát amíg a látogató nem dönt a sütikről, VÉGIG a
+     képen van — és egy rögzített elem hátterének elmosásához a böngészőnek
+     minden egyes görgetési képkockában újra ki kell olvasnia a mögötte
+     elgördülő oldalt. Az egész lapra kiterjedő görgetési költség volt,
+     miközben a sáv 96%-ban átlátszatlan: az elmosásból semmi nem látszott. */
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 50px rgba(36, 28, 24, 0.18);

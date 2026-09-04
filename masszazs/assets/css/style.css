@@ -520,49 +520,264 @@ table { border-collapse: collapse; width: 100%; }
   flex-shrink: 0;
 }
 
+/* Mobil Menü Gomb — az optika stílusával megegyező letisztult 3 vonalas animáció */
+.mobile-nav-toggle,
 .burger {
   display: none;
-  width: 44px; height: 44px;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-md);
-  background: var(--color-bg-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin-right: -6px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 110;
+}
+
+.mobile-nav-toggle span,
+.burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-text-primary);
+  margin-bottom: 5px;
+  transition: all var(--t-base, 0.25s ease);
+}
+
+.mobile-nav-toggle span:last-child,
+.burger span:last-child {
+  margin-bottom: 0;
+}
+
+/* Mobil Nav megnyitva állapot stílusai */
+.mobile-nav-toggle.open span:nth-child(1),
+.burger.open span:nth-child(1),
+.burger[aria-expanded="true"] span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.mobile-nav-toggle.open span:nth-child(2),
+.burger.open span:nth-child(2),
+.burger[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-nav-toggle.open span:nth-child(3),
+.burger.open span:nth-child(3),
+.burger[aria-expanded="true"] span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Mobil Navigáció (Overlay) — az optika stílusával megegyező teljes képernyős,
+   elegáns lebegő panel, finom áttűnéssel */
+.mobile-menu-overlay,
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  background-color: var(--color-bg-primary);
+  z-index: 99;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(var(--header-h) + 16px) 20px 36px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.mobile-nav.open,
+.mobile-menu-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* A süti-sáv `z-index`-e magasabb volt a menüénél; amíg a menü nyitva van, elrejtjük */
+#mobile-nav.open ~ .consent,
+body.is-locked .consent {
+  display: none;
+}
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.65rem;
+  margin-block: auto;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: color var(--t-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link:focus-visible {
+  color: var(--color-accent-deep);
+}
+
+/* Lenyíló almenü a szolgáltatásokhoz / kezelésekhez */
+.mobile-nav__dropdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-nav__dropdown-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   color: var(--color-text-primary);
 }
-.burger__close { display: none; }
-.burger[aria-expanded="true"] .burger__open { display: none; }
-.burger[aria-expanded="true"] .burger__close { display: block; }
 
-.mobile-nav {
-  position: fixed; inset: 0; z-index: 99;
-  padding-top: calc(var(--header-h) + 44px);
-  background: var(--color-bg-primary);
-  overflow-y: auto;
-  animation: fade-in 0.3s var(--ease);
+.mobile-nav__chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--color-accent-deep);
+  transition: transform var(--t-normal, 0.3s ease);
 }
-.mobile-nav[hidden] { display: none; }
-/* A süti-sáv `z-index`-e magasabb a menüénél, ezért ráült a nyitott menüre.
-   Amíg a menü nyitva van (`body.is-locked`), elrejtjük — záráskor visszatér. */
-body.is-locked .consent { display: none; }
-.mobile-nav__inner { padding-bottom: 3rem; }
-.mobile-nav__label {
-  font-size: 0.71rem; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--color-text-secondary);
-  margin: 1.5rem 0 0.7rem;
+
+.mobile-nav__dropdown.is-open .mobile-nav__chevron {
+  transform: rotate(180deg);
 }
-.mobile-nav__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
-.mobile-nav__grid a, .mobile-nav__pages a {
-  display: block; padding: 0.8rem 1rem;
-  background: var(--color-bg-secondary);
+
+.mobile-nav__dropdown-menu {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s ease,
+              margin 0.35s ease;
+  width: 100%;
+  margin-top: 0;
+}
+
+.mobile-nav__dropdown.is-open .mobile-nav__dropdown-menu {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0.9rem;
+}
+
+.mobile-nav__sublist {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--color-accent-light);
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
-  font-size: var(--fs-sm); color: var(--color-text-primary);
+  width: 100%;
+  box-sizing: border-box;
 }
-.mobile-nav__pages { display: grid; gap: 0.4rem; margin-bottom: 1.75rem; }
+
+.mobile-nav__sublink {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 0.96rem;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  text-align: left;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.mobile-nav__sublink:hover,
+.mobile-nav__sublink:focus-visible {
+  background: var(--color-bg-secondary);
+  color: var(--color-accent-deep);
+}
+
+.mobile-nav__sublink .ico {
+  color: var(--color-accent-hover);
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+.mobile-nav__sublink--all {
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--color-border);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-accent-deep);
+  justify-content: center;
+}
+
+.mobile-nav-links .btn-book {
+  width: 100%;
+  padding-block: 0.85rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
 .mobile-nav__phone {
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  margin-top: 1rem; padding: 0.8rem;
-  font-size: var(--fs-sm); color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+
+.mobile-nav__phone:hover,
+.mobile-nav__phone:focus-visible {
+  color: var(--color-accent-deep);
+}
+
+/* Fekvő telefonon vagy alacsony képernyőn szorosabb sorköz */
+@media (max-height: 680px) {
+  .mobile-nav,
+  .mobile-menu-overlay {
+    padding-top: calc(var(--header-h) + 8px);
+    padding-bottom: 20px;
+  }
+
+  .mobile-nav-links {
+    gap: 0.85rem;
+  }
+
+  .mobile-nav-link {
+    font-size: 1.2rem;
+  }
+
+  .mobile-nav__sublink {
+    font-size: 0.88rem;
+    padding: 0.35rem 0.5rem;
+  }
 }
 
 /* ── 6. HERO ───────────────────────────────────────────────────────────────
@@ -2140,7 +2355,91 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   color: var(--color-text-secondary); line-height: 1.55;
 }
 .legal .table-scroll { margin-bottom: 1.25rem; }
-.legal__back { margin-top: 2.75rem; }
+.legal__back {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.legal__back .btn,
+.legal .btn {
+  text-decoration: none !important;
+  color: #fff !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.92rem 1.8rem;
+  border-radius: var(--r-pill);
+  background: var(--color-accent-deep);
+  box-shadow: var(--sh-sm);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.01em;
+  transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-base);
+}
+
+.legal__back .btn:hover,
+.legal .btn:hover {
+  background: var(--color-accent-dark);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: var(--sh-md);
+}
+
+.legal__back .btn .ico,
+.legal .btn .ico {
+  transition: transform var(--t-fast);
+}
+
+.legal__back .btn:hover .ico,
+.legal .btn:hover .ico {
+  transform: translateX(-3px);
+}
+
+.legal-header,
+.header:has(.back-link) {
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 4px 20px -8px rgba(36, 28, 24, 0.12);
+}
+
+.back-link__extra {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .header__inner {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .header .back-link {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .back-link__extra {
+    display: none !important;
+  }
+}
+
+@media (max-width: 540px) {
+  .header .logo__sub {
+    display: none;
+  }
+
+  .header .back-link {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.84rem;
+    gap: 0.4rem;
+  }
+}
 
 /* ── 14b. INTERAKTÍV ANATÓMIA & PANASZTÉRKÉP ──────────────────────────── */
 .anatomy-section {
@@ -2796,7 +3095,7 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
 @media (max-width: 1080px) {
   .nav { display: none; }
   .header__actions { margin-left: auto; }
-  .burger { display: grid; }
+  .burger { display: flex; }
 }
 @media (max-width: 760px) {
   /* keskenyebb kijelzőn kevesebb dísz: a fényudvar visszafogottabb,
@@ -2820,7 +3119,6 @@ html.is-frame-idle *::after { animation-play-state: paused !important; }
   .header__actions .btn--primary { display: none; }
   .treatment__head { flex-direction: column; gap: 1rem; }
   .treatment__alt { display: block; white-space: normal; }
-  .mobile-nav__grid { grid-template-columns: 1fr; }
   .about__caption { margin-top: -2.4rem; padding: 0 1rem; }
   .form-result__summary div { grid-template-columns: 1fr; gap: 0.15rem; }
 }

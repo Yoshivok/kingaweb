@@ -375,44 +375,58 @@
 
       <div class="header__actions">
         <a class="btn btn--primary btn--sm" href="#idopontfoglalas">Időpontfoglalás</a>
-        <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-nav"
+        <button class="burger mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav"
           aria-label="Menü megnyitása">
-          <svg class="ico ico--lg burger__open" aria-hidden="true">
-            <use href="#ico-menu"></use>
-          </svg>
-          <svg class="ico ico--lg burger__close" aria-hidden="true">
-            <use href="#ico-close"></use>
-          </svg>
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Mobil menü -->
-  <div class="mobile-nav" id="mobile-nav" hidden>
-    <nav class="mobile-nav__inner container" aria-label="Mobil menü">
-      <p class="mobile-nav__label">Kezelések</p>
-      <ul class="mobile-nav__grid">
-        <li><a href="#gyogymasszazs">Gyógymasszázs</a></li>
-        <li><a href="#svedmasszazs">Svédmasszázs</a></li>
-        <li><a href="#nyirokmasszazs">Nyirokmasszázs</a></li>
-        <li><a href="#cellulitmasszazs">Cellulitmasszázs</a></li>
-        <li><a href="#szegmentmasszazs">Szegmentmasszázs</a></li>
-        <li><a href="#kotoszoveti-masszazs">Kötőszöveti masszázs</a></li>
-        <li><a href="#szekmasszazs">Székmasszázs</a></li>
-        <li><a href="#arcmasszazs">Arcmasszázs</a></li>
-        <li><a href="#talpmasszazs">Talpmasszázs</a></li>
-      </ul>
-      <p class="mobile-nav__label">Oldalak</p>
-      <ul class="mobile-nav__pages">
-        <li><a href="#rolunk">Rólam — bemutatkozás</a></li>
-        <li><a href="#anatomia">Anatómia &amp; Panasztérkép</a></li>
-        <li><a href="#tudnivalok">Általános tudnivalók</a></li>
-        <li><a href="#araink">Áraink és időtartamok</a></li>
-        <li><a href="#kapcsolat">Elérhetőségek</a></li>
-        <li><a href="../index.html">Vissza a választóhoz</a></li>
-      </ul>
-      <a class="btn btn--primary btn--block" href="#idopontfoglalas">Időpontot kérek</a>
+  <!-- Mobil Navigáció (Overlay) -->
+  <div class="mobile-menu-overlay mobile-nav" id="mobile-nav" aria-hidden="true">
+    <nav class="mobile-nav-links" aria-label="Mobil főmenü">
+      <!-- Lenyíló almenü: Szolgáltatások -->
+      <div class="mobile-nav__dropdown">
+        <button class="mobile-nav-link mobile-nav__dropdown-btn" id="mobile-services-toggle" type="button"
+          aria-expanded="false" aria-controls="mobile-services-menu">
+          Szolgáltatások
+          <svg class="mobile-nav__chevron ico ico--xs" aria-hidden="true">
+            <use href="#ico-chevron"></use>
+          </svg>
+        </button>
+        <div class="mobile-nav__dropdown-menu" id="mobile-services-menu" aria-hidden="true">
+          <ul class="mobile-nav__sublist">
+            <li><a class="mobile-nav__sublink" href="#gyogymasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-gyogy"></use></svg>Gyógymasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#svedmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-sved"></use></svg>Svédmasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#nyirokmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-nyirok"></use></svg>Nyirokmasszázs, drenázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#cellulitmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-cellulit"></use></svg>Cellulitmasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#szegmentmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-szegment"></use></svg>Szegmentmasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#kotoszoveti-masszazs"><svg class="ico" aria-hidden="true"><use href="#ico-kotoszoveti"></use></svg>Kötőszöveti masszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#szekmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-szek"></use></svg>Székmasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#arcmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-arc"></use></svg>Arcmasszázs</a></li>
+            <li><a class="mobile-nav__sublink" href="#talpmasszazs"><svg class="ico" aria-hidden="true"><use href="#ico-talp"></use></svg>Talpmasszázs</a></li>
+            <li>
+              <a class="mobile-nav__sublink mobile-nav__sublink--all" href="#kezelesek">
+                Összes kezelés áttekintése
+                <svg class="ico ico--xs" aria-hidden="true"><use href="#ico-arrow"></use></svg>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <a href="#rolunk" class="mobile-nav-link">Rólam</a>
+      <a href="#anatomia" class="mobile-nav-link">Anatómia</a>
+      <a href="#tudnivalok" class="mobile-nav-link">Tudnivalók</a>
+      <a href="#araink" class="mobile-nav-link">Áraink</a>
+      <a href="#kapcsolat" class="mobile-nav-link">Kapcsolat</a>
+      <a href="../index.html" class="mobile-nav-link">Vissza a választóhoz</a>
+
+      <a class="btn btn--primary btn-book" id="mobile-booking-btn" href="#idopontfoglalas">Időpontfoglalás</a>
+
       <a class="mobile-nav__phone" href="tel:+36205017453">
         <svg class="ico" aria-hidden="true">
           <use href="#ico-phone"></use>

@@ -229,32 +229,77 @@
   }
 
   /* ── 4. MOBIL MENÜ ────────────────────────────────────────────────────── */
-  var burger = $('.burger');
+  var burger = $('.burger') || $('#mobile-nav-toggle');
   var mobileNav = $('#mobile-nav');
 
   function setMobileNav(open) {
     if (!burger || !mobileNav) return;
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
     burger.setAttribute('aria-label', open ? 'Menü bezárása' : 'Menü megnyitása');
-    mobileNav.hidden = !open;
+    burger.classList.toggle('open', open);
+    mobileNav.classList.toggle('open', open);
+    mobileNav.setAttribute('aria-hidden', !open);
     document.body.classList.toggle('is-locked', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+
+    if (!open) {
+      var servicesDropdown = $('.mobile-nav__dropdown');
+      var servicesToggle = $('#mobile-services-toggle');
+      var servicesMenu = $('#mobile-services-menu');
+      if (servicesDropdown) servicesDropdown.classList.remove('is-open');
+      if (servicesToggle) servicesToggle.setAttribute('aria-expanded', 'false');
+      if (servicesMenu) servicesMenu.setAttribute('aria-hidden', 'true');
+    }
   }
 
   if (burger && mobileNav) {
     burger.addEventListener('click', function () {
-      setMobileNav(burger.getAttribute('aria-expanded') !== 'true');
+      var isOpen = burger.classList.contains('open') || burger.getAttribute('aria-expanded') === 'true';
+      setMobileNav(!isOpen);
     });
+
+    // Bármelyik belső linkre koppintva (kezelések, oldalak, foglalás) bezáródik
     $$('a', mobileNav).forEach(function (a) {
       a.addEventListener('click', function () { setMobileNav(false); });
     });
+
+    // Szolgáltatások lenyíló almenü kezelése
+    var servicesToggle = $('#mobile-services-toggle');
+    var servicesDropdown = servicesToggle ? servicesToggle.closest('.mobile-nav__dropdown') : null;
+    var servicesMenu = $('#mobile-services-menu');
+
+    if (servicesToggle && servicesDropdown) {
+      servicesToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var isExpanded = servicesDropdown.classList.toggle('is-open');
+        servicesToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        if (servicesMenu) servicesMenu.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
+      });
+    }
+
+    // A logóra vagy az overlay üres hátterére kattintva is bezáródik
+    var logo = $('.logo');
+    if (logo) {
+      logo.addEventListener('click', function () {
+        if (burger.classList.contains('open')) setMobileNav(false);
+      });
+    }
+    mobileNav.addEventListener('click', function (e) {
+      if (e.target === mobileNav) setMobileNav(false);
+    });
+
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !mobileNav.hidden) {
+      if (e.key === 'Escape' && mobileNav.classList.contains('open')) {
         setMobileNav(false);
         burger.focus();
       }
     });
+
     window.addEventListener('resize', function () {
-      if (window.innerWidth > 1080 && !mobileNav.hidden) setMobileNav(false);
+      if (window.innerWidth > 1080 && mobileNav.classList.contains('open')) {
+        setMobileNav(false);
+      }
     });
   }
 
