@@ -54,17 +54,6 @@
 
   var halves = Array.prototype.slice.call(document.querySelectorAll('.half'));
 
-  /* ── LAPVÁLTÁS: KI ANIMÁL? ───────────────────────────────────────────────
-     Ha a böngésző ismeri a dokumentumok közötti View Transitions-t, ő maga
-     úsztatja át a régi lapot az újba — pillanatkép alapján, a kompozitoron.
-     Ez simább, mint bármi, amit innen időzíthetnénk, és nem is várakoztat:
-     a navigáció azonnal indul. Az átmenet leírása a stíluslapokban van.
-
-     A `pageswap` esemény ugyanabban a körben jelent meg, mint maga a funkció,
-     ezért jó jelzés rá; a `CSS.supports` a második biztosíték. */
-  var nativeTransition = ("onpageswap" in window)
-    && !!(window.CSS && CSS.supports && CSS.supports("view-transition-name: none"));
-
   /* ── EGÉRKÖVETŐ PARALLAX ─────────────────────────────────────────────────
      A `--px/--py` értéket pontosan az a három réteg kapja meg, amelyik mozog
      tőle. Szándékosan NEM a közös szülő: egy egyéni tulajdonság megváltoztatása
@@ -122,61 +111,16 @@
     document.head.appendChild(link);
   }
 
-  /* ── KILÉPÉS (TARTALÉK ÚT) ───────────────────────────────────────────────
-     Csak ott fut, ahol a böngésző nem ismeri a View Transitions-t (ma még a
-     Firefox). A `data-view` átállítása indítja a stíluslapban leírt kicsúszást, a
-     `data-dir` pedig a fénysöprés irányát adja. Az oldalváltás az animáció
-     végén történik.
-
-     A hossz a stíluslapból jön (`--dur-slide`), hogy a kettő ne tudjon
-     elcsúszni egymástól: ha ott átírod, ez magától követi. */
-  var leaving = false;
-
-  function slideDuration() {
-    var raw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--dur-slide').trim();
-    var ms = raw.slice(-2) === 'ms' ? parseFloat(raw) : parseFloat(raw) * 1000;
-    return (isFinite(ms) && ms > 0) ? ms : 620;
-  }
-
-  function leave(target, href) {
-    if (leaving) return;
-    leaving = true;
-
-    body.dataset.dir = (target === 'optika') ? 'left' : 'right';
-    body.dataset.view = target;
-    body.classList.add('is-moving');
-
-    /* A `transitionend` a pontos jelzés, de nem mindig érkezik meg (megszakadó
-       átmenet, háttérbe tett fül). Az időzítő a biztosíték: a látogató nem
-       ragadhat itt egy félbemaradt animációval. */
-    var done = false;
-    function navigate() {
-      if (done) return;
-      done = true;
-      location.href = href;
-    }
-
-    var chooser = document.querySelector('.chooser');
-    if (chooser) {
-      chooser.addEventListener('transitionend', function (e) {
-        if (e.propertyName === 'opacity') navigate();
-      });
-    }
-    setTimeout(navigate, slideDuration() + 60);
-  }
-
-  var isTouch = !window.matchMedia('(hover: hover)').matches;
+  var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   halves.forEach(function (half) {
     var target = half.getAttribute('data-target');
     var href = half.href || half.getAttribute('href');
 
-    /* Egérrel rendelkező asztali eszközökön: hover állapot és előtöltés.
-       Érintőkijelzőkön (iOS Safari, Android) szándékosan NEM figyelünk a
-       pointerenter-re, mert az iOS Safari a hover-animációt kiváltó érintést
-       „lebegtetésként” kezeli, és elnyeli (nem küld click eseményt). */
-    if (!isTouch) {
+    /* Egérrel rendelkező eszközökön: lebegés jelzése és előtöltés.
+       Érintőkijelzőkön (telefon, tablet) szándékosan NEM figyelünk pointerenter-re,
+       hogy a mobil Safari / Chrome soha ne kezelhesse lebegtetésként az érintést. */
+    if (canHover) {
       ['pointerenter', 'focus'].forEach(function (evt) {
         half.addEventListener(evt, function () {
           prefetch(href);
@@ -188,30 +132,21 @@
         half.addEventListener(evt, function () { delete body.dataset.hover; });
       });
     } else {
+      /* Érintőkijelzőn az ujj hozzáérésekor azonnal indul a háttérbeli prefetch */
       half.addEventListener('touchstart', function () {
         prefetch(href);
       }, { passive: true });
     }
 
+    /* Kattintáskor / koppintáskor azonnali vizuális visszajelzés.
+       SZÁNDÉKOSAN NINCS e.preventDefault()!
+       A böngésző natívan, megbízhatóan és azonnal követi a hivatkozást (<a href="...">),
+       így semmilyen időzítő, in-app webview vagy felugró-védelem nem akaszthatja meg. */
     half.addEventListener('click', function (e) {
-      /* Középső gomb vagy módosítóbillentyű: hagyjuk a böngészőre, hadd
-         nyíljon új lapon. */
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-
-      /* Érintőkijelzőkön (telefon, tablet), csökkentett mozgásnál, vagy natív
-         View Transitions támogatásnál NEM tiltjuk le az alapértelmezett navigációt
-         (nincs e.preventDefault()). A böngésző azonnal és natívan átvált az oldalra,
-         nem ragadhat be időzítő vagy webview-korlátozás miatt. */
-      if (isTouch || reduced || nativeTransition) {
-        body.dataset.dir = (target === 'optika') ? 'left' : 'right';
-        body.dataset.view = target;
-        body.classList.add('is-moving');
-        return;
-      }
-
-      /* Csak asztali gépen, natív View Transitions nélkül: saját kicsúszó animáció */
-      e.preventDefault();
-      leave(target, href);
+      body.dataset.dir = (target === 'optika') ? 'left' : 'right';
+      body.dataset.view = target;
+      body.classList.add('is-moving');
     });
   });
 

@@ -562,22 +562,19 @@ body.fx-high[data-hover="optika"] .seam__line {
   background: radial-gradient(115% 95% at 94% 50%, rgba(214, 123, 75, 0.4), rgba(214, 123, 75, 0) 64%);
 }
 
-.half:hover .half__wash,
 .half:focus-visible .half__wash {
   opacity: 1;
 }
 
-/* A nem választott fél halkul.
-   Korábban `filter: saturate(0.45)` is járt hozzá, 0,7 mp-es átmenettel. Egy
-   FÉL KÉPERNYŐNYI elemen animált `filter` ugyanaz a hazárd, amit a lap
-   fejléce tilt: a böngészőnek külön rajzfelületet kell nyitnia, azt
-   képkockánként újraraszterizálnia, majd az átmenet végén eldobnia — és ez
-   minden egyes egérmozdulatra megismétlődik, miközben a részecskevászon is
-   fut. Gyengébb GPU-n itt villan fekete a lap. Az `opacity` egyedül is
-   megadja a halkulást, azt pedig a kompozitor újrarajzolás nélkül intézi. */
-body[data-hover="masszazs"] .half--optics,
-body[data-hover="optika"] .half--massage {
-  opacity: 0.32;
+@media (hover: hover) and (pointer: fine) {
+  .half:hover .half__wash {
+    opacity: 1;
+  }
+
+  body[data-hover="masszazs"] .half--optics,
+  body[data-hover="optika"] .half--massage {
+    opacity: 0.32;
+  }
 }
 
 .half__inner {
@@ -602,12 +599,14 @@ body[data-hover="optika"] .half--massage {
   align-items: flex-end;
 }
 
-.half--massage:hover .half__inner {
-  transform: translateX(-10px);
-}
+@media (hover: hover) and (pointer: fine) {
+  .half--massage:hover .half__inner {
+    transform: translateX(-10px);
+  }
 
-.half--optics:hover .half__inner {
-  transform: translateX(10px);
+  .half--optics:hover .half__inner {
+    transform: translateX(10px);
+  }
 }
 
 .half__eyebrow {
@@ -635,8 +634,10 @@ body[data-hover="optika"] .half--massage {
   flex-direction: row-reverse;
 }
 
-.half:hover .half__eyebrow::before {
-  width: clamp(34px, 5vw, 74px);
+@media (hover: hover) and (pointer: fine) {
+  .half:hover .half__eyebrow::before {
+    width: clamp(34px, 5vw, 74px);
+  }
 }
 
 .half__title {
@@ -650,9 +651,11 @@ body[data-hover="optika"] .half--massage {
   transition: color 0.6s ease, text-shadow 0.6s ease;
 }
 
-.half--massage:hover .half__title,
-.half--optics:hover .half__title {
-  color: #fdf1e8;
+@media (hover: hover) and (pointer: fine) {
+  .half--massage:hover .half__title,
+  .half--optics:hover .half__title {
+    color: #fdf1e8;
+  }
 }
 
 /* A cím fényudvara csak erős gépen.
@@ -722,21 +725,6 @@ body.fx-high .half--optics:hover .half__title {
   transition: transform 0.85s var(--ease-out);
 }
 
-.half:hover .half__cta::before {
-  transform: translateX(130%);
-}
-
-/* Ugyanaz a színátmenet-forma, mint az alaphelyzetben: két azonos felépítésű
-   `linear-gradient` között a böngésző lágyan átvált — színátmenet és sima
-   szín között viszont ugrana. */
-.half--massage:hover .half__cta,
-.half--optics:hover .half__cta {
-  border-color: rgba(214, 123, 75, 0.8);
-  background: linear-gradient(180deg,
-      rgba(214, 123, 75, 0.24),
-      rgba(214, 123, 75, 0.13));
-}
-
 .half__cta-arrow {
   display: inline-flex;
   width: 20px;
@@ -749,12 +737,26 @@ body.fx-high .half--optics:hover .half__title {
   height: 100%;
 }
 
-.half--massage:hover .half__cta-arrow {
-  transform: translateX(-5px);
-}
+@media (hover: hover) and (pointer: fine) {
+  .half:hover .half__cta::before {
+    transform: translateX(130%);
+  }
 
-.half--optics:hover .half__cta-arrow {
-  transform: translateX(5px);
+  .half--massage:hover .half__cta,
+  .half--optics:hover .half__cta {
+    border-color: rgba(214, 123, 75, 0.8);
+    background: linear-gradient(180deg,
+        rgba(214, 123, 75, 0.24),
+        rgba(214, 123, 75, 0.13));
+  }
+
+  .half--massage:hover .half__cta-arrow {
+    transform: translateX(-5px);
+  }
+
+  .half--optics:hover .half__cta-arrow {
+    transform: translateX(5px);
+  }
 }
 
 /* ── 7. KÖZÉPSŐ LOGÓMEDÁL ──────────────────────────────────────────────── */
