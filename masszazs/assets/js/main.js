@@ -258,9 +258,43 @@
       setMobileNav(!isOpen);
     });
 
-    // Bármelyik belső linkre koppintva (kezelések, oldalak, foglalás) bezáródik
+    // Bármelyik belső linkre koppintva (kezelések, oldalak, foglalás) bezáródik és odagörget
     $$('a', mobileNav).forEach(function (a) {
-      a.addEventListener('click', function () { setMobileNav(false); });
+      a.addEventListener('click', function (e) {
+        var href = a.getAttribute('href');
+        if (!href) return;
+
+        // Ha külső vagy relatív oldal link (pl. ../index.html), engedjük a normál navigációt
+        if (!href.startsWith('#')) {
+          setMobileNav(false);
+          return;
+        }
+
+        e.preventDefault();
+        var targetId = href.slice(1);
+        setMobileNav(false);
+
+        // Hash beállítása
+        if (window.location.hash !== href) {
+          window.location.hash = href;
+        } else {
+          window.dispatchEvent(new Event('hashchange'));
+        }
+
+        // Késleltetett finom görgetés a célponthoz a menü bezárulása és a feloldás után
+        setTimeout(function () {
+          var targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({
+              behavior: reduceMotion ? 'auto' : 'smooth',
+              block: 'start'
+            });
+            if (typeof targetEl.focus === 'function') {
+              targetEl.focus({ preventScroll: true });
+            }
+          }
+        }, 80);
+      });
     });
 
     // Szolgáltatások lenyíló almenü kezelése
