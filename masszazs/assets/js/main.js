@@ -360,17 +360,198 @@
     revealables.forEach(function (el) { revealObserver.observe(el); });
   }
 
-  /* ── 5b. HERO: SZÜNETELTETÉS + MUTATÓT KÖVETŐ FÉNY ────────────────────── */
-  /* A háttéranimációk alapból futnak (CSS); a JS csak leállítja őket, ha a
+  /* ── 5b. HERO: SZÜNETELTETÉS + ÉLŐ ENERGIA + KATTINTÁSI WOW-EFFEKT ──────── */
+  /* A háttéranimációk alapból futnak (CSS + Canvas); a JS leállítja őket, ha a
      hero kigördült a képből vagy a fül háttérbe került — így nem fogyaszt
      CPU-t akkor, amikor senki nem látja. */
   var heroEl = $('.hero');
 
   if (heroEl) {
     var heroVisible = true;
+    var heroHands = $('#heroHands', heroEl) || $('.hero__hands', heroEl);
+    var canvas = $('#heroEnergyCanvas', heroEl);
+    var handsSvg = $('.hero-hands__svg', heroEl);
 
+    /* ── A kezek belépő és nyugalmi állapota ── */
+    if (heroHands) {
+      heroHands.addEventListener('animationend', function (ev) {
+        if (ev.animationName === 'hand-enter-left' || ev.animationName === 'hand-enter-right') {
+          heroHands.classList.remove('is-animating');
+          heroHands.classList.add('is-settled');
+        }
+      });
+      /* Tartalék, ha a fül háttérben nyílt meg és nem futott le az animationend */
+      setTimeout(function () {
+        if (heroHands.classList.contains('is-animating')) {
+          heroHands.classList.remove('is-animating');
+          heroHands.classList.add('is-settled');
+        }
+      }, 2600);
+    }
+
+    /* ── Hero doboz méretek gyorsítótárazása ── */
+    var box = null;
+    var dropBox = function () {
+      box = null;
+      orbCenter = null;
+    };
+    var readBox = function () {
+      if (!box) box = heroEl.getBoundingClientRect();
+      return box;
+    };
+    window.addEventListener('scroll', dropBox, { passive: true });
+    window.addEventListener('resize', dropBox, { passive: true });
+    window.addEventListener('load', dropBox);
+
+    var isFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+    /* ── Életenergia részecske motor (Könnyed Canvas, 0% CPU overhead) ── */
+    var animId = 0;
+    var particles = [];
+    var PARTICLE_COUNT = 16;
+    var lastW = 0, lastH = 0;
+    var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+    var dpr = 1;
+
+    /* A kezek közötti érintési fénygömb (bogyó) és közelségérzékelés */
+    var touchWrap = $('.hand__touch-glow-wrap', heroEl);
+    var orbCenter = null;
+    var isNearHands = false;
+
+    var readOrbCenter = function () {
+      if (!orbCenter) {
+        if (touchWrap) {
+          var r = touchWrap.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) {
+            orbCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            return orbCenter;
+          }
+        }
+        if (handsSvg) {
+          var hr = handsSvg.getBoundingClientRect();
+          if (hr.width > 0 && hr.height > 0) {
+            orbCenter = { x: hr.left + hr.width * (605 / 1200), y: hr.top + hr.height * (458 / 700) };
+            return orbCenter;
+          }
+        }
+      }
+      return orbCenter;
+    };
+
+    /* Meleg, arany és gyógyító terrakotta paletta */
+    var palette = [
+      'rgba(246, 231, 203, ',  /* pezsgőarany */
+      'rgba(232, 202, 164, ',  /* homokarany */
+      'rgba(220, 165, 103, ',  /* mézarany */
+      'rgba(214, 123, 75, ',   /* meleg terrakotta */
+      'rgba(255, 246, 229, '   /* ragyogó fehérarany */
+    ];
+
+    var resizeCanvas = function () {
+      if (!canvas || !ctx) return;
+      var b = readBox();
+      if (b.width === lastW && b.height === lastH) return;
+      lastW = b.width;
+      lastH = b.height;
+      canvas.width = Math.round(b.width * dpr);
+      canvas.height = Math.round(b.height * dpr);
+      canvas.style.width = b.width + 'px';
+      canvas.style.height = b.height + 'px';
+
+      /* Részecskék inicializálása (gép nézetben több fénypont a széles térben) */
+      var targetCount = (b.width >= 1200) ? 26 : 16;
+      if (particles.length < targetCount) {
+        var needed = targetCount - particles.length;
+        for (var i = 0; i < needed; i++) {
+          particles.push({
+            x: Math.random() * b.width,
+            y: Math.random() * b.height,
+            vx: (Math.random() - 0.5) * 0.18,
+            vy: -(Math.random() * 0.32 + 0.16), /* lágy felfelé áramlás */
+            r: Math.random() * 1.5 + 0.9,
+            baseAlpha: Math.random() * 0.35 + 0.15,
+            alpha: 0.25,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.014 + 0.007,
+            color: palette[Math.floor(Math.random() * palette.length)]
+          });
+        }
+      }
+    };
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+
+    /* ── A KEZEK KÖZÖTTI BOGYÓ FELVILLANTÁSA (KATTINTÁSKOR ÉS KÖZELÍTÉSKOR) ── */
+    var triggerOrbFlash = function () {
+      if (heroHands) {
+        heroHands.classList.add('is-near');
+        heroHands.classList.remove('is-resonating');
+        void heroHands.offsetWidth;
+        heroHands.classList.add('is-resonating');
+        clearTimeout(heroHands._resTimer);
+        heroHands._resTimer = setTimeout(function () {
+          heroHands.classList.remove('is-resonating');
+          if (!isNearHands) {
+            heroHands.classList.remove('is-near');
+          }
+        }, 850);
+      }
+    };
+
+    /* ── Kattintás / érintés esemény a teljes Hero-n ── */
+    heroEl.addEventListener('pointerdown', function (ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('a, button, input, textarea')) return;
+
+      /* Kattintáskor a kezek közötti bogyó villan fel (kattintás helyére nem kerül semmilyen effekt) */
+      triggerOrbFlash();
+    }, { passive: true });
+
+    /* ── Animációs ciklus (Tiszta, akadásmentes 60fps részecske lebegés) ── */
+    var loop = function () {
+      if (!heroVisible || !isLive()) {
+        animId = 0;
+        return;
+      }
+
+      var b = readBox();
+      if (!lastW || !lastH) resizeCanvas();
+
+      if (ctx && !reduceMotion) {
+        ctx.clearRect(0, 0, b.width, b.height);
+
+        for (var i = 0; i < particles.length; i++) {
+          var p = particles[i];
+          p.phase += p.speed;
+          p.alpha = p.baseAlpha + Math.sin(p.phase) * 0.12;
+          p.x += p.vx + Math.sin(p.phase * 0.7) * 0.14;
+          p.y += p.vy;
+
+          if (p.y < -12) { p.y = b.height + 12; p.x = Math.random() * b.width; }
+          if (p.x < -12) p.x = b.width + 12;
+          if (p.x > b.width + 12) p.x = -12;
+
+          var a = Math.max(0.02, Math.min(0.65, p.alpha));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + a.toFixed(3) + ')';
+          ctx.fill();
+        }
+      }
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    /* ── Megjelenés- és fül-szinkronizálás (Erőforráskímélő) ── */
     var syncHeroMotion = function () {
-      heroEl.classList.toggle('is-paused', !heroVisible || !isLive());
+      var isLiveNow = heroVisible && isLive();
+      heroEl.classList.toggle('is-paused', !isLiveNow);
+
+      if (isLiveNow && !animId) {
+        resizeCanvas();
+        animId = requestAnimationFrame(loop);
+      } else if (!isLiveNow && animId) {
+        cancelAnimationFrame(animId);
+        animId = 0;
+      }
     };
     frameHooks.push(syncHeroMotion);
 
@@ -382,82 +563,33 @@
     }
     document.addEventListener('visibilitychange', syncHeroMotion);
 
-    /* A fénykör és a fényudvar-eltolás csak egeres/trackpados eszközön él:
-       érintésen nincs mutató, a mozgásra érzékeny látogatóknál pedig kimarad. */
-    if (!reduceMotion && window.matchMedia('(pointer: fine)').matches) {
-      var gx = 0, gy = 0, aimGX = 0, aimGY = 0, frame = 0;
-
-      /* A --tx/--ty a fénykörre, a --px/--py a fényudvarra kerül — NEM a
-         .hero-ra. Az egyéni tulajdonság öröklődik: a .hero-ra írva a
-         böngészőnek a hero EGÉSZ részfáját (címsor, bekezdések, gombok) újra
-         kellett stílusoznia minden képkockában, amíg az egér mozgott. Elemre
-         szűkítve képkockánként két elem stílusa számolódik újra, a transformot
-         pedig onnantól tisztán a kompozitor intézi. */
-      var touchEl = $('.hero__touch', heroEl);
-      var haloEl = $('.hero__halo', heroEl);
-
-      /* A hero dobozát egyszer olvassuk ki, és csak görgetéskor, átméretezéskor
-         vagy betöltés után dobjuk el. A getBoundingClientRect() KIKÉNYSZERÍTI
-         az elrendezés újraszámolását: minden egérmozgás-eseménynél meghívva
-         (nem képkockánként — eseményenként!) ez volt a hero legdrágább főszálas
-         tétele, és a kihagyott képkockák pont ilyenkor sűrűsödtek. */
-      var box = null;
-      var dropBox = function () { box = null; };
-      var readBox = function () {
-        if (!box) box = heroEl.getBoundingClientRect();
-        return box;
-      };
-      window.addEventListener('scroll', dropBox, { passive: true });
-      window.addEventListener('resize', dropBox, { passive: true });
-      window.addEventListener('load', dropBox);
-
-      var placeTouch = function () {
-        if (!touchEl) return;
-        touchEl.style.setProperty('--tx', gx.toFixed(1) + 'px');
-        touchEl.style.setProperty('--ty', gy.toFixed(1) + 'px');
-      };
-
-      var draw = function () {
-        gx += (aimGX - gx) * 0.09;
-        gy += (aimGY - gy) * 0.09;
-
-        var b = readBox();
-        placeTouch();
-
-        if (haloEl) {
-          /* eltolás a középtől: ettől a fényudvar és a fénykör külön síkban
-             mozdul — mélységérzet extra rétegek nélkül */
-          haloEl.style.setProperty('--px', ((gx / b.width - 0.5) * -30).toFixed(1) + 'px');
-          haloEl.style.setProperty('--py', ((gy / b.height - 0.5) * -22).toFixed(1) + 'px');
-        }
-
-        frame = (Math.abs(aimGX - gx) > 0.4 || Math.abs(aimGY - gy) > 0.4)
-          ? requestAnimationFrame(draw)
-          : 0;
-      };
-
-      /* A mutató helyét csak eltároljuk; a rajzolás rAF-ben, képkockánként
-         egyszer történik — nem minden egérmozgás-eseménynél. */
+    /* Mutató események (közelségérzékelés a kezek közötti bogyóhoz — fénycsóva nélkül) */
+    if (isFinePointer) {
       heroEl.addEventListener('pointermove', function (ev) {
-        var b = readBox();
-        aimGX = ev.clientX - b.left;
-        aimGY = ev.clientY - b.top;
-        if (!frame) frame = requestAnimationFrame(draw);
-      }, { passive: true });
-
-      heroEl.addEventListener('pointerenter', function (ev) {
-        var b = readBox();
-        /* ugrás nélküli belépés: a fénykör ott jelenik meg, ahol a mutató */
-        gx = aimGX = ev.clientX - b.left;
-        gy = aimGY = ev.clientY - b.top;
-        placeTouch();
-        heroEl.classList.add('is-touch');
+        var orb = readOrbCenter();
+        if (orb) {
+          var dist = Math.hypot(ev.clientX - orb.x, ev.clientY - orb.y);
+          if (dist < 190 && !isNearHands) {
+            isNearHands = true;
+            triggerOrbFlash();
+          } else if (dist > 250 && isNearHands) {
+            isNearHands = false;
+            if (heroHands) heroHands.classList.remove('is-near');
+          }
+        }
       }, { passive: true });
 
       heroEl.addEventListener('pointerleave', function () {
-        heroEl.classList.remove('is-touch');
+        isNearHands = false;
+        if (heroHands) {
+          heroHands.classList.remove('is-near');
+          heroHands.classList.remove('is-resonating');
+        }
       }, { passive: true });
     }
+
+    /* Első indítás */
+    syncHeroMotion();
   }
 
   /* ── 5c. KEZELÉSKÁRTYA → RÉSZLETES LEÍRÁS ─────────────────────────────── */

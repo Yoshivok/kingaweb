@@ -31,7 +31,7 @@
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..500&family=Plus+Jakarta+Sans:wght@400..700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="index.css?v=42">
+  <link rel="stylesheet" href="index.css?v=48">
   <!-- A termékkártyák és a részletek ablakának stílusa. Külön fájl, mert az
        admin felület előnézete is pontosan ezt tölti be. -->
   <link rel="stylesheet" href="assets/css/products.css?v=1">
@@ -41,6 +41,23 @@
 
   <!-- Fejléc (Header) -->
   <header id="main-header" class="header">
+    <!-- Teljesen a bal sarokba rögzített Választó gomb (gépes nézet) -->
+    <a href="../index.html" class="header-chooser-btn" aria-label="Vissza a szolgáltatásválasztóhoz"
+      title="Vissza a szolgáltatásválasztóhoz">
+      <svg class="header-chooser-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true">
+        <path d="M13 8H3M7 4L3 8l4 4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <svg class="header-chooser-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+        aria-hidden="true">
+        <rect x="2" y="2" width="4.5" height="4.5" rx="1.2" />
+        <rect x="9.5" y="2" width="4.5" height="4.5" rx="1.2" />
+        <rect x="2" y="9.5" width="4.5" height="4.5" rx="1.2" />
+        <rect x="9.5" y="9.5" width="4.5" height="4.5" rx="1.2" />
+      </svg>
+      <span>Választó</span>
+    </a>
+
     <div class="header-container">
       <a href="#" class="logo" id="logo-link">
         <span class="logo-icon">
@@ -61,9 +78,6 @@
         <a href="#products-section" class="nav-link">Termékek</a>
         <a href="#contact-section" class="nav-link">Kapcsolat</a>
         <a href="rolam.html" class="nav-link">Rólam</a>
-        <!-- Vissza a szolgáltatásválasztóhoz: mióta ez az oldal önálló lapként
-             nyílik meg, a visszaút a menübe került. -->
-        <a href="../index.html" class="nav-link">Választó</a>
       </nav>
 
       <div class="header-actions">
@@ -97,6 +111,32 @@
     <section id="hero-section" class="hero">
       <canvas id="hero-canvas" class="hero-canvas"></canvas>
       <div class="hero-overlay"></div>
+      <!-- Tollal rajzolt One-Line Szem Design Háttérelem -->
+      <div class="hero-eye-container" id="hero-eye-container" aria-hidden="true">
+        <svg class="hero-eye-svg" id="hero-eye-svg" viewBox="0 0 612 518" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hero-eye-gradient" x1="0%" y1="25%" x2="100%" y2="75%">
+              <stop offset="0%" stop-color="#d67b4b" stop-opacity="0.75" />
+              <stop offset="25%" stop-color="#ebc296" stop-opacity="0.95" />
+              <stop offset="50%" stop-color="#fff5eb" stop-opacity="1" />
+              <stop offset="75%" stop-color="#ebc296" stop-opacity="0.95" />
+              <stop offset="100%" stop-color="#ba6b48" stop-opacity="0.75" />
+            </linearGradient>
+            <filter id="hero-eye-pen-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <g class="hero-eye-group">
+            <path id="hero-eye-stroke-1" class="hero-eye-stroke hero-eye-stroke-1" d="M 34.0,265.0 C 37.67,266.83 47.17,272.28 56.00,276.00 C 64.83,279.72 78.33,284.54 87.00,287.34 C 95.67,290.14 101.33,291.40 108.00,292.80 C 114.67,294.20 121.17,295.20 127.00,295.71 C 132.83,296.23 138.33,296.22 143.00,295.91 C 147.67,295.61 151.17,294.85 155.00,293.89 C 158.83,292.92 161.93,292.04 166.00,290.14 C 170.07,288.24 176.75,283.83 179.43,282.49 C 182.11,281.14 173.49,277.14 182.09,282.09 C 190.68,287.03 218.18,304.94 231.00,312.14 C 243.82,319.35 250.67,322.20 259.00,325.31 C 267.33,328.43 274.83,329.71 281.00,330.83 C 287.17,331.94 290.17,331.91 296.00,332.00 C 301.83,332.09 316.00,331.34 316.00,331.34 C 316.00,331.34 301.83,332.09 296.00,332.00 C 290.17,331.91 287.17,331.94 281.00,330.83 C 274.83,329.71 267.33,328.43 259.00,325.31 C 250.67,322.20 244.00,319.51 231.00,312.14 C 218.00,304.78 190.83,286.76 181.00,281.11 C 171.17,275.47 176.83,278.85 172.00,278.29 C 167.17,277.72 155.83,278.14 152.03,277.71 C 148.23,277.29 149.70,276.50 149.20,275.71 C 148.70,274.93 148.28,274.95 149.06,273.00 C 149.83,271.05 151.82,267.17 153.86,264.00 C 155.90,260.83 158.43,257.50 161.29,254.00 C 164.14,250.50 167.38,246.62 171.00,243.00 C 174.62,239.38 177.00,236.99 183.00,232.29 C 189.00,227.59 198.00,220.35 207.00,214.80 C 216.00,209.25 227.67,203.10 237.00,199.00 C 246.33,194.90 253.67,192.53 263.00,190.23 C 272.33,187.92 283.83,186.20 293.00,185.17 C 302.17,184.14 308.00,183.52 318.00,184.03 C 328.00,184.53 342.33,186.07 353.00,188.20 C 363.67,190.33 372.00,192.88 382.00,196.80 C 392.00,200.72 404.50,207.15 413.00,211.71 C 421.50,216.28 419.50,214.93 433.00,224.20 C 446.50,233.47 481.17,258.51 494.00,267.31 C 506.83,276.11 506.67,275.22 510.00,277.00 C 513.33,278.78 514.00,278.00 514.00,278.00 C 514.00,278.00 513.83,279.11 510.00,277.00 C 506.17,274.89 504.50,274.58 491.00,265.34 C 477.50,256.10 444.83,232.00 429.00,221.57 C 413.17,211.14 404.33,207.09 396.00,202.77 C 387.67,198.46 385.50,197.96 379.00,195.69 C 372.50,193.41 363.17,190.68 357.00,189.11 C 350.83,187.55 348.67,187.14 342.00,186.29 C 335.33,185.43 325.33,184.17 317.00,184.00 C 308.67,183.83 301.00,184.25 292.00,185.29 C 283.00,186.32 271.67,188.14 263.00,190.23 C 254.33,192.31 247.33,194.88 240.00,197.80 C 232.67,200.72 226.33,203.71 219.00,207.77 C 211.67,211.83 203.67,216.59 196.00,222.14 C 188.33,227.70 179.31,235.11 173.00,241.09 C 166.69,247.06 162.10,252.68 158.11,258.00 C 154.12,263.32 150.54,270.05 149.06,273.00 C 147.57,275.95 148.70,274.93 149.20,275.71 C 149.70,276.50 148.23,277.29 152.03,277.71 C 155.83,278.14 167.17,277.72 172.00,278.29 C 176.83,278.85 171.17,275.47 181.00,281.11 C 190.83,286.76 217.50,304.60 231.00,312.14 C 244.50,319.68 254.00,323.27 262.00,326.34 C 270.00,329.41 273.50,329.63 279.00,330.57 C 284.50,331.51 289.50,331.75 295.00,331.97 C 300.50,332.20 306.33,332.29 312.00,331.91 C 317.67,331.54 324.00,330.67 329.00,329.74 C 334.00,328.81 337.33,327.92 342.00,326.34 C 346.67,324.76 349.83,324.15 357.00,320.26 C 364.17,316.37 376.83,307.71 385.00,303.00 C 393.17,298.29 397.83,295.39 406.00,292.00 C 414.17,288.61 424.00,284.91 434.00,282.66 C 444.00,280.40 460.16,279.48 465.97,278.46 C 471.79,277.43 468.48,277.40 468.89,276.51 C 469.29,275.63 469.21,274.35 468.40,273.17 C 467.59,272.00 466.23,270.84 464.00,269.46 C 461.77,268.07 464.00,268.56 455.00,264.86 C 446.00,261.16 425.67,254.60 410.00,247.26 C 394.33,239.91 371.00,225.91 361.00,220.77 C 351.00,215.63 352.63,217.25 350.00,216.43 C 347.37,215.61 346.23,215.72 345.23,215.86 C 344.23,215.99 344.00,216.63 344.00,217.23 C 344.00,217.83 343.23,218.03 345.23,219.46 C 347.23,220.88 352.90,223.51 356.00,225.77 C 359.10,228.03 361.24,229.63 363.83,233.00 C 366.42,236.37 369.69,240.67 371.54,246.00 C 373.40,251.33 374.65,260.17 374.97,265.00 C 375.30,269.83 374.19,272.17 373.49,275.00 C 372.78,277.83 372.04,279.50 370.74,282.00 C 369.44,284.50 368.14,287.03 365.69,290.00 C 363.23,292.97 360.61,296.30 356.00,299.83 C 351.39,303.35 342.83,308.65 338.00,311.14 C 333.17,313.63 331.00,313.82 327.00,314.77 C 323.00,315.72 319.17,316.77 314.00,316.83 C 308.83,316.89 301.17,316.23 296.00,315.11 C 290.83,314.00 287.33,312.54 283.00,310.14 C 278.67,307.74 273.52,303.90 270.00,300.71 C 266.48,297.52 264.12,294.45 261.86,291.00 C 259.60,287.55 257.82,284.17 256.43,280.00 C 255.04,275.83 253.81,270.17 253.51,266.00 C 253.22,261.83 253.76,258.67 254.66,255.00 C 255.55,251.33 256.90,247.67 258.89,244.00 C 260.87,240.33 263.89,236.18 266.57,233.00 C 269.26,229.82 271.76,227.23 275.00,224.91 C 278.24,222.60 282.33,220.40 286.00,219.09 C 289.67,217.77 293.83,217.30 297.00,217.00 C 300.17,216.70 303.14,217.03 305.00,217.31 C 306.86,217.60 307.83,218.06 308.14,218.71 C 308.45,219.37 310.05,219.50 306.86,221.23 C 303.67,222.96 293.26,226.62 289.00,229.09 C 284.74,231.55 283.63,233.01 281.31,236.00 C 279.00,238.99 276.44,243.00 275.09,247.00 C 273.73,251.00 272.77,255.33 273.17,260.00 C 273.57,264.67 275.34,270.55 277.49,275.00 C 279.63,279.45 282.28,283.37 286.03,286.71 C 289.78,290.06 295.34,293.23 300.00,295.09 C 304.66,296.94 309.50,297.56 314.00,297.83 C 318.50,298.10 323.33,297.33 327.00,296.71 C 330.67,296.10 333.00,295.37 336.00,294.14 C 339.00,292.92 342.23,291.40 345.00,289.37 C 347.77,287.35 350.60,284.56 352.63,282.00 C 354.65,279.44 355.94,277.00 357.14,274.00 C 358.34,271.00 359.43,267.33 359.83,264.00 C 360.23,260.67 360.16,257.50 359.54,254.00 C 358.93,250.50 357.30,245.81 356.14,243.00 C 354.99,240.19 353.80,238.42 352.63,237.11 C 351.45,235.80 350.09,235.28 349.09,235.14 C 348.08,235.01 347.95,235.09 346.60,236.31 C 345.25,237.54 342.74,241.12 340.97,242.51 C 339.20,243.91 338.33,244.38 336.00,244.69 C 333.67,245.00 329.48,245.02 327.00,244.37 C 324.52,243.72 322.57,242.20 321.11,240.80 C 319.66,239.40 318.69,237.63 318.29,236.00 C 317.89,234.37 318.23,232.49 318.71,231.00 C 319.20,229.51 319.58,228.79 321.20,227.09 C 322.82,225.39 327.03,222.48 328.43,220.80 C 329.83,219.12 329.86,218.36 329.60,217.00 C 329.34,215.64 328.49,213.85 326.89,212.63 C 325.29,211.40 323.48,210.43 320.00,209.66 C 316.52,208.89 311.33,207.94 306.00,208.00 C 300.67,208.06 293.50,208.86 288.00,210.00 C 282.50,211.14 278.00,212.69 273.00,214.86 C 268.00,217.02 260.50,221.64 258.00,223.00" />
+            <path id="hero-eye-stroke-2" class="hero-eye-stroke hero-eye-stroke-2" d="M 180.0,281.0 C 181.50,280.23 178.67,284.22 189.00,276.37 C 199.33,268.52 229.67,243.30 242.00,233.89 C 254.33,224.47 257.50,223.17 263.00,219.86 C 268.50,216.54 271.00,215.60 275.00,214.00 C 279.00,212.40 281.17,211.20 287.00,210.23 C 292.83,209.26 303.83,208.05 310.00,208.17 C 316.17,208.29 320.77,209.63 324.00,210.94 C 327.23,212.25 328.66,214.39 329.40,216.03 C 330.14,217.67 329.80,218.96 328.43,220.80 C 327.06,222.64 322.87,225.22 321.20,227.09 C 319.53,228.95 318.84,230.35 318.40,232.00 C 317.96,233.65 317.97,235.40 318.57,237.00 C 319.18,238.60 320.46,240.36 322.03,241.63 C 323.60,242.90 325.67,244.12 328.00,244.63 C 330.33,245.14 333.84,245.04 336.00,244.69 C 338.16,244.33 339.08,244.01 340.97,242.51 C 342.87,241.01 345.87,236.89 347.37,235.69 C 348.88,234.48 348.79,234.57 350.00,235.29 C 351.21,236.00 353.14,237.21 354.66,240.00 C 356.18,242.79 358.30,247.67 359.11,252.00 C 359.93,256.33 360.39,261.33 359.54,266.00 C 358.70,270.67 356.48,276.10 354.06,280.00 C 351.63,283.90 348.84,286.73 345.00,289.37 C 341.16,292.01 335.83,294.44 331.00,295.86 C 326.17,297.28 320.17,297.74 316.00,297.89 C 311.83,298.03 309.00,297.31 306.00,296.71 C 303.00,296.11 300.67,295.43 298.00,294.29 C 295.33,293.14 292.45,291.58 290.00,289.86 C 287.55,288.14 285.32,286.28 283.31,283.97 C 281.31,281.66 279.49,279.00 277.97,276.00 C 276.46,273.00 275.06,269.33 274.23,266.00 C 273.40,262.67 273.20,257.67 273.00,256.00" />
+            <path id="hero-eye-stroke-3" class="hero-eye-stroke hero-eye-stroke-3" d="M 179.0,282.0 C 178.64,281.63 178.00,280.42 176.84,279.80 C 175.67,279.18 176.47,278.59 172.00,278.29 C 167.53,277.99 154.00,278.21 150.00,278.00 C 146.00,277.79 148.33,277.67 148.00,277.00 C 147.67,276.33 146.56,276.83 148.00,274.00 C 149.44,271.17 153.11,264.83 156.63,260.00 C 160.14,255.17 162.19,251.55 169.09,245.00 C 175.98,238.45 189.35,227.09 198.00,220.71 C 206.65,214.34 214.50,210.36 221.00,206.74 C 227.50,203.12 231.50,201.34 237.00,199.00 C 242.50,196.66 246.17,194.83 254.00,192.71 C 261.83,190.60 273.33,187.73 284.00,186.29 C 294.67,184.84 308.33,184.03 318.00,184.03 C 327.67,184.03 335.50,185.44 342.00,186.29 C 348.50,187.13 350.83,187.55 357.00,189.11 C 363.17,190.68 372.83,193.56 379.00,195.69 C 385.17,197.81 388.33,199.19 394.00,201.86 C 399.67,204.53 406.83,208.21 413.00,211.71 C 419.17,215.21 419.50,214.92 431.00,222.86 C 442.50,230.80 468.33,250.09 482.00,259.34 C 495.67,268.60 505.50,274.10 513.00,278.37 C 520.50,282.65 521.83,282.92 527.00,285.00 C 532.17,287.08 537.83,289.24 544.00,290.86 C 550.17,292.48 558.67,294.02 564.00,294.71 C 569.33,295.40 573.83,294.79 576.00,295.00 C 578.17,295.21 576.83,295.83 577.00,296.00" />
+          </g>
+        </svg>
+      </div>
       <div class="hero-content">
         <span class="hero-tagline">Exkluzív Szemészeti Szalon</span>
         <h1 class="hero-title">A tökéletes látás művészete</h1>
@@ -254,7 +294,8 @@
                 <span class="switch-slider"></span>
                 <span class="switch-label">Korrekciós lencse (lupé) aktiválása</span>
               </label>
-              <p class="lens-instruction">Húzza az ujját vagy az egeret a kép felett a korrekciós lencse használatához!</p>
+              <p class="lens-instruction">Húzza az ujját vagy az egeret a kép felett a korrekciós lencse használatához!
+              </p>
             </div>
           </div>
 
@@ -301,7 +342,9 @@
             <line x1="10" y1="6.5" x2="10" y2="10.5" />
             <circle cx="10" cy="13.5" r=".75" fill="currentColor" stroke="none" />
           </svg>
-          <span>A szimulátor szemléltető és tájékoztató jellegű vizualizáció. A tényleges látásélmény egyénenként, a dioptria mértékétől és a szem egyéni fénytörési adottságaitól függően eltérhet. Nem helyettesíti a személyre szabott szakorvosi vagy optometriai vizsgálatot és diagnózist.</span>
+          <span>A szimulátor szemléltető és tájékoztató jellegű vizualizáció. A tényleges látásélmény egyénenként, a
+            dioptria mértékétől és a szem egyéni fénytörési adottságaitól függően eltérhet. Nem helyettesíti a személyre
+            szabott szakorvosi vagy optometriai vizsgálatot és diagnózist.</span>
         </p>
       </div>
     </section>
@@ -381,8 +424,9 @@
             <line x1="10" y1="6.5" x2="10" y2="10.5" />
             <circle cx="10" cy="13.5" r=".75" fill="currentColor" stroke="none" />
           </svg>
-          <span>Az ábrák szemléltető célúak, a jobb áttekinthetőség érdekében optimalizáltak. Az itt olvasható tájékoztatás
-          nem helyettesíti a szakorvosi vagy optometriai vizsgálatot és diagnózist.</span>
+          <span>Az ábrák szemléltető célúak, a jobb áttekinthetőség érdekében optimalizáltak. Az itt olvasható
+            tájékoztatás
+            nem helyettesíti a szakorvosi vagy optometriai vizsgálatot és diagnózist.</span>
         </p>
       </div>
     </section>
@@ -455,8 +499,8 @@
             <circle cx="10" cy="13.5" r=".75" fill="currentColor" stroke="none" />
           </svg>
           <span>Az online színlátásteszt tájékoztató jellegű szűrővizsgálat. A monitorok színkalibrációja és fényereje
-          befolyásolhatja a megjelenítést. Pontos, hivatalos orvosi és munkaalkalmassági diagnózist optometriai
-          szakrendelésünkön, kalibrált műszerekkel (anomaloszkóp, Farnsworth-teszt) biztosítunk.</span>
+            befolyásolhatja a megjelenítést. Pontos, hivatalos orvosi és munkaalkalmassági diagnózist optometriai
+            szakrendelésünkön, kalibrált műszerekkel (anomaloszkóp, Farnsworth-teszt) biztosítunk.</span>
         </p>
       </div>
     </section>
@@ -662,13 +706,17 @@
         <div class="footer-perks">
           <div class="footer-perk">
             <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              <path fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
             </svg>
             <span>Ingyenes látásvizsgálat szemüvegkészítés mellé</span>
           </div>
           <div class="footer-perk">
             <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              <path fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
             </svg>
             <span>Egészségpénztári és bankkártyás fizetés</span>
           </div>
@@ -690,8 +738,7 @@
           </div>
           <div class="footer-map" id="footer-map"
             data-consent-src="https://maps.google.com/maps?hl=hu&amp;q=Budapest+Karinthy+Frigyes+%C3%BAt+20&amp;ie=UTF8&amp;t=&amp;z=16&amp;iwloc=B&amp;output=embed"
-            data-consent-title="A Lumina Optika helye a térképen"
-            data-consent-label="Térkép megjelenítése"
+            data-consent-title="A Lumina Optika helye a térképen" data-consent-label="Térkép megjelenítése"
             aria-label="Térkép Budapest Karinthy Frigyes út 20.">
             <!-- Stylized Mock Interactive Map -->
             <div class="mock-map">
@@ -729,201 +776,236 @@
 
   <!-- Időpontfoglaló Modális Ablak (Native Dialog) -->
   <!-- MANDATORY: closedby="any" enables native light dismiss. ID matches aria-labelledby for a11y. -->
-  <dialog id="booking-dialog" class="booking-dialog" closedby="any" aria-labelledby="dialog-title">
+  <dialog id="booking-dialog" class="booking-dialog booking-dialog--disabled" closedby="any"
+    aria-labelledby="dialog-title">
     <div class="dialog-wrapper">
       <button class="dialog-close-btn" id="dialog-close-btn" aria-label="Bezárás">&times;</button>
 
-      <h2 id="dialog-title" class="dialog-main-title">Online Időpontfoglalás</h2>
-
-      <!-- Progress Bar -->
-      <div class="booking-progress-container" aria-label="Foglalási folyamat lépései">
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progress-bar-fill" style="width: 25%;"></div>
-        </div>
-        <div class="progress-steps">
-          <span class="progress-step active" data-step="1" id="step-ind-1">1. Szolgáltatás</span>
-          <span class="progress-step" data-step="2" id="step-ind-2">2. Dátum & Idő</span>
-          <span class="progress-step" data-step="3" id="step-ind-3">3. Adatai</span>
-          <span class="progress-step" data-step="4" id="step-ind-4">4. Kész</span>
+      <!-- Értesítő réteg: az időpontfoglalás átmeneti szüneteltetése -->
+      <div class="booking-unavailable-overlay" id="booking-unavailable-overlay" role="alert" aria-live="polite">
+        <div class="booking-unavailable-card">
+          <div class="booking-unavailable-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="3" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+              <circle cx="12" cy="15" r="3.2" />
+              <line x1="12" y1="13.2" x2="12" y2="15" />
+              <line x1="12" y1="15" x2="13.5" y2="15" />
+            </svg>
+          </div>
+          <span class="booking-unavailable-tag">Tájékoztatás</span>
+          <h3 class="booking-unavailable-title">Az időpontfoglalás átmenetileg szünetel</h3>
+          <p class="booking-unavailable-message">
+            Jelenleg <strong>nem lehet időpontot foglalni online vagy telefonon</strong>.
+          </p>
+          <p class="booking-unavailable-sub">
+            Megértését és türelmét köszönjük! Amint az időpontfoglalási rendszerünk ismét elérhetővé válik, jelezni
+            fogjuk a weboldalon.
+          </p>
+          <button type="button" class="btn btn-primary booking-unavailable-btn" id="btn-unavailable-close">
+            Bezár
+          </button>
         </div>
       </div>
 
-      <form id="booking-form" class="booking-form" novalidate>
-        <!-- LÉPÉS 1: Szolgáltatás választás -->
-        <div class="booking-step-panel active" data-step="1" id="step-panel-1">
-          <h3 class="step-panel-title">Melyik vizsgálatra érkezne?</h3>
-          <div class="booking-options-grid" role="radiogroup" aria-label="Vizsgálat kiválasztása">
+      <!-- Az eredeti foglalási tartalom a háttérben elhomályosítva marad -->
+      <div class="dialog-content-body" inert>
+        <h2 id="dialog-title" class="dialog-main-title">Online Időpontfoglalás</h2>
 
-            <label class="booking-option-card">
-              <input type="radio" name="booking-service" value="general-exam" checked>
-              <div class="option-card-content">
-                <span class="option-title">Komplett Látásvizsgálat</span>
-                <span class="option-desc">Computeress és szubjektív vizsgálat felnőtteknek.</span>
-                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 12 000 Ft</span>
-              </div>
-            </label>
-
-            <label class="booking-option-card">
-              <input type="radio" name="booking-service" value="contact-lens">
-              <div class="option-card-content">
-                <span class="option-title">Kontaktlencse Illesztés</span>
-                <span class="option-desc">Mérések, illesztés és betanítás mintalencsével.</span>
-                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 15 000 Ft</span>
-              </div>
-            </label>
-
-            <label class="booking-option-card">
-              <input type="radio" name="booking-service" value="glasses-fitting">
-              <div class="option-card-content">
-                <span class="option-title">Szemüvegkészítés Tanácsadás</span>
-                <span class="option-desc">Keret és lencseválasztás optometrista segítségével.</span>
-                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; Ingyenes *</span>
-              </div>
-            </label>
-
-            <label class="booking-option-card">
-              <input type="radio" name="booking-service" value="glasses-repair">
-              <div class="option-card-content">
-                <span class="option-title">Szemüveg Javítás</span>
-                <span class="option-desc">Keret- és szárjavítás, csavarcsere, lencsevisszahelyezés.</span>
-                <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 2 500 Ft-tól</span>
-              </div>
-            </label>
-
+        <!-- Progress Bar -->
+        <div class="booking-progress-container" aria-label="Foglalási folyamat lépései">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 25%;"></div>
           </div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-primary btn-next" id="btn-to-step2">Következő lépés</button>
+          <div class="progress-steps">
+            <span class="progress-step active" data-step="1" id="step-ind-1">1. Szolgáltatás</span>
+            <span class="progress-step" data-step="2" id="step-ind-2">2. Dátum & Idő</span>
+            <span class="progress-step" data-step="3" id="step-ind-3">3. Adatai</span>
+            <span class="progress-step" data-step="4" id="step-ind-4">4. Kész</span>
           </div>
         </div>
 
-        <!-- LÉPÉS 2: Dátum és Időpont választás -->
-        <div class="booking-step-panel" data-step="2" id="step-panel-2">
-          <h3 class="step-panel-title">Válasszon egy Önnek megfelelő időpontot</h3>
-          <p class="step-panel-note">A naptár a valóban szabad kezdéseket mutatja: két vizsgálat között
-            20 perc szünetet tartunk, ezért a betelt és a zárva tartó napok nem választhatók.</p>
-          <div class="datetime-grid">
+        <form id="booking-form" class="booking-form" novalidate>
+          <!-- LÉPÉS 1: Szolgáltatás választás -->
+          <div class="booking-step-panel active" data-step="1" id="step-panel-1">
+            <h3 class="step-panel-title">Melyik vizsgálatra érkezne?</h3>
+            <div class="booking-options-grid" role="radiogroup" aria-label="Vizsgálat kiválasztása">
 
-            <!-- Naptár modul -->
-            <div class="calendar-module">
-              <div class="calendar-header">
-                <button type="button" id="prev-month" aria-label="Előző hónap">&lsaquo;</button>
-                <span id="calendar-month-year">2026. Május</span>
-                <button type="button" id="next-month" aria-label="Következő hónap">&rsaquo;</button>
-              </div>
-              <div class="calendar-weekdays">
-                <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
-              </div>
-              <div class="calendar-days" id="calendar-days-grid" role="grid" aria-label="Foglalható napok">
-                <!-- JavaScript tölti fel -->
-              </div>
-            </div>
-
-            <!-- Idősáv modul -->
-            <div class="time-module">
-              <h4 class="time-module-title" id="selected-day-label">Válasszon egy napot</h4>
-              <div class="time-slots-grid" id="time-slots-container" role="radiogroup" aria-label="Szabad órák">
-                <!-- JavaScript tölti fel, ha ki van választva nap -->
-                <p class="time-placeholder">Kérjük, először kattintson egy napra a naptárban!</p>
-              </div>
-            </div>
-
-          </div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step1">Vissza</button>
-            <button type="button" class="btn btn-primary btn-next" id="btn-to-step3" disabled>Következő lépés</button>
-          </div>
-        </div>
-
-        <!-- LÉPÉS 3: Adatok megadása -->
-        <div class="booking-step-panel" data-step="3" id="step-panel-3">
-          <h3 class="step-panel-title">Kérjük, adja meg adatait a foglaláshoz</h3>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="booking-name" class="form-label">Teljes Név <span class="required">*</span></label>
-              <input type="text" id="booking-name" class="form-control" autocomplete="name" required
-                placeholder="Gipsz Jakab">
-              <span class="form-error" id="name-error" aria-live="polite">Név megadása kötelező</span>
-            </div>
-
-            <div class="form-group">
-              <label for="booking-email" class="form-label">E-mail Cím <span class="required">*</span></label>
-              <input type="email" id="booking-email" class="form-control" autocomplete="email" required
-                placeholder="pelda@email.hu">
-              <span class="form-error" id="email-error" aria-live="polite">Érvényes e-mail cím szükséges</span>
-            </div>
-
-            <div class="form-group">
-              <label for="booking-phone" class="form-label">Telefonszám <span class="required">*</span></label>
-              <input type="tel" id="booking-phone" class="form-control" autocomplete="tel" required
-                placeholder="+36 30 123 4567">
-              <span class="form-error" id="phone-error" aria-live="polite">Érvényes telefonszám szükséges
-                (+36...)</span>
-            </div>
-
-            <div class="form-group">
-              <label for="booking-message" class="form-label">Megjegyzés / Különleges kérés</label>
-              <textarea id="booking-message" class="form-control text-area"
-                placeholder="Pl. első kontaktlencse viselő, meglévő szemüveg adatai, panaszok..."></textarea>
-            </div>
-          </div>
-
-          <!-- Kötelező Házirend és Adatkezelési nyilatkozatok -->
-          <div class="booking-checks">
-            <div class="form-check-group" id="group-booking-terms">
-              <label class="form-check-label" for="booking-terms">
-                <input type="checkbox" id="booking-terms" name="booking-terms" required class="form-check-input">
-                <span class="check-text">
-                  Elolvastam és elfogadom a <a href="hazirend.html" target="_blank" rel="noopener">Házirendet</a> és az
-                  <a href="aszf.html" target="_blank" rel="noopener">ÁSZF-et</a> (tudomásul veszem a kizáró fertőző
-                  szembetegségekre és a pontos érkezésre vonatkozó szabályokat). <span class="required">*</span>
-                </span>
+              <label class="booking-option-card">
+                <input type="radio" name="booking-service" value="general-exam" checked>
+                <div class="option-card-content">
+                  <span class="option-title">Komplett Látásvizsgálat</span>
+                  <span class="option-desc">Computeress és szubjektív vizsgálat felnőtteknek.</span>
+                  <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 12 000 Ft</span>
+                </div>
               </label>
-              <span class="form-error" id="terms-error" aria-live="polite">A Házirend és az ÁSZF elfogadása
-                kötelező</span>
-            </div>
 
-            <div class="form-check-group" id="group-booking-gdpr">
-              <label class="form-check-label" for="booking-gdpr">
-                <input type="checkbox" id="booking-gdpr" name="booking-gdpr" required class="form-check-input">
-                <span class="check-text">
-                  Hozzájárulok a megadott adataim kezeléséhez az <a href="adatkezeles.html" target="_blank"
-                    rel="noopener">Adatkezelési tájékoztató</a> szerint. <span class="required">*</span>
-                </span>
+              <label class="booking-option-card">
+                <input type="radio" name="booking-service" value="contact-lens">
+                <div class="option-card-content">
+                  <span class="option-title">Kontaktlencse Illesztés</span>
+                  <span class="option-desc">Mérések, illesztés és betanítás mintalencsével.</span>
+                  <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 15 000 Ft</span>
+                </div>
               </label>
-              <span class="form-error" id="gdpr-error" aria-live="polite">Az adatkezelési tájékoztató elfogadása
-                kötelező</span>
+
+              <label class="booking-option-card">
+                <input type="radio" name="booking-service" value="glasses-fitting">
+                <div class="option-card-content">
+                  <span class="option-title">Szemüvegkészítés Tanácsadás</span>
+                  <span class="option-desc">Keret és lencseválasztás optometrista segítségével.</span>
+                  <span class="option-meta"><span class="option-duration">30 perc</span> &middot; Ingyenes *</span>
+                </div>
+              </label>
+
+              <label class="booking-option-card">
+                <input type="radio" name="booking-service" value="glasses-repair">
+                <div class="option-card-content">
+                  <span class="option-title">Szemüveg Javítás</span>
+                  <span class="option-desc">Keret- és szárjavítás, csavarcsere, lencsevisszahelyezés.</span>
+                  <span class="option-meta"><span class="option-duration">30 perc</span> &middot; 2 500 Ft-tól</span>
+                </div>
+              </label>
+
+            </div>
+            <div class="step-actions">
+              <button type="button" class="btn btn-primary btn-next" id="btn-to-step2">Következő lépés</button>
             </div>
           </div>
 
-          <p class="booking-submit-error" id="booking-submit-error" role="alert" hidden></p>
+          <!-- LÉPÉS 2: Dátum és Időpont választás -->
+          <div class="booking-step-panel" data-step="2" id="step-panel-2">
+            <h3 class="step-panel-title">Válasszon egy Önnek megfelelő időpontot</h3>
+            <p class="step-panel-note">A naptár a valóban szabad kezdéseket mutatja: két vizsgálat között
+              20 perc szünetet tartunk, ezért a betelt és a zárva tartó napok nem választhatók.</p>
+            <div class="datetime-grid">
 
-          <div class="step-actions">
-            <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step2">Vissza</button>
-            <button type="submit" class="btn btn-primary" id="btn-submit-booking">Foglalás Véglegesítése</button>
-          </div>
-        </div>
+              <!-- Naptár modul -->
+              <div class="calendar-module">
+                <div class="calendar-header">
+                  <button type="button" id="prev-month" aria-label="Előző hónap">&lsaquo;</button>
+                  <span id="calendar-month-year">2026. Május</span>
+                  <button type="button" id="next-month" aria-label="Következő hónap">&rsaquo;</button>
+                </div>
+                <div class="calendar-weekdays">
+                  <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+                </div>
+                <div class="calendar-days" id="calendar-days-grid" role="grid" aria-label="Foglalható napok">
+                  <!-- JavaScript tölti fel -->
+                </div>
+              </div>
 
-        <!-- LÉPÉS 4: Sikeres foglalás -->
-        <div class="booking-step-panel success-panel" data-step="4" id="step-panel-4">
-          <div class="success-icon-wrapper">
-            <svg class="success-checkmark" viewBox="0 0 52 52">
-              <circle class="success-checkmark-circle" cx="26" cy="26" r="25" fill="none" />
-              <path class="success-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
-            </svg>
-          </div>
-          <h3 class="success-title">Sikeres Foglalás!</h3>
-          <p class="success-text">Köszönjük bizalmát! Időpontját rögzítettük a naptárunkban.</p>
+              <!-- Idősáv modul -->
+              <div class="time-module">
+                <h4 class="time-module-title" id="selected-day-label">Válasszon egy napot</h4>
+                <div class="time-slots-grid" id="time-slots-container" role="radiogroup" aria-label="Szabad órák">
+                  <!-- JavaScript tölti fel, ha ki van választva nap -->
+                  <p class="time-placeholder">Kérjük, először kattintson egy napra a naptárban!</p>
+                </div>
+              </div>
 
-          <div class="summary-card" id="booking-summary-card">
-            <!-- JavaScript tölti ki az elmentett adatokkal -->
+            </div>
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step1">Vissza</button>
+              <button type="button" class="btn btn-primary btn-next" id="btn-to-step3" disabled>Következő lépés</button>
+            </div>
           </div>
 
-          <div class="step-actions">
-            <button type="button" class="btn btn-primary" id="btn-close-booking">Bezárás</button>
+          <!-- LÉPÉS 3: Adatok megadása -->
+          <div class="booking-step-panel" data-step="3" id="step-panel-3">
+            <h3 class="step-panel-title">Kérjük, adja meg adatait a foglaláshoz</h3>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="booking-name" class="form-label">Teljes Név <span class="required">*</span></label>
+                <input type="text" id="booking-name" class="form-control" autocomplete="name" required
+                  placeholder="Gipsz Jakab">
+                <span class="form-error" id="name-error" aria-live="polite">Név megadása kötelező</span>
+              </div>
+
+              <div class="form-group">
+                <label for="booking-email" class="form-label">E-mail Cím <span class="required">*</span></label>
+                <input type="email" id="booking-email" class="form-control" autocomplete="email" required
+                  placeholder="pelda@email.hu">
+                <span class="form-error" id="email-error" aria-live="polite">Érvényes e-mail cím szükséges</span>
+              </div>
+
+              <div class="form-group">
+                <label for="booking-phone" class="form-label">Telefonszám <span class="required">*</span></label>
+                <input type="tel" id="booking-phone" class="form-control" autocomplete="tel" required
+                  placeholder="+36 30 123 4567">
+                <span class="form-error" id="phone-error" aria-live="polite">Érvényes telefonszám szükséges
+                  (+36...)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="booking-message" class="form-label">Megjegyzés / Különleges kérés</label>
+                <textarea id="booking-message" class="form-control text-area"
+                  placeholder="Pl. első kontaktlencse viselő, meglévő szemüveg adatai, panaszok..."></textarea>
+              </div>
+            </div>
+
+            <!-- Kötelező Házirend és Adatkezelési nyilatkozatok -->
+            <div class="booking-checks">
+              <div class="form-check-group" id="group-booking-terms">
+                <label class="form-check-label" for="booking-terms">
+                  <input type="checkbox" id="booking-terms" name="booking-terms" required class="form-check-input">
+                  <span class="check-text">
+                    Elolvastam és elfogadom a <a href="hazirend.html" target="_blank" rel="noopener">Házirendet</a> és
+                    az
+                    <a href="aszf.html" target="_blank" rel="noopener">ÁSZF-et</a> (tudomásul veszem a kizáró fertőző
+                    szembetegségekre és a pontos érkezésre vonatkozó szabályokat). <span class="required">*</span>
+                  </span>
+                </label>
+                <span class="form-error" id="terms-error" aria-live="polite">A Házirend és az ÁSZF elfogadása
+                  kötelező</span>
+              </div>
+
+              <div class="form-check-group" id="group-booking-gdpr">
+                <label class="form-check-label" for="booking-gdpr">
+                  <input type="checkbox" id="booking-gdpr" name="booking-gdpr" required class="form-check-input">
+                  <span class="check-text">
+                    Hozzájárulok a megadott adataim kezeléséhez az <a href="adatkezeles.html" target="_blank"
+                      rel="noopener">Adatkezelési tájékoztató</a> szerint. <span class="required">*</span>
+                  </span>
+                </label>
+                <span class="form-error" id="gdpr-error" aria-live="polite">Az adatkezelési tájékoztató elfogadása
+                  kötelező</span>
+              </div>
+            </div>
+
+            <p class="booking-submit-error" id="booking-submit-error" role="alert" hidden></p>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary btn-prev" id="btn-back-to-step2">Vissza</button>
+              <button type="submit" class="btn btn-primary" id="btn-submit-booking">Foglalás Véglegesítése</button>
+            </div>
           </div>
-        </div>
-      </form>
+
+          <!-- LÉPÉS 4: Sikeres foglalás -->
+          <div class="booking-step-panel success-panel" data-step="4" id="step-panel-4">
+            <div class="success-icon-wrapper">
+              <svg class="success-checkmark" viewBox="0 0 52 52">
+                <circle class="success-checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="success-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
+            <h3 class="success-title">Sikeres Foglalás!</h3>
+            <p class="success-text">Köszönjük bizalmát! Időpontját rögzítettük a naptárunkban.</p>
+
+            <div class="summary-card" id="booking-summary-card">
+              <!-- JavaScript tölti ki az elmentett adatokkal -->
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-primary" id="btn-close-booking">Bezárás</button>
+            </div>
+          </div>
+        </form>
+      </div><!-- /.dialog-content-body -->
     </div>
   </dialog>
 
@@ -1004,7 +1086,7 @@
   <!-- A termékkártyák és a részletes nézet felépítése. Ugyanezt a fájlt
        használja az admin felület előnézete is, hogy a kettő ne csússzon el. -->
   <script src="assets/js/product-render.js?v=1"></script>
-  <script src="index.js?v=47"></script>
+  <script src="index.js?v=48"></script>
   <script src="assets/js/consent.js" defer></script>
 </body>
 

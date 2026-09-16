@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // az első kirajzolás utánra halasztjuk. Így a cím/alcím belépő animációja nem
   // versenyez a fő szálon a sok szinkron DOM-művelettel, és akadásmentesen indul.
   initHeroCanvas();
+  initHeroEyeDrawing();
 
   const deferredInit = () => {
     initMobileMenu();
@@ -114,12 +115,39 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
+   1.1 Hero Tollal Rajzolt Szem Háttér & Animáció Vezérlő
+   ========================================================================== */
+function initHeroEyeDrawing() {
+  const eyeContainer = document.getElementById('hero-eye-container');
+  if (!eyeContainer) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) {
+    eyeContainer.classList.add('hero-eye-ready');
+    return;
+  }
+
+  // Rajzolás indítása a kezdeti képkocka megjelenésekor
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      eyeContainer.classList.add('hero-eye-drawing');
+
+      // Amikor a tollrajz animáció véget ér (~4 mp), átváltunk az ambient finom pulzálásra
+      setTimeout(() => {
+        eyeContainer.classList.add('hero-eye-ready');
+      }, 4100);
+    }, 120);
+  });
+}
+
+/* ==========================================================================
    1. Canvas Fényrefrakciós Hero Animáció
    ========================================================================== */
 function initHeroCanvas() {
   const canvas = document.getElementById('hero-canvas');
   if (!canvas) return;
 
+  const eyeContainer = document.getElementById('hero-eye-container');
   const heroContent = document.querySelector('.hero-content');
   const ctx = canvas.getContext('2d');
   let width, height;
@@ -383,6 +411,15 @@ function initHeroCanvas() {
       }
     }
 
+    // A háttérben rajzolt szem a háttér bokeh fényeivel és csillámaival mozog együtt (nem a rögzített lencsével)
+    if (eyeContainer && !reduceMotion) {
+      const eyeParallaxFactor = 0.08;
+      const eyeOffsetX = mouseX !== null ? -(mouseX - width / 2) * eyeParallaxFactor : 0;
+      const eyeOffsetY = mouseY !== null ? -(mouseY - height / 2) * eyeParallaxFactor : 0;
+      eyeContainer.style.setProperty('--eye-parallax-x', `${eyeOffsetX.toFixed(2)}px`);
+      eyeContainer.style.setProperty('--eye-parallax-y', `${eyeOffsetY.toFixed(2)}px`);
+    }
+
     // Átlátszóra törlünk; a meleg sötét háttér gradienst a .hero-canvas CSS háttere
     // adja, így keretenként megspóroljuk a teljes képernyős gradiens kitöltést.
     ctx.clearRect(0, 0, width, height);
@@ -608,7 +645,13 @@ function initMobileMenu() {
     bookBtn.addEventListener('click', () => {
       if (toggleBtn.classList.contains('open')) toggleMenu();
       const bookingDialog = document.getElementById('booking-dialog');
-      if (bookingDialog) bookingDialog.showModal();
+      if (bookingDialog) {
+        bookingDialog.showModal();
+        const unavailBtn = document.getElementById('btn-unavailable-close');
+        if (unavailBtn && bookingDialog.classList.contains('booking-dialog--disabled')) {
+          unavailBtn.focus();
+        }
+      }
     });
   }
 }
@@ -2311,10 +2354,21 @@ function initBookingSystem() {
       .catch(() => null);
   }
 
+  const unavailCloseBtn = document.getElementById('btn-unavailable-close');
+  if (unavailCloseBtn) {
+    unavailCloseBtn.addEventListener('click', () => dialog.close());
+  }
+
   // Dialog megnyitása gombokkal
   openButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
+
+      if (dialog.classList.contains('booking-dialog--disabled')) {
+        dialog.showModal();
+        if (unavailCloseBtn) unavailCloseBtn.focus();
+        return;
+      }
 
       // Lassú induláskor a hosszak még nem érkeztek meg — a naptár egy
       // rossz sávméretet kérdezne le. Nyitáskor pótoljuk.

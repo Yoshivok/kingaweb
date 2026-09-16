@@ -273,6 +273,70 @@ a {
   justify-content: space-between;
 }
 
+/* Választó gomb — teljesen a bal sarokba rögzítve, ragyogó pezsgő-arany luxus dizájn (megegyezik a masszázs oldallal) */
+.header-chooser-btn {
+  position: absolute;
+  top: 50%;
+  left: clamp(1rem, 2.5vw, 2.5rem);
+  transform: translateY(-50%);
+  z-index: 105;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 1.15rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7efe4 0%, #e6d3ba 45%, #c9a96e 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  color: #1a120c;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16), 0 0 14px rgba(201, 169, 110, 0.45);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.25s ease;
+}
+
+.header-chooser-btn:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #f7e6d0 50%, #d8b87d 100%);
+  box-shadow: 0 6px 24px rgba(201, 169, 110, 0.7), 0 0 20px rgba(255, 245, 230, 0.65);
+  transform: translateY(-50%) translateY(-2px);
+  color: #120b06;
+}
+
+.header-chooser-btn:active {
+  transform: translateY(-50%) translateY(0);
+}
+
+.header-chooser-ico {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: #1a120c;
+}
+
+.header-chooser-arrow {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  stroke: #1a120c;
+  transition: transform 0.22s ease;
+}
+
+.header-chooser-btn:hover .header-chooser-arrow {
+  transform: translateX(-3px);
+}
+
+@media (min-width: 993px) and (max-width: 1350px) {
+  .header-container {
+    padding-left: clamp(140px, 12vw, 175px);
+  }
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -522,6 +586,149 @@ a {
   height: 100%;
   background: radial-gradient(circle at center, rgba(28, 21, 17, 0.45) 0%, rgba(13, 9, 8, 0.88) 100%);
   z-index: 2;
+}
+
+/* --- 6.1 Hero Tollal Rajzolt Szem Design Háttérelem --- */
+.hero-eye-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + var(--eye-parallax-x, 0px)), calc(-50% + var(--eye-parallax-y, 0px)));
+  width: min(940px, 94vw);
+  max-height: 82vh;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.68;
+  will-change: transform;
+}
+
+.hero-eye-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  opacity: 0.58;
+  filter: drop-shadow(0 0 10px rgba(214, 123, 75, 0.30)) drop-shadow(0 0 22px rgba(235, 194, 150, 0.12));
+}
+
+.hero-eye-stroke {
+  fill: none;
+  stroke: url(#hero-eye-gradient);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+/* Tollrajzoló Folyékony Animáció (Pen Drawing Effect) */
+.hero-eye-drawing #hero-eye-stroke-1 {
+  opacity: 1;
+  stroke-dasharray: 2510;
+  stroke-dashoffset: 2510;
+  animation: heroEyeDrawStroke1 2.0s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards;
+}
+
+.hero-eye-drawing #hero-eye-stroke-2 {
+  opacity: 1;
+  stroke-dasharray: 410;
+  stroke-dashoffset: 410;
+  animation: heroEyeDrawStroke2 1.1s cubic-bezier(0.4, 0, 0.2, 1) 1.75s forwards;
+}
+
+.hero-eye-drawing #hero-eye-stroke-3 {
+  opacity: 1;
+  stroke-dasharray: 540;
+  stroke-dashoffset: 540;
+  animation: heroEyeDrawStroke3 1.4s cubic-bezier(0.35, 0, 0.15, 1) 2.55s forwards;
+}
+
+@keyframes heroEyeDrawStroke1 {
+  0% {
+    stroke-dashoffset: 2510;
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes heroEyeDrawStroke2 {
+  0% {
+    stroke-dashoffset: 410;
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes heroEyeDrawStroke3 {
+  0% {
+    stroke-dashoffset: 540;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* Befejezett Állapot & Ambient Fénypulzálás - állandó halvány fényesség ugro-mentesen */
+.hero-eye-ready .hero-eye-svg {
+  animation: heroEyeAmbientPulse 7s ease-in-out infinite alternate;
+}
+
+@keyframes heroEyeAmbientPulse {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(214, 123, 75, 0.30)) drop-shadow(0 0 22px rgba(235, 194, 150, 0.12));
+    opacity: 0.58;
+  }
+  50% {
+    filter: drop-shadow(0 0 13px rgba(214, 123, 75, 0.36)) drop-shadow(0 0 25px rgba(235, 194, 150, 0.15));
+    opacity: 0.60;
+  }
+  100% {
+    filter: drop-shadow(0 0 10px rgba(214, 123, 75, 0.30)) drop-shadow(0 0 22px rgba(235, 194, 150, 0.12));
+    opacity: 0.58;
+  }
+}
+
+/* Akadálymentesítés csökkentett mozgáshoz */
+@media (prefers-reduced-motion: reduce) {
+  .hero-eye-stroke {
+    opacity: 1 !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+  .hero-eye-ready .hero-eye-svg {
+    animation: none !important;
+  }
+}
+
+/* Mobil és Tablet optimalizálás */
+@media (max-width: 768px) {
+  .hero-eye-container {
+    width: 96vw;
+    opacity: 0.48;
+  }
+  .hero-eye-stroke {
+    stroke-width: 1.8;
+  }
 }
 
 .hero-content {
@@ -2652,6 +2859,161 @@ html.is-frame-idle *::after {
   text-align: center;
 }
 
+/* --- Időpontfoglalás átmeneti szüneteltetése (Elhomályosított felület) --- */
+.booking-dialog--disabled .dialog-wrapper {
+  min-height: 480px;
+  overflow: hidden;
+}
+
+.booking-dialog--disabled .dialog-content-body {
+  filter: blur(8px);
+  -webkit-filter: blur(8px);
+  opacity: 0.32;
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.booking-dialog--disabled .dialog-close-btn {
+  z-index: 30;
+}
+
+.booking-unavailable-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(251, 250, 248, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 25;
+  border-radius: inherit;
+}
+
+.booking-dialog:not(.booking-dialog--disabled) .booking-unavailable-overlay {
+  display: none !important;
+}
+
+.booking-unavailable-card {
+  max-width: 480px;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid rgba(214, 123, 75, 0.35);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 16px 45px rgba(36, 28, 24, 0.14),
+    0 0 35px rgba(214, 123, 75, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  animation: modalScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.booking-unavailable-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(214, 123, 75, 0.1);
+  border: 1.5px solid rgba(214, 123, 75, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent, #d67b4b);
+  margin-bottom: 0.2rem;
+}
+
+.booking-unavailable-tag {
+  display: inline-block;
+  padding: 0.28rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(214, 123, 75, 0.1);
+  color: var(--color-accent, #d67b4b);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.booking-unavailable-title {
+  font-family: var(--font-headings);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #241c18);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.booking-unavailable-message {
+  font-size: 1.06rem;
+  line-height: 1.55;
+  color: var(--color-text-primary, #241c18);
+  margin: 0;
+}
+
+.booking-unavailable-message strong {
+  color: var(--color-accent-hover, #be6538);
+  font-weight: 600;
+}
+
+.booking-unavailable-sub {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #6b5d54);
+  margin: 0;
+  max-width: 400px;
+}
+
+.booking-unavailable-btn {
+  margin-top: 0.6rem;
+  padding: 0.75rem 2.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(214, 123, 75, 0.3);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.booking-unavailable-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(214, 123, 75, 0.45);
+}
+
+@media (max-width: 540px) {
+  .booking-unavailable-card {
+    padding: 2rem 1.25rem;
+    border-radius: 18px;
+  }
+
+  .booking-unavailable-title {
+    font-size: 1.28rem;
+  }
+
+  .booking-unavailable-message {
+    font-size: 0.96rem;
+  }
+
+  .booking-unavailable-sub {
+    font-size: 0.85rem;
+  }
+}
+
 /* --- 12/b. Szolgáltatás Részletek Dialog Box --- */
 .service-dialog {
   max-width: 720px;
@@ -3615,6 +3977,10 @@ html.is-frame-idle *::after {
 
 /* Táblagépek és kisebb laptopok (992px alatt) */
 @media (max-width: 992px) {
+  .header-chooser-btn {
+    display: none;
+  }
+
   .nav-menu {
     display: none;
     /* Hamburger menüre váltunk táblagépen */
