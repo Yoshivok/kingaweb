@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   MANULA-OPTIC MED. — összekötő (választó) oldal stíluslapja
+   MANUAL-OPTIC MED. — összekötő (választó) oldal stíluslapja
    A két testvéroldal közös rendszerére épül: meleg espresso alap, lenvászon
    krém, égetett terrakotta és homokarany, Playfair Display + Outfit.
    A bal fél zsályazöld fénybe (Salvia), a jobb terrakottába (Lumina) hajlik.
@@ -870,9 +870,11 @@ body.fx-high .medallion__halo {
 }
 
 .medallion__disc img {
-  width: 76%;
-  height: auto;
-  transform: translateY(1.5%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.04) translateY(1.5%);
 }
 
 /* Rekeszzáródás váltáskor */

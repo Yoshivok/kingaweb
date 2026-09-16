@@ -1,7 +1,7 @@
 {
-  "name": "manula-optic-med",
+  "name": "manual-optic-med",
   "version": "1.0.0",
-  "description": "Manula-Optic Med. — a Salvia Gyógymasszázs és a Lumina Optika weboldala egy domain alatt, közös választóoldallal",
+  "description": "Manual-Optic Med. — a Salvia Gyógymasszázs és a Lumina Optika weboldala egy domain alatt, közös választóoldallal",
   "private": true,
   "scripts": {
     "start": "node server/server.js",

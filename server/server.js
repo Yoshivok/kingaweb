@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   MANULA-OPTIC MED. — helyi kiszolgáló
+   MANUAL-OPTIC MED. — helyi kiszolgáló
    ─────────────────────────────────────────────────────────────────────────
    • kiszolgálja a statikus oldalt (választó, masszázs, optika, jogi aloldalak)
    • GET  /api/products      — a nyilvános terméklista (az optika oldalhoz)
@@ -590,7 +590,7 @@ server.requestTimeout = 60000;
 server.keepAliveTimeout = 10000;
 
 server.listen(config.port, config.host, () => {
-  console.log('\n  Manula-Optic Med. — helyi kiszolgáló');
+  console.log('\n  Manual-Optic Med. — helyi kiszolgáló');
   console.log(`  http://${config.host}:${config.port}\n`);
   if (config.dryRun) {
     console.log('  ⚠ SZÁRAZ FUTÁS: nincs SMTP-hitelesítés vagy címzett megadva.');

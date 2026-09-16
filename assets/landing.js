@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   MANULA-OPTIC MED. — összekötő oldal vezérlése
+   MANUAL-OPTIC MED. — összekötő oldal vezérlése
    ─────────────────────────────────────────────────────────────────────────
    Ez a fájl korábban több mint ezer sor volt. Nem azért, mert a választó
    bonyolult — hanem mert mindkét teljes weboldalt <iframe>-ben futtatta egy

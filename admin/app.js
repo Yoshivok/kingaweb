@@ -270,7 +270,7 @@
     if (!target) {
       if (areaLabel) areaLabel.textContent = '';
       show(back, false);
-      document.title = 'Manula-Optic Med. — Adminisztráció';
+      document.title = 'Manual-Optic Med. — Adminisztráció';
       window.scrollTo(0, 0);
       announceSection('');
       return;

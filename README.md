@@ -1,4 +1,4 @@
-# Manula-Optic Med. — egyesített weboldal
+# Manual-Optic Med. — egyesített weboldal
 
 A **Salvia Gyógymasszázs** és a **Lumina Optika** weboldala egyetlen domain alatt,
 közös választóoldallal. A látogató középen érkezik, és egy kattintással balra a
