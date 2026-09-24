@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SALVIA GYÓGYMASSZÁZS — hozzájárulás-kezelés (sütik és külső tartalmak)
+   MANUAL-OPTIC MED. GYÓGYMASSZÁZS — hozzájárulás-kezelés (sütik és külső tartalmak)
    ─────────────────────────────────────────────────────────────────────────
    Az oldal nem használ követő- vagy marketingsütiket, és nem futtat analitikát.
    Egyetlen dolgot tárolunk az eszközön: magát a döntést (localStorage), ami az
@@ -14,12 +14,12 @@
           data-consent-title="A rendelő helye a térképen"
           data-consent-label="Térkép megjelenítése"></div>
 
-   Nyilvános felület: window.SalviaConsent.granted() / .open() / .set(bool)
+   Nyilvános felület: window.MassageConsent.granted() / .open() / .set(bool)
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  var KEY = 'salvia-consent';
+  var KEY = 'manualoptic-massage-consent';
   var VERSION = 1;
 
   /* ── Tárolás ──────────────────────────────────────────────────────────── */
@@ -125,7 +125,7 @@
     });
   }
 
-  window.SalviaConsent = {
+  window.MassageConsent = {
     granted: function () { var s = read(); return !!(s && s.external); },
     open: show,
     set: set

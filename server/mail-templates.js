@@ -20,9 +20,9 @@
    dobozok háttere. A két készlet a két weboldal saját színeiből származik. */
 const BRANDS = {
   masszazs: {
-    name: 'Salvia',
+    name: 'Manual-Optic Med.',
     tagline: 'Gyógymasszázs',
-    fullName: 'Salvia Gyógymasszázs',
+    fullName: 'Manual-Optic Med. — Gyógymasszázs',
     address: '1111 Budapest, Karinthy Frigyes út 20.',
     phone: '06 20 501 7453',
     phoneRaw: '+36205017453',
@@ -35,9 +35,9 @@ const BRANDS = {
     consent: 'A vendég nyilatkozott arról, hogy megismerte az ellenjavallatokat, és hozzájárult az adatkezeléshez.'
   },
   optika: {
-    name: 'Lumina',
+    name: 'Manual-Optic Med.',
     tagline: 'Optika',
-    fullName: 'Lumina Optika',
+    fullName: 'Manual-Optic Med. — Optika',
     address: '1111 Budapest, Karinthy Frigyes út 20.',
     phone: '06 20 972 9122',
     phoneRaw: '+36209729122',

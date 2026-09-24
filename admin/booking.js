@@ -204,7 +204,7 @@
   var api = Admin.api;
   var toast = Admin.toast;
 
-  var SITE_NAMES = { masszazs: 'Salvia Gyógymasszázs', optika: 'Lumina Optika' };
+  var SITE_NAMES = { masszazs: 'Gyógymasszázs', optika: 'Optika' };
 
   var DAY_NAMES = ['vasárnap', 'hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat'];
   var DAY_SHORT = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];

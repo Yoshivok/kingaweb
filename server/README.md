@@ -34,7 +34,7 @@ kétlépcsős azonosítás** — ezért nem található meg elsőre. Sorrend:
    **Kétlépcsős azonosítás** → bekapcsolás (telefonszám vagy Google-alkalmazás).
 2. Utána: [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
    (ha a keresőbe írja: „app passwords" / „alkalmazásjelszavak").
-3. Adjon nevet (pl. „Salvia weboldal") → a Google mutat **16 karaktert**,
+3. Adjon nevet (pl. „Manual-Optic Med. weboldal") → a Google mutat **16 karaktert**,
    szóközökkel tagolva. A szóközök elhagyhatók.
 4. Ezt írja a `smtp.pass` mezőbe — a saját jelszavát soha.
 

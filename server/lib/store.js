@@ -385,14 +385,14 @@ function seedProducts() {
     }),
     make({
       category: 'lenses',
-      brand: 'LUMINA TECH',
+      brand: 'OPTIC TECH',
       title: 'HD Focus Pro',
       shortDesc: 'Egyedi csiszolású progresszív lencse kékfény-szűrővel és tükröződésmentes bevonattal.',
       price: '42 000 Ft / db',
       badge: '',
       badgeTone: 'none',
       images: [
-        { full: '/optika/assets/lenses-1200.webp', thumb: '/optika/assets/lenses-600.webp', alt: 'Lumina HD Focus Pro progresszív dioptriás lencse', w: 1200, h: 1200 }
+        { full: '/optika/assets/lenses-1200.webp', thumb: '/optika/assets/lenses-600.webp', alt: 'HD Focus Pro progresszív dioptriás lencse', w: 1200, h: 1200 }
       ],
       detail: {
         intro: 'A progresszív lencse egyetlen felületen viszi végig a távoli, a köztes és a közeli látótávolságot, éles határvonal nélkül. Ennek ára hagyományosan az oldalsó torzítás — a HD Focus Pro ezen a ponton lép tovább: a lencsefelületet nem katalógusból választjuk, hanem az Ön mért adataiból számoljuk.\n\nA számításba bemegy a keret dőlésszöge, a szem és a lencse távolsága, valamint a keret íve. Ugyanaz a dioptria más keretben más felületet kíván; ezért mérjük külön minden szemüvegnél.',
@@ -417,14 +417,14 @@ function seedProducts() {
     }),
     make({
       category: 'accessories',
-      brand: 'LUMINA LEATHER',
+      brand: 'OPTIC LEATHER',
       title: 'Classic Case & Cleaner Kit',
       shortDesc: 'Valódi bőrből készült védőtok mikroszálas tisztítókendővel és prémium lencsespray-vel.',
       price: '18 500 Ft',
       badge: '',
       badgeTone: 'none',
       images: [
-        { full: '/optika/assets/case-1200.webp', thumb: '/optika/assets/case-600.webp', alt: 'Lumina Leather bőr szemüvegtok tisztítókészlettel', w: 1200, h: 1200 }
+        { full: '/optika/assets/case-1200.webp', thumb: '/optika/assets/case-600.webp', alt: 'Valódi bőr szemüvegtok tisztítókészlettel', w: 1200, h: 1200 }
       ],
       detail: {
         intro: 'A szemüveget nem a viselés koptatja el, hanem a két viselés közti idő: a táska aljára ejtett keret, a szárával lefelé letett lencse, a pólóval végigtörölt bevonat. Ez a készlet ezt a három szokást hivatott felváltani.\n\nA tok kérgesített marhabőrből készül, merev belső vázzal — nem lapul be a táskában. A belseje puha, szálmentes béléssel van kirakva, ami a bevonatos lencsét sem karcolja.',

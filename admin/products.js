@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   ADMIN — LUMINA OPTIKA: KIEMELT TERMÉKEK
+   ADMIN — OPTIKA: KIEMELT TERMÉKEK
    ─────────────────────────────────────────────────────────────────────────
    A weboldal „Exkluzív Választék” szakaszának szerkesztője. A vázhoz
    (`app.js`) az `Admin.register` hívással csatlakozik: az adja a
@@ -673,15 +673,16 @@
 
   /* ── Előnézet ──────────────────────────────────────────────────────────── */
   function renderPreview() {
-    if (!window.LuminaProducts) return;
+    var productsApi = window.OptikaProducts;
+    if (!productsApi) return;
     var product = collectForm();
     if (!product.title) product.title = 'Névtelen termék';
 
     var cardBox = $('preview-card');
     cardBox.textContent = '';
-    cardBox.appendChild(window.LuminaProducts.createCard(product));
+    cardBox.appendChild(productsApi.createCard(product));
 
-    window.LuminaProducts.renderDetail(product, $('preview-detail'), {});
+    productsApi.renderDetail(product, $('preview-detail'), {});
   }
 
   /* ── Mentés ────────────────────────────────────────────────────────────── */
@@ -877,8 +878,8 @@
 
   /* ══════════════════ BEJELENTKEZÉS A VÁZNÁL ══════════════════ */
   Admin.register('optika', {
-    title: 'Lumina Optika — Kiemelt termékek',
-    shortTitle: 'Lumina Optika',
+    title: 'Optika — Kiemelt termékek',
+    shortTitle: 'Optika',
     mount: function () {
       wire();
       loadProducts();

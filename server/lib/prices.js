@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   ÁRAK — a Salvia Gyógymasszázs árlistája
+   ÁRAK — a Gyógymasszázs árlistája
    ─────────────────────────────────────────────────────────────────────────
    A `masszazs/index.html` árlistája eddig kézzel írt HTML-tábla volt. Most
    adat, amit az admin szerkeszthet.

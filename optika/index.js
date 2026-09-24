@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Lumina Optika — Kliensoldali Interaktivitás
+   Manual-Optic Med. — Optika: Kliensoldali Interaktivitás
    ========================================================================== */
 
 /* ==========================================================================
@@ -791,7 +791,8 @@ function initProduct3DTilt() {
 /* ── A katalógus betöltése és a részletek ablaka ─────────────────────────── */
 function initProductCatalog() {
   const grid = document.getElementById('product-grid');
-  if (!grid || !window.LuminaProducts) return;
+  const productsApi = window.OptikaProducts;
+  if (!grid || !productsApi) return;
 
   const dialog = document.getElementById('product-dialog');
   const detailRoot = document.getElementById('product-detail-root');
@@ -800,7 +801,7 @@ function initProductCatalog() {
   function openDetail(product) {
     if (!dialog || !detailRoot) return;
 
-    window.LuminaProducts.renderDetail(product, detailRoot, {
+    productsApi.renderDetail(product, detailRoot, {
       titleId: 'product-dialog-title',
       onBook: () => {
         // A részletekből egyenesen az időpontfoglalásba lehet lépni.
@@ -838,7 +839,7 @@ function initProductCatalog() {
     grid.removeAttribute('data-fallback');
 
     products.forEach(product => {
-      grid.appendChild(window.LuminaProducts.createCard(product, { onDetails: openDetail }));
+      grid.appendChild(productsApi.createCard(product, { onDetails: openDetail }));
     });
 
     // A csere után a szűrő, a billenés és a beúszás új elemeket kapott
@@ -2976,7 +2977,7 @@ function initBookingSystem() {
 
   function saveBookingToLocalStorage(state) {
     try {
-      localStorage.setItem('lumina_booking', JSON.stringify({
+      localStorage.setItem('optika_booking', JSON.stringify({
         id: state.id || null,
         service: state.service,
         dateString: isoDay(state.date),
@@ -3066,7 +3067,7 @@ function initDialogDismissFallback() {
    10. Meglévő Foglalás Keresése (LocalStorage) & Toast Értesítés
    ========================================================================== */
 function checkExistingBooking() {
-  const savedData = localStorage.getItem('lumina_booking');
+  const savedData = localStorage.getItem('optika_booking');
   if (!savedData) return;
 
   try {

@@ -163,7 +163,7 @@ function base64Body(text) {
 }
 
 function buildMessage(opts) {
-  const boundary = '=_salvia_' + crypto.randomBytes(12).toString('hex');
+  const boundary = '=_manualoptic_' + crypto.randomBytes(12).toString('hex');
   const domain = (opts.from.address.split('@')[1] || 'localhost');
 
   const headers = [

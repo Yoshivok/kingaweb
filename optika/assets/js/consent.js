@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LUMINA OPTIKA — hozzájárulás-kezelés (sütik és külső tartalmak)
+   MANUAL-OPTIC MED. OPTIKA — hozzájárulás-kezelés (sütik és külső tartalmak)
    ─────────────────────────────────────────────────────────────────────────
    Az oldal nem használ követő- vagy marketingsütiket, és nem futtat analitikát.
    Egyetlen dolgot tárolunk az eszközön: magát a döntést (localStorage), ami az
@@ -14,12 +14,12 @@
           data-consent-title="Az üzlet helye a térképen"
           data-consent-label="Térkép megjelenítése"></div>
 
-   Nyilvános felület: window.LuminaConsent.granted() / .open() / .set(bool)
+   Nyilvános felület: window.OptikaConsent.granted() / .open() / .set(bool)
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  var KEY = 'lumina-consent';
+  var KEY = 'optika-consent';
   var VERSION = 1;
 
   /* ── Tárolás ──────────────────────────────────────────────────────────── */
@@ -125,7 +125,7 @@
     });
   }
 
-  window.LuminaConsent = {
+  window.OptikaConsent = {
     granted: function () { var s = read(); return !!(s && s.external); },
     open: show,
     set: set

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   ADMIN — SALVIA GYÓGYMASSZÁZS: ÁRAK
+   ADMIN — GYÓGYMASSZÁZS: ÁRAK
    ─────────────────────────────────────────────────────────────────────────
    A weboldal „Áraink” táblázatának szerkesztője. A vázhoz (`app.js`) az
    `Admin.register` hívással csatlakozik.
@@ -543,8 +543,8 @@
 
   /* ══════════════════ BEJELENTKEZÉS A VÁZNÁL ══════════════════ */
   Admin.register('masszazs', {
-    title: 'Salvia Gyógymasszázs — Áraink',
-    shortTitle: 'Salvia Gyógymasszázs',
+    title: 'Gyógymasszázs — Áraink',
+    shortTitle: 'Gyógymasszázs',
     mount: function () {
       wire();
       /* Nem mentett munkával visszatérve azt tartjuk meg — a felhasználó nem

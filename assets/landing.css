@@ -2,7 +2,7 @@
    MANUAL-OPTIC MED. — összekötő (választó) oldal stíluslapja
    A két testvéroldal közös rendszerére épül: meleg espresso alap, lenvászon
    krém, égetett terrakotta és homokarany, Playfair Display + Outfit.
-   A bal fél zsályazöld fénybe (Salvia), a jobb terrakottába (Lumina) hajlik.
+   A bal fél a gyógymasszázs, a jobb az optika színeibe hajlik.
    ─────────────────────────────────────────────────────────────────────────
    1.  Design tokenek
    2.  Alapok és a kilépő animáció
@@ -72,13 +72,13 @@
 
   /* Kiemelések */
   --terra: #d67b4b;
-  /* égetett terrakotta — Lumina Optika */
+  /* égetett terrakotta — Optika */
   --terra-deep: #be6538;
   --gold: #c9a96e;
   /* homokarany — közös kötőelem */
   --gold-soft: #e2cda2;
   --sage: #d67b4b;
-  /* zsályazöld helyett terrakotta — Salvia Gyógymasszázs */
+  /* terrakotta kiemelés — Gyógymasszázs */
   --sage-light: #d67b4b;
 
   /* Tipográfia */

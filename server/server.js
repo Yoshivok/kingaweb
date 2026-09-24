@@ -47,9 +47,9 @@ function loadConfig() {
       port: Number(process.env.SMTP_PORT || (file.smtp && file.smtp.port) || 587),
       user: process.env.SMTP_USER || (file.smtp && file.smtp.user) || '',
       pass: process.env.SMTP_PASS || (file.smtp && file.smtp.pass) || '',
-      clientName: 'salviamasszazs.hu'
+      clientName: 'manualopticmed.hu'
     },
-    fromName: process.env.MAIL_FROM_NAME || file.fromName || 'Salvia Gyógymasszázs',
+    fromName: process.env.MAIL_FROM_NAME || file.fromName || 'Manual-Optic Med.',
     /* Ide érkezik a masszőr értesítése. NEM jelenik meg a weboldalon. */
     to: process.env.MAIL_TO || file.to || '',
     phoneRaw: file.phoneRaw || '+36205017453',
@@ -423,8 +423,18 @@ async function sendFile(req, res, filePath, { admin = false } = {}) {
 function notFound(req, res) {
   const body = Buffer.from(
     '<!doctype html><html lang="hu"><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<meta name="robots" content="noindex">' +
     '<title>404 — nincs ilyen oldal</title>' +
-    '<h1>404</h1><p><a href="/">Vissza a főoldalra</a></p>',
+    '<link rel="icon" href="/assets/favicon.png" type="image/png">' +
+    /* A CSP a beágyazott stílust megengedi (style-src 'unsafe-inline'). */
+    '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;' +
+    'background:#1c1511;color:#f3ebe0;font:17px/1.6 system-ui,sans-serif;text-align:center;padding:24px}' +
+    'h1{font:400 clamp(3.5rem,18vw,6rem)/1 Georgia,serif;margin:0 0 .3em;color:#d67b4b}' +
+    'a{display:inline-block;margin-top:1.2em;padding:.7em 1.4em;border:1px solid #c9a96e;' +
+    'border-radius:999px;color:#e2cda2;text-decoration:none}</style>' +
+    '<main><h1>404</h1><p>Ez az oldal nem található.</p>' +
+    '<a href="/">Vissza a főoldalra</a></main>',
     'utf8'
   );
   res.writeHead(404, {

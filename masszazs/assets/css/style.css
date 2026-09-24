@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SALVIA GYÓGYMASSZÁZS — stíluslap
+   MANUAL-OPTIC MED. GYÓGYMASSZÁZS — stíluslap
    Dizájnrendszer a style.md alapján: zsályazöld–arany paletta,
    Playfair Display címsorok + Outfit főszöveg, glassmorphism, lágy ívek.
    ─────────────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@
 
 /* ── 1. DESIGN TOKENEK ─────────────────────────────────────────────────── */
 :root {
-  /* Színpaletta — a testvéroldal (Lumina Optika) meleg terrakotta rendszere:
+  /* Színpaletta — a testvéroldal (Optika) meleg terrakotta rendszere:
      lenvászon-fehér alap, égetett terrakotta kiemelés, homok szegélyek,
      meleg faszén-sötét szekciók. */
   --color-bg-primary: #faf8f5;
@@ -962,9 +962,36 @@ table {
   transform: translateX(3px);
 }
 
+/* A gomb abszolút pozícióban ül, ezért a fejléc tartalmának helyet kell
+   hagynia neki: a gomb szélessége (~160 px) + a jobb margója + egy kis rés.
+   1080–1340 px között a menü már nem fér el mellette, ezért ott csak az ikon
+   látszik (a felirat az aria-labelben megmarad). */
 @media (min-width: 1081px) {
   .header__inner {
-    padding-right: clamp(140px, 12vw, 180px);
+    padding-right: calc(170px + clamp(1rem, 2.5vw, 2.5rem));
+  }
+}
+
+@media (min-width: 1081px) and (max-width: 1339px) {
+  .header__inner {
+    padding-right: calc(44px + clamp(1rem, 2.5vw, 2.5rem) + 0.75rem);
+  }
+
+  .header__chooser-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .header__chooser-btn span,
+  .header__chooser-btn .header__chooser-arrow {
+    display: none;
+  }
+
+  .nav__link {
+    padding-inline: 0.6rem;
   }
 }
 
@@ -4019,6 +4046,23 @@ html.is-frame-idle *::after {
   gap: 0.6rem;
 }
 
+/* A kezelések listájának második fele. Széles képernyőn külön oszlop, üres
+   címmel igazítva; egy oszlopban viszont az első fele alá zárkózik fel,
+   különben a rács hézaga és az üres cím nagy rést hagyna a lista közepén. */
+.footer__col--cont .footer__title {
+  display: block;
+}
+
+@media (max-width: 699px) {
+  .footer__col--cont {
+    margin-top: calc(0.6rem - clamp(2rem, 4vw, 3rem));
+  }
+
+  .footer__col--cont .footer__title {
+    display: none;
+  }
+}
+
 /* a :not(.btn) kizárás nélkül a lábléc gombja is elveszítené a saját színét */
 .footer__col a:not(.btn),
 .footer__col span:not(.btn) {
@@ -4301,8 +4345,12 @@ html.is-frame-idle *::after {
   line-height: 1.55;
 }
 
+/* A táblázat telefonon szélesebb a képernyőnél (min-width: 620px) — a
+   görgetés a dobozán belül marad, nem tolja szét az egész oldalt. */
 .legal .table-scroll {
   margin-bottom: 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .legal__back {
@@ -4388,6 +4436,18 @@ html.is-frame-idle *::after {
     padding: 0.45rem 0.75rem;
     font-size: 0.84rem;
     gap: 0.4rem;
+  }
+}
+
+/* A legkeskenyebb telefonokon (320 px) a logó és a „Vissza” gomb együtt
+   12 px-lel szélesebb volt a képernyőnél. */
+@media (max-width: 359px) {
+  .header:has(.back-link) .logo__name {
+    font-size: 1.08rem;
+  }
+
+  .header .back-link {
+    padding: 0.4rem 0.6rem;
   }
 }
 
@@ -5182,8 +5242,7 @@ html.is-frame-idle *::after {
 }
 
 /* A legkeskenyebb készülékeken az alcím már nem fér ki a hamburger mellett —
-   olvashatatlanná zsugorítani viszont értelmetlen, ezért inkább elhagyjuk.
-   A „Salvia" név önmagában is azonosítja az oldalt. */
+   olvashatatlanná zsugorítani viszont értelmetlen, ezért inkább elhagyjuk. */
 @media (max-width: 430px) {
   .logo__sub {
     display: none;

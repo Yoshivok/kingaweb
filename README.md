@@ -1,6 +1,6 @@
 # Manual-Optic Med. — egyesített weboldal
 
-A **Salvia Gyógymasszázs** és a **Lumina Optika** weboldala egyetlen domain alatt,
+A **Gyógymasszázs** és az **Optika** weboldala (Manual-Optic Med.) egyetlen domain alatt,
 közös választóoldallal. A látogató középen érkezik, és egy kattintással balra a
 masszázs, jobbra az optika oldalra úszik át — **újratöltés nélkül**.
 
@@ -14,8 +14,8 @@ manula_optic_med/
 │   ├── main_logo.jpg   Az eredeti logó (változatlanul)
 │   ├── main_logo.webp  Ugyanaz, átlátszó háttérrel — ez látszik a medálon
 │   └── favicon.png     A logó jelképéből
-├── masszazs/           Salvia Gyógymasszázs
-├── optika/             Lumina Optika
+├── masszazs/           Gyógymasszázs (Manual-Optic Med.)
+├── optika/             Optika (Manual-Optic Med.)
 │   └── assets/
 │       ├── css/products.css        Termékkártya + részletek — KÖZÖS az adminnal
 │       ├── js/product-render.js    Ugyanezek felépítése — KÖZÖS az adminnal

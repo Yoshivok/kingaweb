@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SALVIA GYÓGYMASSZÁZS — interakciók
+   MANUAL-OPTIC MED. GYÓGYMASSZÁZS — interakciók
    ─────────────────────────────────────────────────────────────────────────
    1.  Konfiguráció (kezelés–időtartam párok, űrlap végpont)
    2.  Fejléc állapot + aktív menüpont

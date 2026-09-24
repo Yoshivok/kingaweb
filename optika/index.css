@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Lumina Optika — CSS Design Rendszer & Stíluslap
+   Manual-Optic Med. — Optika: CSS Design Rendszer & Stíluslap
    ========================================================================== */
 
 /* --- 1. Design Tokenek és Változók --- */
@@ -331,9 +331,32 @@ a {
   transform: translateX(-3px);
 }
 
-@media (min-width: 993px) and (max-width: 1350px) {
+/* A gomb abszolút pozícióban ül a bal sarokban, a logónak ki kell kerülnie:
+   gombszélesség (~160 px) + bal margó + rés, amiből levonható az a hely,
+   amit a középre igazított (max. 1200 px-es) konténer amúgy is szabadon hagy.
+   1200–1440 px között a menü már nem fér el mellette, ott csak az ikon látszik. */
+@media (min-width: 993px) {
   .header-container {
-    padding-left: clamp(140px, 12vw, 175px);
+    padding-left: max(24px, calc(176px + clamp(1rem, 2.5vw, 2.5rem) - (100vw - 1200px) / 2));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .header-container {
+    padding-left: calc(44px + clamp(1rem, 2.5vw, 2.5rem) + 0.75rem);
+  }
+
+  .header-chooser-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .header-chooser-btn span,
+  .header-chooser-btn .header-chooser-arrow {
+    display: none;
   }
 }
 
@@ -4015,6 +4038,24 @@ html.is-frame-idle *::after {
 
   .nav-link {
     font-size: 1.02rem;
+  }
+}
+
+/* 993–1199 px között a logó, a hat menüpont és a foglalás gomb együtt
+   szélesebb a képernyőnél (a gomb kilógott jobbra) — itt is a hamburger
+   menü jelenik meg, amelyben a „Vissza a választóhoz” link is benne van. */
+@media (min-width: 993px) and (max-width: 1199px) {
+  .nav-menu,
+  .header-chooser-btn {
+    display: none;
+  }
+
+  .mobile-nav-toggle {
+    display: flex;
+  }
+
+  .header-container {
+    padding-left: 24px;
   }
 }
 

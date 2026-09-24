@@ -387,7 +387,7 @@
     return svg;
   }
 
-  global.LuminaProducts = {
+  global.OptikaProducts = {
     CATEGORY_LABELS: CATEGORY_LABELS,
     createCard: createCard,
     renderDetail: renderDetail,

@@ -22,13 +22,13 @@ function loadConfig() {
     console.error('      cp server/config.example.json server/config.json\n');
     process.exit(1);
   }
-  const smtp = Object.assign({ host: 'smtp.gmail.com', port: 587, clientName: 'salviamasszazs.hu' }, file.smtp);
+  const smtp = Object.assign({ host: 'smtp.gmail.com', port: 587, clientName: 'manualopticmed.hu' }, file.smtp);
   smtp.user = process.env.SMTP_USER || smtp.user || '';
   smtp.pass = process.env.SMTP_PASS || smtp.pass || '';
   return {
     smtp,
     from: file.from || smtp.user,
-    fromName: file.fromName || 'Salvia Gyógymasszázs',
+    fromName: file.fromName || 'Manual-Optic Med.',
     to: process.argv[2] || process.env.MAIL_TO || file.to || '',
     phoneRaw: file.phoneRaw || '+36205017453',
     timeZone: file.timeZone || 'Europe/Budapest'
