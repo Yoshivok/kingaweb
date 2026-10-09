@@ -26,24 +26,32 @@
   --color-error: #a84242;
   /* Finom piros a hibákhoz */
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --glass-shadow: 0 8px 32px 0 rgba(36, 28, 24, 0.05);
+  /* Glassmorphism / Fejléc háttér (masszázs stílus — nincs GPU-terhelő backdrop-filter) */
+  --glass-bg: rgba(250, 248, 245, 0.82);
+  --glass-bg-solid: rgba(250, 248, 245, 0.96);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 6px 28px -12px rgba(36, 28, 24, 0.18);
+
+  /* Származtatott színek és arany díszítés (masszázs stílussal harmonizálva) */
+  --color-accent-deep: #a85832;
+  --color-accent-dark: #8f4a2b;
+  --color-gold: #c9a96e;
 
   /* Betűtípusok */
   --font-headings: 'Playfair Display', 'Cormorant Garamond', serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
   /* Lekerekítések és Átmenetek */
   --radius-sm: 4px;
-  --radius-md: 12px;
-  --radius-lg: 24px;
-  --transition-normal: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  --transition-smooth: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --transition-fast: 0.18s ease;
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Fejléc Kezdő Magasság */
-  --header-height: 80px;
+  /* Fejléc Magasság (karcsú, elegáns profil) */
+  --header-height: 70px;
 }
 
 /* --- 2. Alapok és Resztek --- */
@@ -231,46 +239,36 @@ a {
   box-shadow: none !important;
 }
 
-/* --- 5. Fejléc és Navigáció --- */
+/* --- 5. Fejléc és Navigáció (megegyezik a masszázs oldal letisztult stílusával) --- */
 .header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
-  background-color: rgba(251, 250, 248, 0.88);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* NINCS backdrop-filter — a 82%-os krém sáv nélküle is hibátlan, és kiküszöböli a
+     GPU-rajzfelület újraépítését és a villanást a hero fölött úszva */
+  background-color: var(--glass-bg);
   border-bottom: 1px solid transparent;
-  padding-block: 1.25rem;
-  transition: padding var(--transition-normal), background var(--transition-normal);
+  transition: box-shadow var(--transition-normal), background-color var(--transition-normal),
+    border-color var(--transition-normal);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
-/* Native CSS Scroll-driven header shrinking */
-@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
-  .header {
-    animation: shrink-header auto linear both;
-    animation-timeline: scroll(block root);
-    animation-range: 0px 100px;
-  }
-}
-
-@keyframes shrink-header {
-  to {
-    padding-block: 0.6rem;
-    background-color: rgba(251, 250, 248, 0.95);
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 4px 30px rgba(36, 28, 24, 0.03);
-  }
+.header.is-stuck {
+  background-color: var(--glass-bg-solid);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 6px 28px -12px rgba(36, 28, 24, 0.18);
 }
 
 .header-container {
-  max-width: 1200px;
+  max-width: 1240px;
   margin-inline: auto;
   padding-inline: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: var(--header-height);
+  gap: 1.25rem;
 }
 
 /* Választó gomb — teljesen a bal sarokba rögzítve, ragyogó pezsgő-arany luxus dizájn (megegyezik a masszázs oldallal) */
@@ -428,45 +426,81 @@ a {
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 2.2rem;
+  gap: 0.2rem;
+  margin-left: auto;
 }
 
 .nav-link {
-  font-family: var(--font-headings);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  white-space: nowrap;
+  text-decoration: none;
   position: relative;
-  padding-block: 5px;
-  transition: color var(--transition-normal);
-}
-
-.nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: var(--color-accent);
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform var(--transition-normal);
 }
 
 .nav-link:hover {
-  color: var(--color-accent);
+  color: var(--color-accent-deep);
+  background-color: var(--color-accent-light);
 }
 
-.nav-link:hover::after {
-  transform: scaleX(1);
-  transform-origin: left;
+.nav-link.is-active {
+  color: var(--color-accent-deep);
+}
+
+.nav-link.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.28rem;
+  height: 1.5px;
+  background-color: var(--color-gold);
+  border-radius: 2px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-left: 0.75rem;
+}
+
+.header-actions .btn-book {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background-color: var(--color-accent-deep);
+  color: #ffffff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(168, 72, 47, 0.25);
+  transition: background-color var(--transition-fast), transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.header-actions .btn-book:hover {
+  background-color: var(--color-accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(168, 72, 47, 0.35);
+}
+
+.header-actions .btn-book:active {
+  transform: translateY(0);
 }
 
 /* Mobil Menü Gomb */
@@ -595,10 +629,10 @@ a {
 /* --- 6. Hero / Landing Szekció --- */
 .hero {
   position: relative;
-  /* `svh`: a hero pontosan a látható területet tölti ki akkor is, amikor a
-     mobil böngésző címsora látszik — `vh`-val az alja a kép alá lógott. */
-  height: 100vh;
-  height: 100svh;
+  /* A hero a ragadós fejléc alatti teljes képernyőt tölti ki */
+  height: calc(100vh - var(--header-height));
+  height: calc(100svh - var(--header-height));
+  min-height: 520px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -618,20 +652,11 @@ a {
      a böngésző át is ugorja (stílus, elrendezés, rajzolás), és a vászon
      textúrája felszabadul. Visszagörgetve magától újraéled, az animációt
      gondozó IntersectionObserver ugyanúgy elsül.
-     A magasság itt kötött (`100svh`), így a helyfoglaló méret pontos — az
+     A magasság itt kötött (`100svh - var(--header-height)`), így a helyfoglaló méret pontos — az
      `auto` kulcsszó pedig az első kirajzolás után a TÉNYLEGES méretet
-     jegyzi meg, tehát a görgetősáv nem ugrál.
-
-     A TÖBBI szakasz szándékosan NEM kapja meg ezt. Kipróbáltuk, és elrontja
-     az oldalon belüli ugrásokat: a még sosem megjelenített szakasz addig a
-     `contain-intrinsic-size` BECSÜLT magasságával szerepel, és a böngésző
-     ezekkel a becsült magasságokkal számolja ki, hova görgessen. Telefonon a
-     szakaszok jóval magasabbak, mint asztali gépen, ezért a menü
-     „Kapcsolat” pontjára kattintva a lábléc mérve 2924 képponttal a
-     képernyőn kívülre került. A heronál ez nem fordulhat elő, mert a
-     magassága kötött — nincs mit elcsúsztatni. */
+     jegyzi meg, tehát a görgetősáv nem ugrál. */
   content-visibility: auto;
-  contain-intrinsic-size: auto 100svh;
+  contain-intrinsic-size: auto calc(100svh - var(--header-height));
 }
 
 .hero-canvas {
@@ -2865,6 +2890,25 @@ html.is-frame-idle *::after {
   color: #8a7f76;
 }
 
+.footer .logo-text,
+.footer .logo-name,
+.footer .logo__name,
+.footer .logo,
+.logo--footer .logo-text,
+.logo--footer .logo-name,
+.logo--footer .logo__name,
+.footer-brand-name {
+  color: #ffffff;
+}
+
+.footer .logo-accent,
+.footer .logo__accent,
+.logo--footer .logo-accent,
+.logo--footer .logo__accent,
+.footer-brand-accent {
+  color: var(--color-accent);
+}
+
 .footer-bottom-link:hover {
   color: #ffffff;
 }
@@ -3968,23 +4012,20 @@ html.is-frame-idle *::after {
 
 /* --- 13. Reszponzivitás (Media Queries) --- */
 
-/* Laptopok és kisebb asztali kijelzők (992px és 1200px között) */
+/* Laptopok és asztali kijelzők (1200px alatt) */
 @media (max-width: 1200px) {
   .nav-menu {
-    gap: 1.25rem;
-  }
-
-  .logo {
-    font-size: 1.25rem;
+    gap: 0.15rem;
   }
 
   .nav-link {
-    font-size: 1.05rem;
+    padding: 0.48rem 0.65rem;
+    font-size: 0.88rem;
   }
 
   .header-actions .btn-book {
-    padding: 10px 20px;
-    font-size: 1.0rem;
+    padding: 0.48rem 0.95rem;
+    font-size: 0.82rem;
   }
 
   .hero-content {
@@ -4030,17 +4071,6 @@ html.is-frame-idle *::after {
   }
 }
 
-/* Keskeny asztali ablak: hat menüpont már szűkösen fér el a fejlécben */
-@media (max-width: 1200px) {
-  .nav-menu {
-    gap: 1.5rem;
-  }
-
-  .nav-link {
-    font-size: 1.02rem;
-  }
-}
-
 /* 993–1199 px között a logó, a hat menüpont és a foglalás gomb együtt
    szélesebb a képernyőnél (a gomb kilógott jobbra) — itt is a hamburger
    menü jelenik meg, amelyben a „Vissza a választóhoz” link is benne van. */
@@ -4059,8 +4089,12 @@ html.is-frame-idle *::after {
   }
 }
 
-/* Táblagépek és kisebb laptopok (992px alatt) */
+/* Táblagépek és kisebb kijelzők (992px alatt) */
 @media (max-width: 992px) {
+  :root {
+    --header-height: 64px;
+  }
+
   .header-chooser-btn {
     display: none;
   }
@@ -4072,17 +4106,12 @@ html.is-frame-idle *::after {
 
   .mobile-nav-toggle {
     display: flex;
-    /* Hamburger gomb megjelenik — flex, mert a sávokat oszlopban középre
-       igazítjuk a megnövelt érintőfelületen belül */
-  }
-
-  .header {
-    padding-block: 0.9rem;
+    /* Hamburger gomb megjelenik */
   }
 
   .header-actions .btn-book {
-    padding: 8px 18px;
-    font-size: 0.98rem;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.82rem;
   }
 
   .section {
@@ -4333,10 +4362,10 @@ html.is-frame-idle *::after {
 /* Magasság alapú korrekciók alacsonyabb kijelzőkhöz (pl. laptop fekvő tájolás, kisméretű képernyők) */
 @media (max-height: 760px) and (min-width: 768px) {
   .hero {
-    height: auto;
-    min-height: 100vh;
-    padding-top: 100px;
-    padding-bottom: 80px;
+    height: calc(100vh - var(--header-height));
+    height: calc(100svh - var(--header-height));
+    min-height: 520px;
+    padding-block: clamp(1.5rem, 2.5vw, 2.5rem);
   }
 
   .hero-content {
@@ -4682,27 +4711,28 @@ html.is-frame-idle *::after {
 }
 
 .legal-header .header-container {
-  min-height: calc(var(--header-height) - 20px);
+  min-height: var(--header-height);
 }
 
 .legal-header .back-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 0.5rem 1.05rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-family: var(--font-headings);
-  font-size: 1.02rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--color-text-primary);
   background-color: var(--color-bg-secondary);
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
 }
 
 .legal-header .back-link:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--color-accent-deep);
+  color: var(--color-accent-deep);
+  background-color: var(--color-accent-light);
   transform: translateY(-1px);
 }
 

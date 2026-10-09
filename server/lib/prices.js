@@ -179,31 +179,33 @@ async function save(input) {
 function seed() {
   const row = (key, name, anchor, footnote, values) => ({
     key, name, anchor, footnote,
-    prices: { 20: values[0], 30: values[1], 40: values[2], 45: values[3], 60: values[4], 90: values[5] }
+    prices: { 15: values[0], 20: values[1], 30: values[2], 40: values[3], 45: values[4], 60: values[5], 90: values[6] }
   });
 
   return {
     version: 1,
-    durations: [20, 30, 40, 45, 60, 90],
+    durations: [15, 20, 30, 40, 45, 60, 90],
     treatments: [
+      row('konzultacio', 'Személyes konzultáció, állapotfelmérés', 'konzultacio', false,
+        [3000, null, null, null, null, null, null]),
       row('gyogymasszazs', 'Gyógymasszázs', 'gyogymasszazs', false,
-        [null, 9000, null, 13000, 16000, 23000]),
+        [null, null, 9000, null, 13000, 16000, 23000]),
       row('svedmasszazs', 'Svédmasszázs', 'svedmasszazs', false,
-        [null, 7500, null, 9000, 13000, 16000]),
+        [null, null, 7500, null, 9000, 13000, 16000]),
       row('nyirokmasszazs', 'Nyirokmasszázs, drenázs', 'nyirokmasszazs', false,
-        [null, 10000, null, 15000, 17000, null]),
+        [null, null, 10000, null, 15000, 17000, null]),
       row('cellulitmasszazs', 'Cellulitmasszázs, zsírtörés', 'cellulitmasszazs', true,
-        [null, 10000, null, 15000, 17000, null]),
+        [null, null, 10000, null, 15000, 17000, null]),
       row('szegmentmasszazs', 'Szegmentmasszázs', 'szegmentmasszazs', false,
-        [null, null, null, null, 17000, null]),
+        [null, null, null, null, null, 17000, null]),
       row('kotoszoveti', 'Kötőszöveti masszázs', 'kotoszoveti-masszazs', false,
-        [null, null, null, null, 17000, null]),
+        [null, null, null, null, null, 17000, null]),
       row('szekmasszazs', 'Székmasszázs', 'szekmasszazs', false,
-        [6000, 7000, null, 9000, null, null]),
+        [null, 6000, 7000, null, 9000, null, null]),
       row('arcmasszazs', 'Arcmasszázs', 'arcmasszazs', false,
-        [5000, 7000, null, null, null, null]),
+        [null, 5000, 7000, null, null, null, null]),
       row('talpmasszazs', 'Talpmasszázs', 'talpmasszazs', false,
-        [5500, 7500, 9500, null, null, null])
+        [null, 5500, 7500, 9500, null, null, null])
     ],
     notes: [
       {

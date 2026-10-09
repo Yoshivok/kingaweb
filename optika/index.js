@@ -215,8 +215,20 @@ function initHeroCanvas() {
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) return;   // rejtett elem: NaN méret ellen
 
-    const nextWidth = Math.round(Math.min(1200, rect.width));
-    const nextHeight = Math.round((rect.height / rect.width) * nextWidth);
+    const displayWidth = Math.round(rect.width);
+    const displayHeight = Math.round(rect.height);
+
+    // 1:1 pontos pixel-leképezés asztali és laptop képernyőkön (1600 px-ig),
+    // így a rajzolt körök (arc) garantáltan SOHA nem torzulhatnak oválissá a CSS nyújtása miatt!
+    let nextWidth, nextHeight;
+    if (displayWidth <= 1600) {
+      nextWidth = displayWidth;
+      nextHeight = displayHeight;
+    } else {
+      const scale = 1600 / displayWidth;
+      nextWidth = 1600;
+      nextHeight = Math.round(displayHeight * scale);
+    }
 
     canvasRect = rect; // Eltároljuk a méreteket a forced-reflow elkerülésére
     if (nextWidth === width && nextHeight === height) return;
@@ -226,7 +238,7 @@ function initHeroCanvas() {
 
     lensX = width / 2;
     lensY = height / 2;
-    lensR = Math.min(240, Math.max(165, height * 0.38));
+    lensR = Math.min(285, Math.max(165, Math.round(Math.min(width * 0.46, height * 0.45))));
 
     // Cache gradients to avoid re-creation on every frame
     // (A háttér gradienst a .hero-canvas CSS háttere adja, így keretenként nem kell újrarajzolni)
@@ -243,6 +255,31 @@ function initHeroCanvas() {
     glareGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
   }
   resize();
+
+  // ResizeObserver: a legmegbízhatóbb natív módszer bármilyen elrendezés-változás azonnali követésére
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(() => {
+      const prevWidth = width;
+      const prevHeight = height;
+      resize();
+      if (!isRunning && (width !== prevWidth || height !== prevHeight)) {
+        drawFrame();
+      }
+    });
+    ro.observe(canvas);
+  }
+
+  // Betűtípusok és teljes lap betöltődés utáni szinkronizáció
+  window.addEventListener('load', () => {
+    resize();
+    if (!isRunning) drawFrame();
+  });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      resize();
+      if (!isRunning) drawFrame();
+    });
+  }
 
   // A `resize` sorozatban érkezik (ablakhúzás, címsáv). Képkockánként egyszer
   // mérünk, így nem halmozódik a kényszerített újratördelés (forced reflow).
@@ -583,6 +620,16 @@ function initHeroCanvas() {
       isRunning = false;
       animationFrameId = 0;
       return;
+    }
+
+    // Biztonsági védelem: ha a vászon CSS dobozmérete és a belső felbontás elcsúszna
+    // (pl. dinamikus betűtípus-betöltődés vagy reflow miatt), azonnal korrigáljuk
+    if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+      const expW = canvas.clientWidth <= 1600 ? canvas.clientWidth : 1600;
+      const expH = canvas.clientWidth <= 1600 ? canvas.clientHeight : Math.round(canvas.clientHeight * (1600 / canvas.clientWidth));
+      if (width !== expW || height !== expH) {
+        resize();
+      }
     }
 
     drawFrame();
@@ -3000,35 +3047,46 @@ function initBookingSystem() {
    8. CSS Scroll-Driven Animations Fallback
    ========================================================================== */
 function initScrollAnimationsFallback() {
-  // 1. Shrinking Header Fallback
-  if (!CSS.supports('(animation-timeline: scroll()) and (animation-range: 0% 100%)')) {
-    const header = document.getElementById('main-header');
-    if (header) {
-      const scrollDistance = 80;
-
-      window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        const scrollPercent = Math.min(1, scrollY / scrollDistance);
-
-        if (scrollPercent > 0.1) {
-          header.style.paddingBlock = '0.6rem';
-          header.style.backgroundColor = 'rgba(251, 250, 248, 0.95)';
-          header.style.borderBottom = '1px solid var(--color-border)';
-          header.style.boxShadow = '0 4px 30px rgba(28, 35, 33, 0.03)';
-        } else {
-          header.style.paddingBlock = '1.25rem';
-          header.style.backgroundColor = 'rgba(251, 250, 248, 0.8)';
-          header.style.borderBottom = '1px solid transparent';
-          header.style.boxShadow = 'none';
-        }
-      });
-    }
+  // 1. Fejléc ragadós állapot (.is-stuck) — megegyezik a masszázs oldal viselkedésével
+  const header = document.getElementById('main-header');
+  if (header) {
+    const updateHeader = () => {
+      header.classList.toggle('is-stuck', window.scrollY > 12);
+    };
+    window.addEventListener('scroll', updateHeader, { passive: true });
+    updateHeader();
   }
 
-  // 2. Product Card Entrance Animáció Fallback (IntersectionObserver)
-  //    A megvalósítás a termékkatalógusnál él (revealProductCards), mert a
-  //    rács tartalma a /api/products megérkezésekor kicserélődik — a beúszást
-  //    az új kártyákra is fel kell kötni.
+  // 2. Aktív menüpont a látható szekció alapján (arany aláhúzással, mint a masszázs oldalon)
+  const navLinks = Array.from(document.querySelectorAll('.nav-menu .nav-link[href^="#"]'));
+  const watched = navLinks
+    .map(link => {
+      const id = link.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      return el ? { link, el } : null;
+    })
+    .filter(Boolean);
+
+  if ('IntersectionObserver' in window && watched.length > 0) {
+    const spy = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('is-active'));
+          const hit = watched.find(w => w.el === entry.target);
+          if (hit) hit.link.classList.add('is-active');
+        }
+      });
+    }, { rootMargin: '-25% 0px -65% 0px' });
+    watched.forEach(w => spy.observe(w.el));
+  }
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY < 80) {
+      navLinks.forEach(l => l.classList.remove('is-active'));
+    }
+  }, { passive: true });
+
+  // 3. Product Card Entrance Animáció Fallback (IntersectionObserver)
   revealProductCards();
 }
 

@@ -34,6 +34,7 @@
      az adminban felvett vagy törölt kezelés azonnal itt is látszik. Ez a
      lista csak addig él, amíg a válasz megérkezik — és akkor is, ha nem. */
   var TREATMENTS = {
+    konzultacio: { name: 'Személyes konzultáció, állapotfelmérés', durations: [15] },
     gyogymasszazs: { name: 'Gyógymasszázs', durations: [30, 45, 60, 90] },
     svedmasszazs: { name: 'Svédmasszázs', durations: [30, 45, 60, 90] },
     nyirokmasszazs: { name: 'Nyirokmasszázs, nyirokdrenázs', durations: [30, 45, 60] },

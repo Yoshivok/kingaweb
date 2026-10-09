@@ -80,6 +80,7 @@
     { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "13:00" }
   ],
   "availableService": [
+    { "@type": "MedicalTherapy", "name": "Személyes konzultáció, állapotfelmérés" },
     { "@type": "MedicalTherapy", "name": "Gyógymasszázs" },
     { "@type": "MedicalTherapy", "name": "Svédmasszázs" },
     { "@type": "MedicalTherapy", "name": "Nyirokmasszázs, nyirokdrenázs" },
@@ -100,6 +101,18 @@
 
   <!-- ══════════════════ SVG IKONKÉSZLET ══════════════════ -->
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" focusable="false">
+    <symbol id="ico-konzultacio" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4.5h10a1.5 1.5 0 0 1 1.5 1.5v1.5h1.5A2.5 2.5 0 0 1 26.5 10v15a2.5 2.5 0 0 1-2.5 2.5h-16A2.5 2.5 0 0 1 5.5 25V10A2.5 2.5 0 0 1 8 7.5h1.5V6a1.5 1.5 0 0 1 1.5-1.5Z" />
+      <path d="M12 4.5h8" />
+      <path d="m9.5 13.5 1.5 1.5 2.5-3" />
+      <path d="M16 13.5h6" />
+      <path d="m9.5 18.5 1.5 1.5 2.5-3" />
+      <path d="M16 18.5h6" />
+      <path d="m9.5 23.5 1.5 1.5 2.5-3" />
+      <path d="M16 23.5h5" />
+    </symbol>
+
     <symbol id="ico-gyogy" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="M7 20.5c0-3 1.6-4.4 3.2-5.6l1.3-1" />
@@ -319,6 +332,9 @@
             <div class="submenu" id="menu-kezelesek">
               <p class="submenu__title">Kezeléseink</p>
               <ul class="submenu__list">
+                <li><a href="#konzultacio"><svg class="ico" aria-hidden="true">
+                      <use href="#ico-konzultacio"></use>
+                    </svg>Személyes konzultáció</a></li>
                 <li><a href="#gyogymasszazs"><svg class="ico" aria-hidden="true">
                       <use href="#ico-gyogy"></use>
                     </svg>Gyógymasszázs</a></li>
@@ -400,6 +416,9 @@
         </button>
         <div class="mobile-nav__dropdown-menu" id="mobile-services-menu" aria-hidden="true">
           <ul class="mobile-nav__sublist">
+            <li><a class="mobile-nav__sublink" href="#konzultacio"><svg class="ico" aria-hidden="true">
+                  <use href="#ico-konzultacio"></use>
+                </svg>Személyes konzultáció</a></li>
             <li><a class="mobile-nav__sublink" href="#gyogymasszazs"><svg class="ico" aria-hidden="true">
                   <use href="#ico-gyogy"></use>
                 </svg>Gyógymasszázs</a></li>
@@ -769,60 +788,7 @@
               várom konzultációra és kezelésre!
             </p>
           </div>
-
         </div>
-
-        <figure class="about__visual reveal" aria-labelledby="about-fig">
-          <!-- KITÖLTENDŐ: ide kerül Kinga fényképe. A helyén most egy absztrakt ábra áll;
-           cserélje ki az alábbi <div class="about__art"> tartalmát a képre:
-
-           <div class="about__art">
-             <img src="assets/img/kinga.webp" width="960" height="1120" loading="lazy"
-                  alt="Urbányi Kinga gyógymasszőr a kezelőben">
-           </div>
-
-           Ajánlott arány 6:7 (pl. 960 × 1120 px), a stíluslap a többit elvégzi. -->
-          <div class="about__art">
-            <svg viewBox="0 0 480 560" role="img"
-              aria-label="Absztrakt vonalas ábra: a testkontúrokat követő szintvonalak">
-              <defs>
-                <linearGradient id="ag1" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#1c1511" />
-                  <stop offset="100%" stop-color="#4a3227" />
-                </linearGradient>
-                <radialGradient id="ag2" cx="30%" cy="20%" r="80%">
-                  <stop offset="0%" stop-color="#c9a96e" stop-opacity=".38" />
-                  <stop offset="100%" stop-color="#c9a96e" stop-opacity="0" />
-                </radialGradient>
-              </defs>
-              <rect width="480" height="560" rx="24" fill="url(#ag1)" />
-              <rect width="480" height="560" rx="24" fill="url(#ag2)" />
-              <g fill="none" stroke="#faf8f5" stroke-opacity=".2" stroke-width="1.1">
-                <path d="M-20 560c0-70 30-100 70-130s60-70 60-130 20-90 60-100" />
-                <path d="M10 570c0-72 32-104 74-134s62-72 62-132 21-92 63-102" />
-                <path d="M45 580c0-74 34-108 78-138s64-74 64-134 22-94 66-104" />
-                <path d="M80 590c0-76 36-112 82-142s66-76 66-136 23-96 69-106" />
-                <path d="M115 600c0-78 38-116 86-146s68-78 68-138 24-98 72-108" />
-                <path d="M150 610c0-80 40-120 90-150s70-80 70-140 25-100 75-110" />
-                <path d="M185 620c0-82 42-124 94-154s72-82 72-142 26-102 78-112" />
-                <path d="M220 630c0-84 44-128 98-158s74-84 74-144 27-104 81-114" />
-                <path d="M255 640c0-86 46-132 102-162s76-86 76-146 28-106 84-116" />
-              </g>
-              <g stroke="#c9a96e" fill="none" stroke-width="1.5">
-                <path d="M80 590c0-76 36-112 82-142s66-76 66-136 23-96 69-106" stroke-opacity=".9" />
-                <path d="M255 640c0-86 46-132 102-162s76-86 76-146 28-106 84-116" stroke-opacity=".4" />
-              </g>
-              <circle cx="228" cy="312" r="5" fill="#c9a96e" />
-              <circle cx="162" cy="448" r="4" fill="#faf8f5" fill-opacity=".7" />
-              <circle cx="297" cy="182" r="3.5" fill="#faf8f5" fill-opacity=".5" />
-              <circle cx="433" cy="332" r="3.5" fill="#c9a96e" fill-opacity=".6" />
-            </svg>
-          </div>
-          <figcaption id="about-fig" class="about__caption">
-            <span class="about__quote">„Gyógymasszőrként elsődleges célom visszaadni leendő betegeimnek a mozgás
-              örömét.”</span>
-          </figcaption>
-        </figure>
 
         <ul class="credentials reveal">
           <li>
@@ -862,6 +828,19 @@
         </header>
 
         <ul class="cards">
+          <li class="card reveal">
+            <a class="card__link" href="#konzultacio">
+              <span class="card__icon"><svg class="ico ico--xl" aria-hidden="true">
+                  <use href="#ico-konzultacio"></use>
+                </svg></span>
+              <h3 class="card__title">Személyes konzultáció</h3>
+              <p class="card__desc">Állapotfelmérés, felkészülést nem igénylő vizsgálat és egyéni terápia megbeszélése.</p>
+              <p class="card__meta"><span class="dur">15</span><span class="dur__unit">perc</span></p>
+              <span class="card__more">Részletek <svg class="ico ico--xs" aria-hidden="true">
+                  <use href="#ico-arrow"></use>
+                </svg></span>
+            </a>
+          </li>
           <li class="card reveal">
             <a class="card__link" href="#gyogymasszazs">
               <span class="card__icon"><svg class="ico ico--xl" aria-hidden="true">
@@ -1001,6 +980,78 @@
          A láthatóságot a :target vezérli (JS nélkül is működik), a main.js
          csak a kártya kijelölését és az ismételt kattintásra záródást adja. ── -->
         <div class="details" id="reszletek">
+          <!-- ─── SZEMÉLYES KONZULTÁCIÓ, ÁLLAPOTFELMÉRÉS ─── -->
+          <article class="treatment" tabindex="-1" id="konzultacio">
+            <div class="treatment__head">
+              <span class="treatment__icon"><svg class="ico ico--xl" aria-hidden="true">
+                  <use href="#ico-konzultacio"></use>
+                </svg></span>
+              <div class="treatment__headings">
+                <p class="treatment__num">Konzultáció / Állapotfelmérés</p>
+                <h3 class="treatment__title">Személyes konzultáció <span class="treatment__alt">(állapotfelmérés)</span></h3>
+                <p class="durations"><span class="durations__label">Időtartam</span><span class="dur">15</span><span
+                    class="dur__unit">perc</span></p>
+              </div>
+              <a class="treatment__close" href="#kezelesek" aria-label="Leírás bezárása" title="Leírás bezárása">
+                <svg class="ico" aria-hidden="true">
+                  <use href="#ico-close"></use>
+                </svg>
+              </a>
+            </div>
+
+            <div class="treatment__body">
+              <div class="prose">
+                <p>
+                  Az állapotfelmérés egy <strong>rövid és egyszerű vizsgálatból áll</strong>, amihez semmilyen előkészület nem szükséges a vendég részéről. A vizsgálat után megbeszéljük a továbbiakat, és a vendég eldönti, hogy szeretne-e kúraszerűen alkalmazott terápiát igénybe venni.
+                </p>
+                <p>
+                  A személyes konzultáción felteheti felmerülő kérdéseit a kezeléssel kapcsolatban. Ha szükséges, egy konkrét, <strong>személyre szabott terápia</strong> részleteit is kidolgozhatják a szakemberrel.
+                </p>
+              </div>
+
+              <div class="panels">
+                <div class="panel panel--ind">
+                  <h4 class="panel__title"><svg class="ico" aria-hidden="true">
+                      <use href="#ico-check"></use>
+                    </svg> Javasolt, ha:</h4>
+                  <ul class="list list--check">
+                    <li>Bármilyen kétsége van a terápiával kapcsolatban.</li>
+                    <li>Szeretne többet tudni a gyógymasszázs hatásairól és a kezelések menetéről.</li>
+                    <li>Szeretne pontosabb képet kapni a saját fizikai állapotáról.</li>
+                    <li>Konkrét panasz esetén személyre szabott terápiás tervet szeretne összeállítani.</li>
+                  </ul>
+                </div>
+
+                <div class="panel panel--contra">
+                  <h4 class="panel__title"><svg class="ico" aria-hidden="true">
+                      <use href="#ico-warn"></use>
+                    </svg> Fontos tudnivalók</h4>
+                  <p class="panel__intro">
+                    A konzultáció nem kötelezi azonnali kezelésre vagy terápiás bérlet vásárlására. Ha rendelkezik korábbi orvosi dokumentációval (röntgen, MRI, lelet), hozza magával, de a felmérésnek nem előfeltétele.
+                  </p>
+                  <a class="panel__link" href="#gyogymasszazs-kontra">
+                    Általános egészségügyi feltételek és ellenjavallatok
+                    <svg class="ico ico--xs" aria-hidden="true">
+                      <use href="#ico-arrow"></use>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              <aside class="callout callout--note">
+                <p class="callout__label">Előkészület nem szükséges</p>
+                <p>
+                  Az állapotfelméréshez <strong>semmilyen előkészület nem szükséges</strong> a vendég részéről. Célunk, hogy biztonságos, megalapozott és az Ön állapotához leginkább illeszkedő terápiát válasszunk.
+                </p>
+              </aside>
+
+              <div class="treatment__cta">
+                <button class="btn btn--primary" type="button" data-book="konzultacio">Időpontot kérek — Személyes konzultáció</button>
+                <a class="btn btn--ghost" href="#araink">Árak megtekintése</a>
+              </div>
+            </div>
+          </article>
+
           <!-- ─── 01 GYÓGYMASSZÁZS ─── -->
           <article class="treatment" tabindex="-1" id="gyogymasszazs">
             <div class="treatment__head">
@@ -2181,6 +2232,7 @@
               <thead>
                 <tr>
                   <th scope="col" class="price-table__name">Kezelés</th>
+                  <th scope="col">15 perc</th>
                   <th scope="col">20 perc</th>
                   <th scope="col">30 perc</th>
                   <th scope="col">40 perc</th>
@@ -2191,7 +2243,18 @@
               </thead>
               <tbody>
                 <tr>
+                  <th scope="row"><a href="#konzultacio">Személyes konzultáció, állapotfelmérés</a></th>
+                  <td>3&nbsp;000 Ft</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
+                </tr>
+                <tr>
                   <th scope="row"><a href="#gyogymasszazs">Gyógymasszázs</a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td>9&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2202,6 +2265,7 @@
                 <tr>
                   <th scope="row"><a href="#svedmasszazs">Svédmasszázs</a></th>
                   <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>7&nbsp;500 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td>9&nbsp;000 Ft</td>
@@ -2210,6 +2274,7 @@
                 </tr>
                 <tr>
                   <th scope="row"><a href="#nyirokmasszazs">Nyirokmasszázs, drenázs</a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td>10&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2220,6 +2285,7 @@
                 <tr>
                   <th scope="row"><a href="#cellulitmasszazs">Cellulitmasszázs, zsírtörés<span
                         class="price-table__mark">*</span></a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td>10&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2233,6 +2299,7 @@
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
@@ -2242,11 +2309,13 @@
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                   <td class="na" aria-label="nem elérhető">—</td>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>17&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
                 </tr>
                 <tr>
                   <th scope="row"><a href="#szekmasszazs">Székmasszázs</a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>6&nbsp;000 Ft</td>
                   <td>7&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2256,6 +2325,7 @@
                 </tr>
                 <tr>
                   <th scope="row"><a href="#arcmasszazs">Arcmasszázs</a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>5&nbsp;000 Ft</td>
                   <td>7&nbsp;000 Ft</td>
                   <td class="na" aria-label="nem elérhető">—</td>
@@ -2265,6 +2335,7 @@
                 </tr>
                 <tr>
                   <th scope="row"><a href="#talpmasszazs">Talpmasszázs</a></th>
+                  <td class="na" aria-label="nem elérhető">—</td>
                   <td>5&nbsp;500 Ft</td>
                   <td>7&nbsp;500 Ft</td>
                   <td>9&nbsp;500 Ft</td>
@@ -2384,6 +2455,7 @@
                 <div class="select-wrap">
                   <select id="f-treatment" name="treatment" required aria-describedby="e-treatment">
                     <option value="" selected>Válasszon kezelést…</option>
+                    <option value="konzultacio">Személyes konzultáció, állapotfelmérés</option>
                     <option value="gyogymasszazs">Gyógymasszázs</option>
                     <option value="svedmasszazs">Svédmasszázs</option>
                     <option value="nyirokmasszazs">Nyirokmasszázs, nyirokdrenázs</option>
@@ -2679,6 +2751,7 @@
       <nav class="footer__col" aria-label="Kezelések a láblécben">
         <h2 class="footer__title">Kezelések</h2>
         <ul>
+          <li><a href="#konzultacio">Személyes konzultáció</a></li>
           <li><a href="#gyogymasszazs">Gyógymasszázs</a></li>
           <li><a href="#svedmasszazs">Svédmasszázs</a></li>
           <li><a href="#nyirokmasszazs">Nyirokmasszázs, drenázs</a></li>
@@ -2718,7 +2791,7 @@
     </div>
 
     <div class="container footer__bottom">
-      <p>&copy; <span id="year">2026</span> Manual-Optic Med. Minden jog fenntartva.</p>
+      <p>&copy; <span id="year">2026</span> <span class="footer-brand-name">Manual-Optic</span> <span class="footer-brand-accent">Med.</span> Minden jog fenntartva.</p>
       <ul class="footer__legal">
         <li><a href="hazirend.html">Házirend</a></li>
         <li><a href="aszf.html">ÁSZF</a></li>
