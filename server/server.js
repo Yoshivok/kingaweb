@@ -22,7 +22,7 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const zlib = require('node:zlib');
 const { sendMail, buildMessage } = require('./smtp');
-const { customerMail, ownerMail } = require('./mail-templates');
+const { customerMail, ownerMail, cancelMail } = require('./mail-templates');
 const booking = require('./lib/booking');
 const { Api } = require('./lib/api');
 
@@ -88,7 +88,8 @@ const api = new Api({
   /* Az API menti a foglalást, a levelezés viszont itt él (itt van a
      beállítás és az SMTP). A visszatérési érték csak annyit mond, sikerült-e
      — a foglalás sorsát nem befolyásolja. */
-  notify: (saved) => deliver(saved)
+  notify: (saved) => deliver(saved),
+  notifyCancel: (cancelled) => deliverCancel(cancelled)
 });
 
 /* ── Statikus kiszolgálás ─────────────────────────────────────────────────
@@ -469,17 +470,10 @@ async function serveAdmin(req, res, name) {
   await sendFile(req, res, path.join(ROOT, 'admin', name), { admin: true });
 }
 
-/* ── Levélküldés a foglalásról (vagy száraz futás fájlba) ─────────────────
-   A foglalás EKKOR MÁR EL VAN MENTVE. Ez a lépés csak értesít: visszaigazolás
-   a vendégnek, jelzés a szolgáltatónak. Ha nincs SMTP-beállítás, a levelek a
-   `server/outbox/` mappába íródnak — így fejlesztés közben is látszik, mi
-   ment volna ki, és a foglalás akkor sem vész el.
-
-   Hitelesítő adatok nélkül a `dryRun` igaz; ilyenkor a válasz `mailed: false`,
-   és a weboldal ennek megfelelően fogalmaz. */
-async function deliver(saved) {
+/* A levelek közös adatai: a mentett foglalásból a sablonok bemenete. */
+function mailData(saved) {
   const startMin = booking.toMinutes(saved.start);
-  const data = {
+  return {
     id: saved.id,
     site: saved.site,
     name: saved.name,
@@ -493,6 +487,18 @@ async function deliver(saved) {
     restEnd: booking.toClock(startMin + saved.duration + saved.buffer),
     message: saved.message
   };
+}
+
+/* ── Levélküldés a foglalásról (vagy száraz futás fájlba) ─────────────────
+   A foglalás EKKOR MÁR EL VAN MENTVE. Ez a lépés csak értesít: visszaigazolás
+   a vendégnek, jelzés a szolgáltatónak. Ha nincs SMTP-beállítás, a levelek a
+   `server/outbox/` mappába íródnak — így fejlesztés közben is látszik, mi
+   ment volna ki, és a foglalás akkor sem vész el.
+
+   Hitelesítő adatok nélkül a `dryRun` igaz; ilyenkor a válasz `mailed: false`,
+   és a weboldal ennek megfelelően fogalmaz. */
+async function deliver(saved) {
+  const data = mailData(saved);
 
   const forCustomer = customerMail(data, config);
   const forOwner = ownerMail(data, config);
@@ -543,6 +549,34 @@ async function deliver(saved) {
     await sendMail(config.smtp, item.msg);
     console.log(`  ✓ elküldve (${item.label}) → ${item.msg.envelopeTo.join(', ')}`);
   }
+  return true;
+}
+
+/* ── Lemondás értesítése ──────────────────────────────────────────────────
+   A foglalás ekkor már törölve van. Csak a vendég kap levelet (a lemondást
+   az admin végezte, neki nem kell róla értesítés), és csak ha van címe. */
+async function deliverCancel(cancelled) {
+  if (!cancelled.email) return false;
+  const mail = cancelMail(mailData(cancelled), config);
+  const brand = require('./mail-templates').brandOf(cancelled.site);
+
+  if (config.dryRun) {
+    await fsp.mkdir(OUTBOX, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await fsp.writeFile(path.join(OUTBOX, `${stamp}-${cancelled.site}-lemondas.html`), mail.html);
+    console.log(`  ✎ száraz futás — a lemondó levél a server/outbox/ mappába került (${stamp})`);
+    return false;
+  }
+
+  await sendMail(config.smtp, buildMessage({
+    from: { address: config.from, name: brand.fullName },
+    to: [{ address: cancelled.email, name: cancelled.name }],
+    replyTo: { address: config.to || config.from, name: brand.fullName },
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text
+  }));
+  console.log(`  ✓ elküldve (lemondás) → ${cancelled.email}`);
   return true;
 }
 

@@ -281,4 +281,53 @@ function ownerMail(data, cfg) {
   return { subject, html, text };
 }
 
-module.exports = { customerMail, ownerMail, BRANDS, brandOf, longDate, shortTime };
+/* ── 3. Lemondás értesítése a vendégnek ───────────────────────────────────── */
+function cancelMail(data, cfg) {
+  const brand = brandOf(data.site);
+  const C = brand.colors;
+  const subject = `Foglalása lemondva — ${longDate(data.date)} ${shortTime(data.start)} · ${brand.fullName}`;
+
+  const after = `
+    <div style="margin:26px 0 0;padding:18px 20px;background:${C.cream};border-left:3px solid ${C.accent};border-radius:0 10px 10px 0">
+      <p style="margin:0 0 6px;font:700 12px/1 Arial,Helvetica,sans-serif;color:${C.accentDeep};letter-spacing:.1em;text-transform:uppercase">Új időpont</p>
+      <p style="margin:0;font:400 14px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">
+        Szívesen látjuk máskor is — új időpontot a weboldalon foglalhat,
+        vagy hívjon minket a ${esc(brand.phone)} számon.
+      </p>
+    </div>
+    ${button(C, 'tel:' + brand.phoneRaw, 'Hívás: ' + brand.phone)}
+    <p style="margin:18px 0 0;font:400 13px/1.7 Arial,Helvetica,sans-serif;color:${C.muted}">
+      Ha a lemondás nem várt volt, egyszerűen válaszoljon erre a levélre.
+      Foglalás azonosítója: <strong style="color:${C.ink}">${esc(data.id || '—')}</strong>
+    </p>`;
+
+  const html = shell(brand, {
+    subject,
+    preheader: `Lemondva: ${longDate(data.date)} ${shortTime(data.start)} — ${data.serviceName}`,
+    badge: 'Foglalás lemondva',
+    title: `Kedves ${esc(data.name)}!`,
+    lead: 'Az alábbi foglalását lemondtuk, az időpont felszabadult. Kellemetlenségért elnézését kérjük.',
+    rows: slotRows(C, data),
+    after,
+    footerNote: 'Adatait kizárólag a foglalás teljesítéséhez használjuk. Az adatkezelésről a weboldal „Adatkezelési tájékoztató” oldalán olvashat.'
+  });
+
+  const text = [
+    `Kedves ${data.name}!`,
+    '',
+    'Az alábbi foglalását lemondtuk, az időpont felszabadult:',
+    `- Szolgáltatás: ${data.serviceName}`,
+    `- Nap: ${longDate(data.date)}`,
+    `- Időpont: ${shortTime(data.start)} – ${shortTime(data.end)}`,
+    '',
+    `Új időpontot a weboldalon foglalhat, vagy hívjon a ${brand.phone} számon.`,
+    '',
+    `Foglalás azonosítója: ${data.id || '—'}`,
+    '',
+    `${brand.fullName} · ${brand.address} · ${brand.phone}`
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+module.exports = { customerMail, ownerMail, cancelMail, BRANDS, brandOf, longDate, shortTime };

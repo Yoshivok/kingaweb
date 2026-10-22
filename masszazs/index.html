@@ -2378,6 +2378,500 @@
           </ul>
         </div>
 
+        <!-- ══════════════════ BÉRLETEK (4 GOMB + LENYÍLÓ RÉSZ) ══════════════════ -->
+        <div class="passes reveal" id="berletek">
+          <div class="passes__header">
+            <span class="passes__badge">15% kedvezmény</span>
+            <h3 class="passes__title">Masszázs Bérletek – Kedvezményes bérletkonstrukciók</h3>
+            <p class="passes__desc">
+              Rendszeres kezelésekhez 5 és 10 alkalmas bérleteink <strong>15% megtakarítással</strong> vehetők igénybe.
+              Kattintson az alábbi gombokra a részletes bérletárak megjelenítéséhez:
+            </p>
+          </div>
+
+          <!-- 4 Gomb navigáció -->
+          <div class="passes__nav" role="tablist" aria-label="Bérlet kategóriák">
+            <button class="pass-btn" type="button" role="tab" id="tab-pass-gyogy" aria-controls="panel-pass-gyogy" aria-expanded="false" data-pass="gyogy">
+              <span class="pass-btn__icon">
+                <svg class="ico" aria-hidden="true"><use href="#ico-gyogy"></use></svg>
+              </span>
+              <span class="pass-btn__content">
+                <strong class="pass-btn__name">Gyógymasszázs</strong>
+                <span class="pass-btn__hint">5 és 10 alkalom · -15%</span>
+              </span>
+              <svg class="ico ico--xs pass-btn__arrow" aria-hidden="true"><use href="#ico-chevron"></use></svg>
+            </button>
+
+            <button class="pass-btn" type="button" role="tab" id="tab-pass-sved" aria-controls="panel-pass-sved" aria-expanded="false" data-pass="sved">
+              <span class="pass-btn__icon">
+                <svg class="ico" aria-hidden="true"><use href="#ico-sved"></use></svg>
+              </span>
+              <span class="pass-btn__content">
+                <strong class="pass-btn__name">Svédmasszázs</strong>
+                <span class="pass-btn__hint">5 és 10 alkalom · -15%</span>
+              </span>
+              <svg class="ico ico--xs pass-btn__arrow" aria-hidden="true"><use href="#ico-chevron"></use></svg>
+            </button>
+
+            <button class="pass-btn" type="button" role="tab" id="tab-pass-nyirok" aria-controls="panel-pass-nyirok" aria-expanded="false" data-pass="nyirok">
+              <span class="pass-btn__icon">
+                <svg class="ico" aria-hidden="true"><use href="#ico-nyirok"></use></svg>
+              </span>
+              <span class="pass-btn__content">
+                <strong class="pass-btn__name">Nyirokmasszázs</strong>
+                <span class="pass-btn__hint">5 és 10 alkalom · -15%</span>
+              </span>
+              <svg class="ico ico--xs pass-btn__arrow" aria-hidden="true"><use href="#ico-chevron"></use></svg>
+            </button>
+
+            <button class="pass-btn" type="button" role="tab" id="tab-pass-cellulit" aria-controls="panel-pass-cellulit" aria-expanded="false" data-pass="cellulit">
+              <span class="pass-btn__icon">
+                <svg class="ico" aria-hidden="true"><use href="#ico-cellulit"></use></svg>
+              </span>
+              <span class="pass-btn__content">
+                <strong class="pass-btn__name">Cellulit Kezelés</strong>
+                <span class="pass-btn__hint">Zsírtörés · -15%</span>
+              </span>
+              <svg class="ico ico--xs pass-btn__arrow" aria-hidden="true"><use href="#ico-chevron"></use></svg>
+            </button>
+          </div>
+
+          <!-- Lenyíló panelek -->
+          <div class="passes__panels" id="passes-panels">
+
+            <!-- 1. Gyógymasszázs Panel -->
+            <div class="pass-panel" id="panel-pass-gyogy" role="tabpanel" aria-labelledby="tab-pass-gyogy" hidden>
+              <div class="pass-card">
+                <div class="pass-card__header">
+                  <div class="pass-card__header-info">
+                    <span class="pass-card__badge">15% kedvezménnyel számolva</span>
+                    <h4 class="pass-card__title">Gyógymasszázs Bérletek – Árlista</h4>
+                    <p class="pass-card__subtitle">Gyógymasszázs szolgáltatások és bérletkonstrukciók</p>
+                  </div>
+                </div>
+
+                <div class="table-scroll" role="region" aria-label="Gyógymasszázs bérletárak táblázat" tabindex="0">
+                  <table class="pass-table">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="pass-table__th-main">Masszázs Típusa</th>
+                        <th scope="col">Alkalom</th>
+                        <th scope="col">Eredeti Ár</th>
+                        <th scope="col" class="pass-table__th-discount">Kedvezményes Ár (-15%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">60 perces Gyógymasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 16&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">80&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>68&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 12&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">160&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>136&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 24&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">90 perces Gyógymasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 23&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">115&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>97&nbsp;750 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 17&nbsp;250 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">230&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>195&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 34&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">45 perces Gyógymasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 13&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">65&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>55&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 9&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">130&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>110&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 19&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">30 perces Gyógymasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 9&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">45&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>38&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 6&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">90&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>76&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 13&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="pass-card__footer">
+                  <div class="pass-card__note">
+                    <svg class="ico ico--xs" aria-hidden="true"><use href="#ico-shield"></use></svg>
+                    <p><strong>Megjegyzés:</strong> A feltüntetett kedvezményes árak a 15%-os levonás utáni végösszeget mutatják. A bérletek az első alkalomtól számítva visszavonásig érvényesek.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Svédmasszázs Panel -->
+            <div class="pass-panel" id="panel-pass-sved" role="tabpanel" aria-labelledby="tab-pass-sved" hidden>
+              <div class="pass-card">
+                <div class="pass-card__header">
+                  <div class="pass-card__header-info">
+                    <span class="pass-card__badge">15% kedvezménnyel számolva</span>
+                    <h4 class="pass-card__title">Svédmasszázs Bérletek – Árlista</h4>
+                    <p class="pass-card__subtitle">Svédmasszázs szolgáltatások és kedvezményes bérletkonstrukciók</p>
+                  </div>
+                </div>
+
+                <div class="table-scroll" role="region" aria-label="Svédmasszázs bérletárak táblázat" tabindex="0">
+                  <table class="pass-table">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="pass-table__th-main">Masszázs Típusa</th>
+                        <th scope="col">Alkalom</th>
+                        <th scope="col">Eredeti Ár</th>
+                        <th scope="col" class="pass-table__th-discount">Kedvezményes Ár (-15%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">60 perces Svédmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 13&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">65&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>55&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 9&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">130&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>110&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 19&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">90 perces Svédmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 16&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">80&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>68&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 12&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">160&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>136&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 24&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">45 perces Svédmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 9&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">45&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>38&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 6&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">90&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>76&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 13&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">30 perces Svédmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 7&nbsp;500 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">37&nbsp;500 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>31&nbsp;875 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 5&nbsp;625 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">75&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>63&nbsp;750 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 11&nbsp;250 Ft</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="pass-card__footer">
+                  <div class="pass-card__note">
+                    <svg class="ico ico--xs" aria-hidden="true"><use href="#ico-shield"></use></svg>
+                    <p><strong>Megjegyzés:</strong> A feltüntetett kedvezményes árak a 15%-os levonás utáni végösszeget mutatják. A bérletek az első alkalomtól számítva visszavonásig érvényesek.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Nyirokmasszázs Panel -->
+            <div class="pass-panel" id="panel-pass-nyirok" role="tabpanel" aria-labelledby="tab-pass-nyirok" hidden>
+              <div class="pass-card">
+                <div class="pass-card__header">
+                  <div class="pass-card__header-info">
+                    <span class="pass-card__badge">15% kedvezménnyel számolva</span>
+                    <h4 class="pass-card__title">Nyirokmasszázs Bérletek – Árlista</h4>
+                    <p class="pass-card__subtitle">Nyirokmasszázs szolgáltatások és kedvezményes bérletkonstrukciók</p>
+                  </div>
+                </div>
+
+                <div class="table-scroll" role="region" aria-label="Nyirokmasszázs bérletárak táblázat" tabindex="0">
+                  <table class="pass-table">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="pass-table__th-main">Masszázs Típusa</th>
+                        <th scope="col">Alkalom</th>
+                        <th scope="col">Eredeti Ár</th>
+                        <th scope="col" class="pass-table__th-discount">Kedvezményes Ár (-15%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">60 perces Nyirokmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 17&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">85&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>72&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 12&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">170&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>144&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 25&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">45 perces Nyirokmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 15&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">75&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>63&nbsp;750 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 11&nbsp;250 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">150&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>127&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 22&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">30 perces Nyirokmasszázs</span>
+                          <span class="pass-table__sub">(1 alkalom = 10&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">50&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>42&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 7&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">100&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>85&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 15&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="pass-card__footer">
+                  <div class="pass-card__note">
+                    <svg class="ico ico--xs" aria-hidden="true"><use href="#ico-shield"></use></svg>
+                    <p><strong>Megjegyzés:</strong> A feltüntetett kedvezményes árak a 15%-os levonás utáni végösszeget mutatják. A bérletek az első alkalomtól számítva visszavonásig érvényesek.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Cellulit Kezelés Panel -->
+            <div class="pass-panel" id="panel-pass-cellulit" role="tabpanel" aria-labelledby="tab-pass-cellulit" hidden>
+              <div class="pass-card">
+                <div class="pass-card__header">
+                  <div class="pass-card__header-info">
+                    <span class="pass-card__badge">15% kedvezménnyel számolva</span>
+                    <h4 class="pass-card__title">Cellulit Kezelés – Zsírtörés Bérletek</h4>
+                    <p class="pass-card__subtitle">Alakformáló és cellulit kezelési szolgáltatások, kedvezményes bérletkonstrukciók</p>
+                  </div>
+                </div>
+
+                <div class="table-scroll" role="region" aria-label="Cellulit kezelés bérletárak táblázat" tabindex="0">
+                  <table class="pass-table">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="pass-table__th-main">Kezelés Típusa</th>
+                        <th scope="col">Alkalom</th>
+                        <th scope="col">Eredeti Ár</th>
+                        <th scope="col" class="pass-table__th-discount">Kedvezményes Ár (-15%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">60 perces Cellulit Kezelés</span>
+                          <span class="pass-table__sub">(1 alkalom = 17&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">85&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>72&nbsp;250 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 12&nbsp;750 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">170&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>144&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 25&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">45 perces Cellulit Kezelés</span>
+                          <span class="pass-table__sub">(1 alkalom = 15&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">75&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>63&nbsp;750 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 11&nbsp;250 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">150&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>127&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 22&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th scope="row" rowspan="2">
+                          <span class="pass-table__service">30 perces Cellulit Kezelés</span>
+                          <span class="pass-table__sub">(1 alkalom = 10&nbsp;000 Ft)</span>
+                        </th>
+                        <td><span class="pass-table__badge-occasions">5 alkalom</span></td>
+                        <td class="pass-table__price-old">50&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>42&nbsp;500 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 7&nbsp;500 Ft</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="pass-table__badge-occasions">10 alkalom</span></td>
+                        <td class="pass-table__price-old">100&nbsp;000 Ft</td>
+                        <td class="pass-table__price-new">
+                          <strong>85&nbsp;000 Ft</strong>
+                          <span class="pass-table__savings">Megtakarítás: 15&nbsp;000 Ft</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="pass-card__footer">
+                  <div class="pass-card__note">
+                    <svg class="ico ico--xs" aria-hidden="true"><use href="#ico-shield"></use></svg>
+                    <p><strong>Megjegyzés:</strong> A feltüntetett kedvezményes árak a 15%-os levonás utáni végösszeget mutatják. A bérletek az első alkalomtól számítva visszavonásig érvényesek.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <div class="payinfo reveal">
           <div class="payinfo__item">
             <h3>Fizetés a helyszínen</h3>
@@ -2446,6 +2940,14 @@
             <p class="form__intro">A <span class="req" aria-hidden="true">*</span>-gal jelölt mezők kitöltése kötelező.
               A kezelés és a hossz kiválasztása után töltődnek be a szabad időpontok.
             </p>
+
+            <div class="booking__saved-notice" id="booking-saved-notice" hidden>
+              <span class="booking__saved-notice-text">
+                <svg class="ico" aria-hidden="true"><use href="#ico-check"></use></svg>
+                <span>A legutóbbi foglalás adatai betöltve (<strong id="saved-guest-name"></strong>).</span>
+              </span>
+              <button type="button" class="booking__saved-clear" id="booking-clear-saved">Adatok törlése</button>
+            </div>
 
             <div class="form__row">
               <div class="field">
@@ -2547,6 +3049,12 @@
             </div>
 
             <div class="form__row form__checks">
+              <div class="check">
+                <input type="checkbox" id="f-remember" name="remember" checked>
+                <label for="f-remember">
+                  Adataim megjegyzése ezen a készüléken a legközelebbi foglaláshoz (név, telefon, e-mail)
+                </label>
+              </div>
               <div class="check">
                 <input type="checkbox" id="f-contra" name="contra" required aria-describedby="e-contra">
                 <label for="f-contra">

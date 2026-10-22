@@ -131,7 +131,7 @@ function readJsonBody(req) {
 
 /* ── Az API osztálya ──────────────────────────────────────────────────────── */
 class Api {
-  constructor({ root, trustProxy, defaultAdmin, log, notify }) {
+  constructor({ root, trustProxy, defaultAdmin, log, notify, notifyCancel }) {
     this.trustProxy = !!trustProxy;
     this.defaultAdmin = defaultAdmin;
     this.log = log || (() => {});
@@ -140,6 +140,8 @@ class Api {
        függvényt kapunk — így az API nem függ a levélküldéstől, és a levél
        elakadása sem viheti magával a már elmentett foglalást. */
     this.notify = typeof notify === 'function' ? notify : null;
+    /* Ugyanez a lemondásról szóló levélhez. */
+    this.notifyCancel = typeof notifyCancel === 'function' ? notifyCancel : null;
     this.uploads = new Uploads(
       path.join(root, 'optika', 'assets', 'products'),
       '/optika/assets/products/'
@@ -873,7 +875,18 @@ class Api {
     if (!result.ok) { fail(res, 404, result.error); return true; }
 
     this.log(`  − foglalás lemondva: ${result.booking.date} ${result.booking.start} · ${result.booking.name}`);
-    sendJson(res, 200, { ok: true });
+
+    /* A foglalás már törölve van; a levél elakadása ezen nem változtat. */
+    let mailed = false;
+    if (this.notifyCancel) {
+      try {
+        mailed = await this.notifyCancel(result.booking);
+      } catch (err) {
+        this.log('  ! a lemondó levél nem ment ki: ' + (err && err.message));
+      }
+    }
+
+    sendJson(res, 200, { ok: true, mailed: mailed === true });
     return true;
   }
 

@@ -573,12 +573,16 @@
         'Foglalás lemondása',
         b.name + ' — ' + longDate(b.date) + ' ' + b.start + ', ' + b.serviceName + '. ' +
         'A lemondás után az idősáv azonnal újra foglalhatóvá válik a weboldalon. ' +
-        'A vendég erről NEM kap automatikus értesítést.',
+        (b.email
+          ? 'A vendég e-mailben értesítést kap a lemondásról (' + b.email + ').'
+          : 'A vendég e-mail címe nincs megadva, ezért NEM kap értesítést — hívja fel.'),
         'Lemondom'
       ).then(function (confirmed) {
         if (!confirmed) return;
-        return api('/api/admin/bookings/' + b.id, { method: 'DELETE' }).then(function () {
-          toast('A foglalás lemondva.', 'success');
+        return api('/api/admin/bookings/' + b.id, { method: 'DELETE' }).then(function (res) {
+          toast(res && res.mailed
+            ? 'A foglalás lemondva, a vendég értesítést kapott.'
+            : 'A foglalás lemondva.', 'success');
           render();
         });
       }).catch(Admin.reportError);

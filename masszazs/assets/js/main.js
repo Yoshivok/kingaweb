@@ -923,6 +923,156 @@
     });
   });
 
+  /* ── 8c. VENDÉGADATOK MEGJEGYZÉSE ÉS VISSZATÖLTÉSE (LOCALSTORAGE) ──────────
+     Ha a látogató kéri (alapértelmezetten bepipált jelölőnégyzet), a nevét,
+     telefonszámát, e-mail címét és a kezelést megjegyezzük a böngésző helyi
+     tárolójában (localStorage). Így a következő foglaláskor nem kell újra
+     begépelnie, és az „Adatok törlése” gombbal vagy a pipa kivételével
+     bármikor visszavonhatja. */
+  var STORAGE_GUEST_KEY = 'manualoptic_guest_profile';
+  var STORAGE_MASSAGE_KEY = 'manualoptic_massage_guest';
+
+  function getSavedGuest() {
+    try {
+      var raw = localStorage.getItem(STORAGE_MASSAGE_KEY) || localStorage.getItem(STORAGE_GUEST_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveGuestFromForm() {
+    var rememberField = $('#f-remember');
+    var shouldRemember = !rememberField || rememberField.checked;
+    if (!shouldRemember) {
+      try {
+        localStorage.removeItem(STORAGE_MASSAGE_KEY);
+        localStorage.removeItem(STORAGE_GUEST_KEY);
+      } catch (e) {}
+      return;
+    }
+
+    var nameVal = $('#f-name') ? $('#f-name').value.trim() : '';
+    var phoneVal = $('#f-phone') ? $('#f-phone').value.trim() : '';
+    var emailVal = $('#f-email') ? $('#f-email').value.trim() : '';
+    var treatVal = treatmentSel ? treatmentSel.value : '';
+    var durVal = chosenDuration();
+
+    if (!nameVal && !phoneVal && !emailVal) return;
+
+    var payload = {
+      name: nameVal,
+      phone: phoneVal,
+      email: emailVal,
+      treatment: treatVal,
+      duration: durVal,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(STORAGE_MASSAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(STORAGE_GUEST_KEY, JSON.stringify({
+        name: nameVal,
+        phone: phoneVal,
+        email: emailVal
+      }));
+    } catch (e) { /* privát böngészés */ }
+  }
+
+  function clearSavedGuest() {
+    try {
+      localStorage.removeItem(STORAGE_MASSAGE_KEY);
+      localStorage.removeItem(STORAGE_GUEST_KEY);
+    } catch (e) {}
+
+    var nameField = $('#f-name');
+    var phoneField = $('#f-phone');
+    var emailField = $('#f-email');
+    var rememberField = $('#f-remember');
+    var notice = $('#booking-saved-notice');
+
+    if (nameField) nameField.value = '';
+    if (phoneField) phoneField.value = '';
+    if (emailField) emailField.value = '';
+    if (rememberField) rememberField.checked = false;
+    if (treatmentSel) {
+      treatmentSel.value = '';
+      fillDurations('', false);
+    }
+    if (notice) notice.hidden = true;
+  }
+
+  function restoreSavedGuest() {
+    var saved = getSavedGuest();
+    if (!saved) return;
+
+    var nameField = $('#f-name');
+    var phoneField = $('#f-phone');
+    var emailField = $('#f-email');
+    var rememberField = $('#f-remember');
+    var notice = $('#booking-saved-notice');
+    var nameSpan = $('#saved-guest-name');
+
+    if (nameField && saved.name && !nameField.value) nameField.value = saved.name;
+    if (phoneField && saved.phone && !phoneField.value) phoneField.value = saved.phone;
+    if (emailField && saved.email && !emailField.value) emailField.value = saved.email;
+    if (rememberField) rememberField.checked = true;
+
+    /* Kezelés és időtartam visszatöltése, ha a látogató még nem választott */
+    if (treatmentSel && !treatmentSel.value && saved.treatment && TREATMENTS[saved.treatment]) {
+      treatmentSel.value = saved.treatment;
+      fillDurations(saved.treatment, false);
+      if (durationSel && saved.duration) {
+        durationSel.value = String(saved.duration);
+        loadSlots(true);
+      }
+    }
+
+    if (notice && (saved.name || saved.phone || saved.email)) {
+      if (nameSpan) nameSpan.textContent = saved.name || saved.email || 'korábbi látogató';
+      notice.hidden = false;
+    }
+  }
+
+  var clearSavedBtn = $('#booking-clear-saved');
+  if (clearSavedBtn) {
+    clearSavedBtn.addEventListener('click', function () {
+      clearSavedGuest();
+    });
+  }
+
+  var rememberField = $('#f-remember');
+  if (rememberField) {
+    rememberField.addEventListener('change', function () {
+      if (!rememberField.checked) {
+        try {
+          localStorage.removeItem(STORAGE_MASSAGE_KEY);
+          localStorage.removeItem(STORAGE_GUEST_KEY);
+        } catch (e) {}
+        var notice = $('#booking-saved-notice');
+        if (notice) notice.hidden = true;
+      } else {
+        saveGuestFromForm();
+      }
+    });
+  }
+
+  var saveDebounceTimer = null;
+  function onInputDebouncedSave() {
+    if (rememberField && !rememberField.checked) return;
+    clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(saveGuestFromForm, 800);
+  }
+
+  ['#f-name', '#f-phone', '#f-email'].forEach(function (sel) {
+    var el = $(sel);
+    if (el) el.addEventListener('input', onInputDebouncedSave);
+  });
+  if (treatmentSel) treatmentSel.addEventListener('change', onInputDebouncedSave);
+  if (durationSel) durationSel.addEventListener('change', onInputDebouncedSave);
+
+  restoreSavedGuest();
+
   /* 9. Validáció */
   function errorEl(field) {
     if (!field) return null;
@@ -1176,6 +1326,7 @@
         })
         .then(function (res) {
           if (res.body && res.body.ok) {
+            saveGuestFromForm();
             showResult(view, true, res.body.mailed === true);
             return;
           }
@@ -1195,6 +1346,7 @@
         .catch(function () {
           /* Nincs kapcsolat a kiszolgálóval — átváltunk az e-mailes útra,
              de egyértelműen közöljük, hogy ez még nem foglalás. */
+          saveGuestFromForm();
           showResult(view, false, false);
         })
         .then(function () {
@@ -2348,6 +2500,10 @@
     /* A kezelésválasztó újraépítése. A látogató esetleges választását
        megtartjuk, ha még mindig létezik. */
     var previous = treatmentSel.value;
+    var savedGuest = !previous ? getSavedGuest() : null;
+    if (!previous && savedGuest && savedGuest.treatment && byKey[savedGuest.treatment]) {
+      previous = savedGuest.treatment;
+    }
     treatmentSel.innerHTML = '';
     treatmentSel.appendChild(new Option('Válasszon kezelést…', ''));
     services.forEach(function (service) {
@@ -2357,6 +2513,10 @@
     treatmentSel.value = previous;
     if (treatmentSel.selectedIndex < 0) treatmentSel.value = '';
     fillDurations(treatmentSel.value, true);
+    if (savedGuest && savedGuest.duration && durationSel && !durationSel.value) {
+      durationSel.value = String(savedGuest.duration);
+      loadSlots(true);
+    }
   }
 
   function loadBookingOptions() {
@@ -2396,8 +2556,52 @@
       });
   }
 
+  /* ── 11b. BÉRLETEK (4 GOMB + LENYÍLÓ RÉSZ) ──────────────────────────────── */
+  function initPassesAccordion() {
+    var passButtons = $$('.pass-btn');
+    var passPanels = $$('.pass-panel');
+    if (!passButtons.length) return;
+
+    passButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var passKey = btn.getAttribute('data-pass');
+        var targetPanel = $('#panel-pass-' + passKey);
+        var isAlreadyActive = btn.classList.contains('active');
+
+        /* Ha a már nyitott gombra kattint, becsukjuk (lenyíló/összecsukható működés) */
+        if (isAlreadyActive) {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-expanded', 'false');
+          if (targetPanel) {
+            targetPanel.hidden = true;
+            targetPanel.classList.remove('active');
+          }
+          return;
+        }
+
+        /* Másik gomb esetén a többit becsukjuk, a kiválasztottat kinyitjuk */
+        passButtons.forEach(function (b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-expanded', 'false');
+        });
+        passPanels.forEach(function (p) {
+          p.hidden = true;
+          p.classList.remove('active');
+        });
+
+        btn.classList.add('active');
+        btn.setAttribute('aria-expanded', 'true');
+        if (targetPanel) {
+          targetPanel.hidden = false;
+          targetPanel.classList.add('active');
+        }
+      });
+    });
+  }
+
   loadBookingOptions();
   loadPrices();
+  initPassesAccordion();
 
   // Initialize Anatomy Module
   renderAnatomyView();

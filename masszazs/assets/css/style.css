@@ -3038,6 +3038,387 @@ html.is-frame-idle *::after {
    „hasonlít” a valódi megjelenésre, hanem ugyanazokból a szabályokból épül.
    Ha itt írnánk felül valamelyiket, a kettő észrevétlenül elcsúszna. */
 
+/* ── BÉRLETEK (PASSES) ──────────────────────────────────────────────────── */
+.passes {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--sh-sm);
+}
+
+.passes__header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto clamp(1.25rem, 2.5vw, 1.85rem);
+}
+
+.passes__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.85rem;
+  background: var(--color-accent-light);
+  color: var(--color-accent-deep);
+  border: 1px solid rgba(214, 123, 75, 0.3);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.passes__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  line-height: 1.25;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.passes__desc {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 4 gombos navigáció */
+.passes__nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(0.65rem, 1.5vw, 1rem);
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .passes__nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .passes__nav {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pass-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.1rem;
+  background: var(--color-bg-primary);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--r-xl);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all var(--t-fast);
+  position: relative;
+}
+
+.pass-btn:hover {
+  background: #ffffff;
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--sh-md);
+}
+
+.pass-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pass-btn.active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(214, 123, 75, 0.2), var(--sh-sm);
+}
+
+.pass-btn__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  color: var(--color-accent-deep);
+  transition: all var(--t-fast);
+}
+
+.pass-btn:hover .pass-btn__icon,
+.pass-btn.active .pass-btn__icon {
+  background: var(--color-accent);
+  color: #ffffff;
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.pass-btn__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pass-btn__name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.pass-btn__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+}
+
+.pass-btn.active .pass-btn__hint {
+  color: var(--color-accent-deep);
+  font-weight: 500;
+}
+
+.pass-btn__arrow {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--color-muted);
+  transition: transform var(--t-fast), color var(--t-fast);
+}
+
+.pass-btn:hover .pass-btn__arrow {
+  color: var(--color-accent);
+}
+
+.pass-btn.active .pass-btn__arrow {
+  transform: rotate(180deg);
+  color: var(--color-accent-deep);
+}
+
+/* Lenyíló panelek */
+.passes__panels {
+  position: relative;
+}
+
+.pass-panel {
+  display: block;
+  opacity: 0;
+  transform: translateY(-8px);
+  animation: passPanelFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.pass-panel[hidden] {
+  display: none !important;
+}
+
+@keyframes passPanelFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pass-card {
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--sh-sm);
+  background: var(--color-bg-secondary);
+}
+
+.pass-card__header {
+  background: linear-gradient(135deg, #241c18 0%, #1a1411 100%);
+  padding: 1.3rem clamp(1.2rem, 3vw, 1.85rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px solid var(--color-gold);
+}
+
+.pass-card__header-info {
+  flex: 1;
+  min-width: 240px;
+}
+
+.pass-card__badge {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #ffffff;
+  padding: 0.22rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.pass-card__title {
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.pass-card__subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+/* Bérlet táblázat */
+.pass-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  background: var(--color-bg-secondary);
+}
+
+.pass-table thead th {
+  background: #33261f;
+  color: #f7efe9;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pass-table thead th.pass-table__th-main {
+  text-align: left;
+  padding-left: clamp(1.2rem, 3vw, 2rem);
+}
+
+.pass-table thead th.pass-table__th-discount {
+  background: #422d21;
+  color: var(--color-gold);
+}
+
+.pass-table tbody th[scope="row"] {
+  background: #faf8f5;
+  text-align: left;
+  padding: 1.1rem clamp(1.2rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  border-right: 1px solid var(--color-border);
+}
+
+.pass-table__service {
+  display: block;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+}
+
+.pass-table__sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-top: 0.2rem;
+}
+
+.pass-table tbody td {
+  padding: 0.95rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.pass-table tbody tr:hover td,
+.pass-table tbody tr:hover th[scope="row"] {
+  background: var(--color-accent-light);
+}
+
+.pass-table__badge-occasions {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  background: rgba(36, 28, 24, 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+.pass-table__price-old {
+  color: var(--color-muted);
+  text-decoration: line-through;
+  font-size: 0.9rem;
+}
+
+.pass-table__price-new {
+  background: rgba(214, 123, 75, 0.07);
+}
+
+.pass-table__price-new strong {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-accent-deep);
+  display: block;
+}
+
+.pass-table__savings {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #2f6f4f;
+  background: #e8f2ec;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+}
+
+/* Kártya lábléc és megjegyzés */
+.pass-card__footer {
+  padding: 1.25rem clamp(1.2rem, 3vw, 2rem);
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.pass-card__note {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.85rem;
+  margin: 0;
+}
+
+.pass-card__note p {
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.pass-card__note .ico {
+  color: var(--color-accent);
+  flex: none;
+  margin-top: 0.15rem;
+}
+
 .payinfo {
   display: grid;
   gap: clamp(1rem, 2vw, 1.5rem);
@@ -3301,6 +3682,54 @@ html.is-frame-idle *::after {
   margin-bottom: 1.5rem;
   padding-bottom: 1.1rem;
   border-bottom: 1px solid var(--color-border);
+}
+
+.booking__saved-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.95rem;
+  margin-bottom: 1.25rem;
+  background: rgba(214, 123, 75, 0.12);
+  border: 1px solid rgba(214, 123, 75, 0.35);
+  border-radius: var(--r-md);
+  font-size: var(--fs-xs);
+  color: #f3ebe0;
+}
+
+.booking__saved-notice[hidden] {
+  display: none;
+}
+
+.booking__saved-notice-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.booking__saved-notice-text .ico {
+  color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.booking__saved-clear {
+  background: none;
+  border: none;
+  color: var(--color-gold);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast);
+}
+
+.booking__saved-clear:hover {
+  color: #fff;
 }
 
 .req {

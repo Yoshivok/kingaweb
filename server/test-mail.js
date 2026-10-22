@@ -11,7 +11,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { sendMail, buildMessage } = require('./smtp');
-const { customerMail, ownerMail } = require('./mail-templates');
+const { customerMail, ownerMail, cancelMail } = require('./mail-templates');
 
 function loadConfig() {
   let file = {};
@@ -53,15 +53,17 @@ if (missing.length) {
 }
 
 const sample = {
+  id: 'teszt-0001',
+  site: 'masszazs',
   name: 'Teszt Anna',
   phone: '+36 30 111 2222',
   email: cfg.to,
-  treatment: 'Gyógymasszázs',
-  treatmentKey: 'gyogymasszazs',
-  duration: '60 perc',
-  date: 'próbaküldés',
-  dateRaw: '',
-  time: '10:00',
+  serviceName: 'Gyógymasszázs',
+  duration: 60,
+  date: '2026-11-03',
+  start: '10:00',
+  end: '11:00',
+  restEnd: '11:20',
   message: 'Ez egy próbalevél a weboldal beállításának ellenőrzéséhez.'
 };
 
@@ -72,7 +74,8 @@ const sample = {
 
   const variants = [
     ['vendégnek szóló visszaigazolás', customerMail(sample, cfg)],
-    ['masszőrnek szóló értesítés', ownerMail(sample, cfg)]
+    ['masszőrnek szóló értesítés', ownerMail(sample, cfg)],
+    ['vendégnek szóló lemondás', cancelMail(sample, cfg)]
   ];
 
   try {

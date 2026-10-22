@@ -2960,6 +2960,65 @@ function initBookingSystem() {
   if (termsInp) termsInp.addEventListener('change', () => showError(termsInp, !termsInp.checked));
   if (gdprInp) gdprInp.addEventListener('change', () => showError(gdprInp, !gdprInp.checked));
 
+  // Korábbi vendégadatok betöltése és megjegyzése (localStorage)
+  const rememberInp = document.getElementById('booking-remember');
+
+  function restoreSavedGuest() {
+    try {
+      const raw = localStorage.getItem('manualoptic_guest_profile') || localStorage.getItem('optika_booking');
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (nameInp && saved.name && !nameInp.value) nameInp.value = saved.name;
+      if (emailInp && saved.email && !emailInp.value) emailInp.value = saved.email;
+      if (phoneInp && saved.phone && !phoneInp.value) phoneInp.value = saved.phone;
+      if (rememberInp) rememberInp.checked = true;
+    } catch (e) {}
+  }
+  restoreSavedGuest();
+
+  function saveOptikaGuestFromInputs() {
+    if (rememberInp && !rememberInp.checked) {
+      try {
+        localStorage.removeItem('manualoptic_guest_profile');
+      } catch (e) {}
+      return;
+    }
+    const nameVal = nameInp ? nameInp.value.trim() : '';
+    const emailVal = emailInp ? emailInp.value.trim() : '';
+    const phoneVal = phoneInp ? phoneInp.value.trim() : '';
+    if (!nameVal && !emailVal && !phoneVal) return;
+    try {
+      localStorage.setItem('manualoptic_guest_profile', JSON.stringify({
+        name: nameVal,
+        email: emailVal,
+        phone: phoneVal
+      }));
+    } catch (e) {}
+  }
+
+  if (rememberInp) {
+    rememberInp.addEventListener('change', () => {
+      if (!rememberInp.checked) {
+        try {
+          localStorage.removeItem('manualoptic_guest_profile');
+          localStorage.removeItem('optika_booking');
+        } catch (e) {}
+      } else {
+        saveOptikaGuestFromInputs();
+      }
+    });
+  }
+
+  let optikaDebounceTimer = null;
+  const onOptikaInputSave = () => {
+    if (rememberInp && !rememberInp.checked) return;
+    clearTimeout(optikaDebounceTimer);
+    optikaDebounceTimer = setTimeout(saveOptikaGuestFromInputs, 800);
+  };
+  if (nameInp) nameInp.addEventListener('input', onOptikaInputSave);
+  if (emailInp) emailInp.addEventListener('input', onOptikaInputSave);
+  if (phoneInp) phoneInp.addEventListener('input', onOptikaInputSave);
+
   function showError(inputEl, isError) {
     const group = inputEl.closest('.form-group, .form-check-group');
     if (group) {
@@ -3023,6 +3082,14 @@ function initBookingSystem() {
   }
 
   function saveBookingToLocalStorage(state) {
+    const rememberInp = document.getElementById('booking-remember');
+    if (rememberInp && !rememberInp.checked) {
+      try {
+        localStorage.removeItem('optika_booking');
+        localStorage.removeItem('manualoptic_guest_profile');
+      } catch (err) {}
+      return;
+    }
     try {
       localStorage.setItem('optika_booking', JSON.stringify({
         id: state.id || null,
@@ -3034,6 +3101,11 @@ function initBookingSystem() {
         email: state.email,
         phone: state.phone,
         message: state.message
+      }));
+      localStorage.setItem('manualoptic_guest_profile', JSON.stringify({
+        name: state.name,
+        email: state.email,
+        phone: state.phone
       }));
     } catch (err) {
       /* Privát böngészés vagy tele tároló — a foglalás ettől még megvan. */
