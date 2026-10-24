@@ -2115,8 +2115,8 @@ html.is-frame-idle *::after {
 
 /* Szembetegségek: lenyitható lista a szemanatómia ábra alatt */
 .eye-diseases {
-  max-width: 1000px;
-  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+  /* ugyanolyan széles, mint a fenti ábra + kártya, hogy egy vonalba essen vele */
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -2166,6 +2166,10 @@ html.is-frame-idle *::after {
   font-size: 0.98rem;
   line-height: 1.5;
   color: var(--color-text-secondary);
+}
+
+.eye-diseases[open] .eye-diseases__lead {
+  display: none;
 }
 
 .eye-diseases__toggle {
@@ -2345,6 +2349,7 @@ html.is-frame-idle *::after {
 }
 
 .eye-disease__text {
+  max-width: 80ch;
   font-size: 1.02rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
@@ -2367,6 +2372,7 @@ html.is-frame-idle *::after {
 }
 
 .eye-disease__facts dd {
+  max-width: 80ch;
   margin: 0;
   font-size: 1.02rem;
   line-height: 1.55;
@@ -2383,7 +2389,52 @@ html.is-frame-idle *::after {
   }
 
   .eye-diseases__content {
-    padding: 16px 12px 18px;
+    padding: 14px 12px 16px;
+  }
+
+  .eye-diseases__hint {
+    font-size: 0.95rem;
+    text-align: left;
+    margin-bottom: 12px;
+  }
+
+  /* Telefonon a szűrőgombok egy sorban, oldalra húzva görgethetők */
+  .eye-disease-filters {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    margin-inline: -12px;
+    padding: 2px 12px 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .eye-disease-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .eye-disease-filter {
+    flex: none;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .eye-diseases__count {
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .eye-disease__summary {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .eye-disease__name {
+    font-size: 1rem;
+  }
+
+  .eye-disease__body {
+    padding: 12px 14px 14px;
   }
 }
 
