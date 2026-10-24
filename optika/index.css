@@ -1339,9 +1339,12 @@ html.is-frame-idle *::after {
   transform: none;
 }
 
+/* Asztigmia: az SVG szűrő (index.html, #astigmatism-distort) irányított
+   életlenséget, kettőzést és fénycsíkokat ad. A kis nagyítás elrejti a
+   szűrő által elhalványított széleket. */
 .filter-astigmatism {
-  filter: blur(3px) contrast(1.1);
-  transform: scale(1.02);
+  filter: url(#astigmatism-distort);
+  transform: scale(1.03);
 }
 
 .filter-farkasvaksag {

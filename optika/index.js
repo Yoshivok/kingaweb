@@ -966,7 +966,7 @@ function initVisionSimulator() {
   // Látáshibák leírásai és képei (mindegyik a book_in_hand képből dolgozik, eltérő réteg-effektekkel)
   const conditions = {
     normal: {
-      title: 'Normál Látás',
+      title: 'Normál Látás (Emmetrópiás szem)',
       text: 'A fény sugarai pontosan a retinán fókuszálódnak, így a közeli és távoli tárgyak egyaránt tisztán, élesen és torzításmentesen látszódnak.',
       filter: 'filter-normal'
     },
@@ -976,13 +976,13 @@ function initVisionSimulator() {
       filter: 'filter-myopia'
     },
     hyperopia: {
-      title: 'Távollátás (Hyperopia)',
+      title: 'Távollátás (Hypermetrópia)',
       text: 'A távoli dolgok élesek, de a közeli tárgyak homályosak. A szem nem képes megfelelően fókuszálni a kezünkben tartott könyv betűire.',
       filter: 'filter-hyperopia'
     },
     astigmatism: {
       title: 'Asztigmia (Szemtengelyferdülés)',
-      text: 'Minden távolságra életlen vagy kissé megnyúlt, kettőzött a kép, mert a szem szaruhártyája nem gömbszerű, hanem tojásdad alakú. Korrekciója: cilinderes lencse.',
+      text: 'A szaruhártya nem gömbszerű, hanem tojásdad alakú, ezért a kép egy irányban elnyúlik, kettőzötté válik. Esti séta során az utcai kandeláberek és fényreklámok függőleges fénycsóvákat húznak, az utcatáblák feliratai szellemképesen összemosódnak. Korrekciója: cilinderes lencse.',
       filter: 'filter-astigmatism'
     },
     farkasvaksag: {
@@ -1036,6 +1036,7 @@ function initVisionSimulator() {
 
     // Határozzuk meg a megfelelő képet az aktív látáshiba alapján
     const bgImg = (activeCondition === 'myopia') ? "assets/myopia_skyscraper.webp" :
+      (activeCondition === 'astigmatism') ? "assets/astigmatism_street.webp" :
       (activeCondition === 'farkasvaksag') ? "assets/night_driving.webp" : "assets/book_in_hand.webp";
 
     // Alap háttérképek beállítása
@@ -1067,7 +1068,7 @@ function initVisionSimulator() {
       effectLayer.style.clipPath = 'polygon(29% 28%, 50% 29%, 71% 28%, 71% 74%, 50% 74%, 29% 74%)';
       effectLayer.style.opacity = '1';
     } else if (activeCondition === 'astigmatism') {
-      // Asztigmia: minden elmosódott/torzított (base)
+      // Asztigmia: esti utca, az egész kép irányítottan életlen, kettőzött, a fények csíkosak (base)
       baseLayer.classList.add('filter-astigmatism');
       effectLayer.style.clipPath = 'polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)';
       effectLayer.style.opacity = '0';
@@ -2133,7 +2134,7 @@ const SERVICE_DETAILS = {
   '1': {
     title: 'Komplett Optometriai Látásvizsgálat',
     duration: '45 perc',
-    price: '12 000 Ft',
+    price: '8 000 Ft',
     bookingService: 'general-exam',
     image: 'assets/service-latasvizsgalat.webp',
     imageAlt: 'Komplett optometriai látásvizsgálat korszerű digitális diagnosztikai eszközökkel',
@@ -2152,7 +2153,7 @@ const SERVICE_DETAILS = {
   '2': {
     title: 'Kontaktlencse Illesztés & Tanácsadás',
     duration: '60 perc',
-    price: '15 000 Ft',
+    price: '10 000 Ft',
     bookingService: 'contact-lens',
     image: 'assets/service-kontaktlencse.webp',
     imageAlt: 'Kontaktlencse illesztés, réslámpás vizsgálat és betanítási tanácsadás',
@@ -2190,7 +2191,7 @@ const SERVICE_DETAILS = {
   '4': {
     title: 'Szemüveg Javítás',
     duration: '15-30 perc',
-    price: '2 500 Ft-tól',
+    price: 'Helyszíni felmérés alapján',
     bookingService: 'glasses-repair',
     image: 'assets/service-szemuvegjavitas.webp',
     imageAlt: 'Szemüvegjavítás és finombeállítás precíziós optikai műhelyben',
