@@ -2113,6 +2113,295 @@ html.is-frame-idle *::after {
   max-width: 36ch;
 }
 
+/* Szembetegségek: lenyitható lista a szemanatómia ábra alatt */
+.eye-diseases {
+  max-width: 1000px;
+  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.eye-diseases[open] {
+  border-color: var(--color-accent);
+}
+
+.eye-diseases__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.eye-diseases__summary::-webkit-details-marker {
+  display: none;
+}
+
+.eye-diseases__summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.eye-diseases__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.eye-diseases__title {
+  font-family: var(--font-headings);
+  font-size: clamp(1.2rem, 2.2vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.eye-diseases__lead {
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.eye-diseases__toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.93rem;
+  font-weight: 500;
+  color: var(--color-accent-hover);
+}
+
+.eye-diseases__toggle-text::before {
+  content: 'Megnyitás';
+}
+
+.eye-diseases[open] .eye-diseases__toggle-text::before {
+  content: 'Bezárás';
+}
+
+.eye-diseases[open] > .eye-diseases__summary .eye-disease__chevron {
+  transform: rotate(225deg) translateY(-2px);
+}
+
+.eye-diseases__content {
+  padding: 4px 22px 22px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
+}
+
+.eye-diseases__hint {
+  text-align: center;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  max-width: 62ch;
+  margin: 0 auto 16px;
+}
+
+.eye-disease-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.eye-disease-filter {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-family: var(--font-body);
+  font-size: 0.93rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal),
+    color var(--transition-normal);
+}
+
+.eye-disease-filter:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.eye-disease-filter.is-active {
+  background-color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  color: #ffffff;
+}
+
+.eye-diseases__count {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+}
+
+.eye-disease-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eye-disease {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.eye-disease--urgent {
+  border-left: 3px solid var(--color-error);
+}
+
+.eye-disease[open] {
+  border-color: var(--color-accent);
+  box-shadow: 0 6px 18px rgba(36, 28, 24, 0.07);
+}
+
+.eye-disease__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.eye-disease__summary::-webkit-details-marker {
+  display: none;
+}
+
+.eye-disease__summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.eye-disease__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eye-disease__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-family: var(--font-headings);
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.eye-disease__tag {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+.eye-disease__latin {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+.eye-disease__chevron {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--color-accent-hover);
+  border-bottom: 2px solid var(--color-accent-hover);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform var(--transition-normal);
+}
+
+.eye-disease[open] .eye-disease__chevron {
+  transform: rotate(225deg) translateY(-2px);
+}
+
+.eye-disease__body {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.eye-disease__text {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.eye-disease__facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 20px;
+  margin-top: 14px;
+}
+
+.eye-disease__facts dt {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent-hover);
+  margin-top: 8px;
+}
+
+.eye-disease__facts dd {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 600px) {
+  .eye-diseases__summary {
+    padding: 16px;
+  }
+
+  .eye-diseases__toggle-text {
+    display: none;
+  }
+
+  .eye-diseases__content {
+    padding: 16px 12px 18px;
+  }
+}
+
+@media (min-width: 720px) {
+  .eye-disease__facts {
+    grid-template-columns: 170px 1fr;
+  }
+
+  .eye-disease__facts dt {
+    margin-top: 0;
+    padding-top: 0.3em;
+  }
+
+  .eye-disease__facts dd {
+    padding-bottom: 8px;
+  }
+}
+
 .eye-note {
   display: flex;
   gap: 0.65rem;

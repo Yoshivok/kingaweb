@@ -31,7 +31,7 @@
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..500&family=Plus+Jakarta+Sans:wght@400..700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="index.css?v=49">
+  <link rel="stylesheet" href="index.css?v=52">
   <!-- A termékkártyák és a részletek ablakának stílusa. Külön fájl, mert az
        admin felület előnézete is pontosan ezt tölti be. -->
   <link rel="stylesheet" href="assets/css/products.css?v=1">
@@ -411,6 +411,29 @@
             </div>
           </div>
         </div>
+
+        <!-- Szembetegségek: a szemanatómiai ábra alatti, lenyitható lista (assets/js/eye-diseases.js) -->
+        <details class="eye-diseases" id="eye-diseases">
+          <summary class="eye-diseases__summary">
+            <span class="eye-diseases__heading">
+              <span class="eye-diseases__title">Gyakori szembetegségek és elváltozások</span>
+              <span class="eye-diseases__lead">Kattintson a lenyitáshoz: részletes leírások a szem egyes részeinek
+                leggyakoribb betegségeiről.</span>
+            </span>
+            <span class="eye-diseases__toggle" aria-hidden="true">
+              <span class="eye-diseases__toggle-text"></span>
+              <span class="eye-disease__chevron"></span>
+            </span>
+          </summary>
+          <div class="eye-diseases__content">
+            <p class="eye-diseases__hint">Válasszon egy szemrészt az ábrán, vagy szűrjön az alábbi csoportokra, majd
+              nyissa le az elváltozást a részletes leíráshoz.</p>
+            <div class="eye-disease-filters" id="eye-disease-filters" role="group"
+              aria-label="Szembetegségek szűrése szemrész szerint"></div>
+            <p class="eye-diseases__count" id="eye-disease-count" aria-live="polite"></p>
+            <div class="eye-disease-list" id="eye-disease-list"></div>
+          </div>
+        </details>
 
         <p class="note note--wide eye-note">
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -1090,7 +1113,8 @@
   <!-- A termékkártyák és a részletes nézet felépítése. Ugyanezt a fájlt
        használja az admin felület előnézete is, hogy a kettő ne csússzon el. -->
   <script src="assets/js/product-render.js?v=1"></script>
-  <script src="index.js?v=48"></script>
+  <script src="assets/js/eye-diseases.js?v=1"></script>
+  <script src="index.js?v=50"></script>
   <script src="assets/js/consent.js" defer></script>
 </body>
 

@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initProduct3DTilt();
     initVisionSimulator();
     initEyeAnatomy();
+    if (window.EyeDiseases) window.EyeDiseases.init();
     initColorBlindnessTest();
     initServiceDetails();
     initBookingSystem();
@@ -1563,6 +1564,8 @@ function initEyeAnatomy() {
         pill.setAttribute('aria-selected', active ? 'true' : 'false');
       });
     }
+
+    if (window.EyeDiseases) window.EyeDiseases.showForPart(partId);
 
     if (partId) {
       renderCard(partId);
