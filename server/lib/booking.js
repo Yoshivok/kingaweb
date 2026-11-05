@@ -71,6 +71,7 @@ const LIMITS = {
   label: 60,
   breaks: 16,
   closures: 80,
+  dates: 120,
   buffer: 180,
   step: 120,
   minDuration: 5,
@@ -83,10 +84,12 @@ const LIMITS = {
    index.html` rádiógombjainak értéke ugyanez — a hosszuk viszont a
    nyitvatartás mellett, szerkeszthetően (lásd `serviceDurations`). */
 const OPTIKA_SERVICES = [
-  { key: 'general-exam', name: 'Komplett látásvizsgálat' },
-  { key: 'contact-lens', name: 'Kontaktlencse-illesztés' },
-  { key: 'glasses-fitting', name: 'Szemüvegkészítés, tanácsadás' },
-  { key: 'glasses-repair', name: 'Szemüvegjavítás' }
+  { key: 'general-exam', name: 'Komplett látásvizsgálat', minutes: 30 },
+  { key: 'contact-lens', name: 'Kontaktlencse-illesztés', minutes: 30 },
+  { key: 'glasses-fitting', name: 'Szemüvegkészítés, tanácsadás', minutes: 30 },
+  { key: 'glasses-repair', name: 'Szemüvegjavítás', minutes: 30 },
+  { key: 'iop', name: 'Szemnyomásmérés', minutes: 15 },
+  { key: 'control', name: 'Kontrollvizsgálat', minutes: 20 }
 ];
 
 /* A masszázs árlistájában nem szereplő, mégis kérhető tétel: aki nem tudja,
@@ -247,13 +250,28 @@ function normaliseClosures(raw) {
   return list;
 }
 
+/** Egyedi napok: konkrét dátumhoz kötött nyitvatartás, egy dátum egyszer. */
+function normaliseDates(raw) {
+  const seen = new Map();
+  for (const item of (Array.isArray(raw) ? raw : [])) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    if (!isDay(item.date)) continue;
+    const hours = normaliseHours(item);
+    if (!hours) continue;
+    seen.set(item.date, { date: item.date, from: hours.from, to: hours.to });
+  }
+  return [...seen.values()]
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .slice(0, LIMITS.dates);
+}
+
 /** Az optika vizsgálati hosszai — kulcsonként egy percérték. */
 function normaliseServiceDurations(raw, fallback) {
   const out = {};
   const source = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   for (const service of OPTIKA_SERVICES) {
     out[service.key] = intOr(source[service.key], LIMITS.minDuration, LIMITS.maxDuration,
-      (fallback && fallback[service.key]) || 30);
+      (fallback && fallback[service.key]) || service.minutes);
   }
   return out;
 }
@@ -274,6 +292,8 @@ function normaliseSite(raw, site, defaults) {
     leadMinutes: intOr(input.leadMinutes, 0, 30 * 24 * 60, base.leadMinutes),
     horizonDays: intOr(input.horizonDays, 1, LIMITS.horizonDays, base.horizonDays),
     hours,
+    dates: normaliseDates(input.dates),
+    datesOnly: input.datesOnly === true,
     breaks: normaliseBreaks(input.breaks),
     closures: normaliseClosures(input.closures)
   };
@@ -310,7 +330,7 @@ function defaultSite(site) {
   if (site === 'optika') {
     /* „Egyelőre minden vizsgálat 30 perc.” Az admin bármikor átírhatja. */
     base.serviceDurations = {};
-    for (const service of OPTIKA_SERVICES) base.serviceDurations[service.key] = 30;
+    for (const service of OPTIKA_SERVICES) base.serviceDurations[service.key] = service.minutes;
   }
   return base;
 }
@@ -359,7 +379,8 @@ async function saveSchedule(site, input) {
 
   /* Nyitvatartás nélküli hét = soha nincs szabad időpont. Ez majdnem
      biztosan elgépelés, ezért inkább szólunk, mint hogy némán elfogadjuk. */
-  if (!next.sites[site].hours.some(Boolean)) {
+  const saved = next.sites[site];
+  if (!(saved.datesOnly ? saved.dates.length : saved.hours.some(Boolean))) {
     return { ok: false, error: 'Legalább egy napon meg kell adni a nyitvatartást.' };
   }
 
@@ -485,6 +506,16 @@ function breaksOn(cfg, date) {
     .sort((a, b) => a.from - b.from);
 }
 
+/**
+ * A nap nyitvatartása. Az egyedi nap felülírja a heti rendet; „csak egyedi
+ * napokon” módban a heti rend nem is számít — ami nincs felsorolva, zárva van.
+ */
+function hoursOn(cfg, date) {
+  const special = cfg.dates.find((item) => item.date === date);
+  if (special) return { from: special.from, to: special.to };
+  return cfg.datesOnly ? null : cfg.hours[weekdayOf(date)];
+}
+
 /** A napra eső szabadnap, vagy `null`. */
 function closureOn(cfg, date) {
   return cfg.closures.find((item) => date >= item.from && date <= item.to) || null;
@@ -497,7 +528,7 @@ function closureOn(cfg, date) {
  */
 function dayPlan(site, date) {
   const cfg = schedule(site);
-  const hours = cfg.hours[weekdayOf(date)];
+  const hours = hoursOn(cfg, date);
   const closure = closureOn(cfg, date);
 
   return {

@@ -2191,7 +2191,7 @@ const SERVICE_DETAILS = {
   '4': {
     title: 'Szemüveg Javítás',
     duration: '15-30 perc',
-    price: 'Helyszíni felmérés alapján',
+    price: 'Helyszíni felmérés alapján (0 – 15 000 Ft)',
     bookingService: 'glasses-repair',
     image: 'assets/service-szemuvegjavitas.webp',
     imageAlt: 'Szemüvegjavítás és finombeállítás precíziós optikai műhelyben',
@@ -2205,6 +2205,40 @@ const SERVICE_DETAILS = {
       'Ultrahangos tisztítás és a keret átvizsgálása minden javítás után.'
     ],
     outro: 'A pontos árat mindig a hiba felmérése után mondjuk meg, és csak az Ön jóváhagyásával kezdünk hozzá. Nálunk vásárolt szemüveg esetén az utánigazítás és a csavarpótlás a garanciaidő alatt díjmentes. Egyszerűbb javításokat bejelentkezés nélkül is elvégzünk nyitvatartási időben.'
+  },
+
+  '5': {
+    title: 'Szemnyomásmérés',
+    duration: '15 perc',
+    price: '5 000 Ft',
+    bookingService: 'iop',
+    image: '',
+    imageAlt: 'Szemnyomásmérés',
+    intro: 'A megemelkedett szemnyomás hosszú ideig tünetmentes lehet, mégis ez a zöldhályog (glaukóma) egyik fő kockázati tényezője. A mérés pár percig tart, teljesen fájdalommentes, és semmilyen előkészületet nem igényel.',
+    list: [
+      'Rövid kérdőív: családi anamnézis, korábbi szemészeti problémák.',
+      'Érintésmentes szemnyomásmérés mindkét szemen.',
+      'Az eredmények azonnali értékelése és részletes elmagyarázása.',
+      'Kóros érték esetén szakorvosi továbbirányítás.'
+    ],
+    outro: 'Negyven év felett, illetve családi halmozódás esetén évente érdemes ellenőriztetni. A mérés nem helyettesíti a szemorvosi vizsgálatot.'
+  },
+
+  '6': {
+    title: 'Kontrollvizsgálat',
+    duration: '20 perc',
+    price: '5 000 Ft',
+    bookingService: 'control',
+    image: '',
+    imageAlt: 'Kontrollvizsgálat',
+    intro: 'Egy korábbi vizsgálat, új szemüveg vagy kontaktlencse után érdemes ellenőriztetni, hogy a korrekció valóban megfelelő-e, és a látás nem változott-e meg.',
+    list: [
+      'A korábbi vizsgálat eredményeinek áttekintése.',
+      'A látásélesség és a viselési komfort ellenőrzése.',
+      'Szükség esetén a korrekció finomhangolása.',
+      'Kontaktlencse esetén a lencse illeszkedésének és a szemfelszín állapotának vizsgálata.'
+    ],
+    outro: 'Hozza magával jelenlegi szemüvegét vagy kontaktlencséjét, és a korábbi receptet, ha van.'
   }
 };
 
@@ -3218,7 +3252,9 @@ function checkExistingBooking() {
         'general-exam': 'Komplett Látásvizsgálat',
         'contact-lens': 'Kontaktlencse Illesztés',
         'glasses-fitting': 'Szemüvegkészítés Tanácsadás',
-        'glasses-repair': 'Szemüveg Javítás'
+        'glasses-repair': 'Szemüveg Javítás',
+        'iop': 'Szemnyomásmérés',
+        'control': 'Kontrollvizsgálat'
       };
 
       const months = [

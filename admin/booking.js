@@ -874,6 +874,35 @@
       hoursPanel.appendChild(hoursList);
       body.appendChild(hoursPanel);
 
+      /* ── Egyedi napok ── */
+      var datesPanel = h('section', 'cal-panel');
+      datesPanel.appendChild(h('h2', 'cal-panel-title', 'Egyedi napok'));
+      datesPanel.appendChild(h('p', 'cal-panel-hint',
+        'Konkrét napokhoz kötött nyitvatartás: ez felülírja a heti rendet. ' +
+        'Ha be van kapcsolva a „Csak ezeken a napokon”, a felsoroltakon kívül minden nap zárva van.'));
+
+      var onlyBox = input('checkbox');
+      onlyBox.checked = !!draft.datesOnly;
+      onlyBox.addEventListener('change', function () { draft.datesOnly = onlyBox.checked; markDirty(); });
+      var onlyLabel = h('label', 'cal-hour-day');
+      onlyLabel.appendChild(onlyBox);
+      onlyLabel.appendChild(h('span', null, 'Csak ezeken a napokon lehet foglalni'));
+      datesPanel.appendChild(onlyLabel);
+
+      draft.dates = draft.dates || [];
+      var dateList = h('div', 'cal-rows');
+      draft.dates.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; })
+        .forEach(function (item) { dateList.appendChild(dateEditor(draft, item)); });
+      if (!draft.dates.length) dateList.appendChild(h('p', 'cal-empty', 'Nincs egyedi nap.'));
+      datesPanel.appendChild(dateList);
+      datesPanel.appendChild(button('btn btn-ghost btn-sm', '+ Új egyedi nap', function () {
+        var start = state.day >= todayIso() ? state.day : todayIso();
+        draft.dates.push({ date: start, from: '08:00', to: '14:00' });
+        markDirty();
+        renderSettings();
+      }));
+      body.appendChild(datesPanel);
+
       /* ── Időzítés ── */
       var timingPanel = h('section', 'cal-panel');
       timingPanel.appendChild(h('h2', 'cal-panel-title', 'Időzítés'));
@@ -1075,6 +1104,38 @@
 
       row.appendChild(button('cal-remove', '×', function () {
         draft.breaks.splice(index, 1);
+        markDirty();
+        renderSettings();
+      }));
+      return row;
+    }
+
+    function dateEditor(draft, item) {
+      var row = h('div', 'cal-row');
+
+      var date = input('date', item.date);
+      date.addEventListener('change', function () { item.date = date.value; markDirty(); });
+      row.appendChild(field('Nap', date));
+
+      var from = input('time', item.from);
+      from.addEventListener('change', function () { item.from = from.value; markDirty(); });
+      row.appendChild(field('Nyitás', from));
+
+      var to = input('time', item.to);
+      to.addEventListener('change', function () {
+        if (clockToMinutes(to.value) <= clockToMinutes(item.from)) {
+          toast('A zárásnak a nyitás után kell lennie.', 'error');
+          to.value = item.to;
+          return;
+        }
+        item.to = to.value;
+        markDirty();
+      });
+      row.appendChild(field('Zárás', to));
+
+      row.appendChild(button('cal-remove', '×', function () {
+        var at = draft.dates.indexOf(item);
+        if (at !== -1) draft.dates.splice(at, 1);
         markDirty();
         renderSettings();
       }));
