@@ -2212,8 +2212,8 @@ const SERVICE_DETAILS = {
     duration: '15 perc',
     price: '5 000 Ft',
     bookingService: 'iop',
-    image: '',
-    imageAlt: 'Szemnyomásmérés',
+    image: 'assets/service-szemnyomasmeres.webp',
+    imageAlt: 'Érintésmentes szemnyomásmérés modern non-contact tonométerrel',
     intro: 'A megemelkedett szemnyomás hosszú ideig tünetmentes lehet, mégis ez a zöldhályog (glaukóma) egyik fő kockázati tényezője. A mérés pár percig tart, teljesen fájdalommentes, és semmilyen előkészületet nem igényel.',
     list: [
       'Rövid kérdőív: családi anamnézis, korábbi szemészeti problémák.',
@@ -2229,8 +2229,8 @@ const SERVICE_DETAILS = {
     duration: '20 perc',
     price: '5 000 Ft',
     bookingService: 'control',
-    image: '',
-    imageAlt: 'Kontrollvizsgálat',
+    image: 'assets/service-kontrollvizsgalat.webp',
+    imageAlt: 'Kontrollvizsgálat és látásélesség ellenőrzés szakértő optometristával',
     intro: 'Egy korábbi vizsgálat, új szemüveg vagy kontaktlencse után érdemes ellenőriztetni, hogy a korrekció valóban megfelelő-e, és a látás nem változott-e meg.',
     list: [
       'A korábbi vizsgálat eredményeinek áttekintése.',
