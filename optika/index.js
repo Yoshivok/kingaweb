@@ -1465,6 +1465,7 @@ function initEyeAnatomy() {
   const svgEl = document.getElementById('eye-svg');
   const hotspotsLayer = document.getElementById('eye-hotspots-layer');
   const pillsBox = document.getElementById('eye-pills');
+  const legendBox = document.getElementById('eye-legend');
   const badgeEl = document.getElementById('eye-badge');
   const titleEl = document.getElementById('eye-title');
   const latinEl = document.getElementById('eye-latin');
@@ -1566,6 +1567,14 @@ function initEyeAnatomy() {
       });
     }
 
+    if (legendBox) {
+      legendBox.querySelectorAll('.eye-legend__btn').forEach(btn => {
+        const active = btn.getAttribute('data-part') === partId;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+
     if (window.EyeDiseases) window.EyeDiseases.showForPart(partId);
 
     if (partId) {
@@ -1585,6 +1594,7 @@ function initEyeAnatomy() {
     svgEl.innerHTML = '';
     hotspotsLayer.innerHTML = '';
     if (pillsBox) pillsBox.innerHTML = '';
+    if (legendBox) legendBox.innerHTML = '';
 
     EYE_HOTSPOTS.forEach((item, idx) => {
       const part = EYE_PARTS[item.id];
@@ -1631,6 +1641,16 @@ function initEyeAnatomy() {
         pin.setAttribute('data-part', item.id);
         pin.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
+        /* Keskeny kijelzőn a felirat helyett számozott pont áll a célponton
+           (CSS), a nevek pedig az ábra alatti listában vannak. */
+        if (item.target) {
+          pin.classList.add('eye-pin--target');
+          pin.style.setProperty('--tx', (item.target.x / 10) + '%');
+          pin.style.setProperty('--ty', (item.target.y / 10) + '%');
+        }
+        pin.setAttribute('data-n', String(idx + 1));
+        pin.setAttribute('aria-label', part.name);
+
         // Hover synchronization
         pin.addEventListener('mouseenter', () => {
           if (path) path.classList.add('is-active');
@@ -1658,6 +1678,24 @@ function initEyeAnatomy() {
 
         pin.addEventListener('click', () => selectPart(item.id, true));
         hotspotsLayer.appendChild(pin);
+      }
+
+      // 4a. Számozott lista az ábra alatt (csak keskeny kijelzőn látszik)
+      if (legendBox) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'eye-legend__btn' + (isSelected ? ' is-active' : '');
+        btn.setAttribute('data-part', item.id);
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+        const num = document.createElement('span');
+        num.className = 'eye-legend__num';
+        num.textContent = String(idx + 1);
+        btn.appendChild(num);
+        btn.appendChild(document.createTextNode(part.name));
+
+        btn.addEventListener('click', () => selectPart(item.id, true));
+        legendBox.appendChild(btn);
       }
 
       // 4. Quick filter Pill Button (ha létezik a konténer)

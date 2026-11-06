@@ -5314,6 +5314,133 @@ html.is-frame-idle *::after {
   box-shadow: 0 0 8px #ffffff;
 }
 
+/* ── Keskeny kijelző: számozott pontok + lista ───────────────────────────────
+   A feliratos gombostűk telefonon kilógtak az ábrából és egymásra csúsztak.
+   Ott a pont a célponton áll (a részletes nézetben a helyén) és csak a számát
+   mutatja; a nevek az ábra alatti listában vannak, ujjal kényelmesen bökhető
+   sorokban. A felső gombsor ilyenkor fölösleges: ugyanaz a lista, csak az ábrától
+   messze. A széles nézet változatlan, a lista ott rejtett. */
+.anatomy-legend {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .anatomy-pills {
+    display: none;
+  }
+
+  .anatomy-stage-header {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .anatomy-back-btn {
+    white-space: nowrap;
+  }
+
+  .anatomy-overlay {
+    display: none;
+  }
+
+  .anatomy-pin {
+    width: 26px;
+    height: 26px;
+    min-height: 0;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+    gap: 0;
+    border-color: rgba(255, 255, 255, 0.85);
+    animation: none;
+  }
+
+  .anatomy-pin::before {
+    content: attr(data-n);
+    width: auto;
+    height: auto;
+    background: none;
+    box-shadow: none;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff;
+  }
+
+  .anatomy-pin.is-active::before {
+    background: none;
+    box-shadow: none;
+  }
+
+  .anatomy-pin,
+  .anatomy-pin--left,
+  .anatomy-pin--right,
+  .anatomy-pin:hover,
+  .anatomy-pin.is-active {
+    transform: translate(-50%, -50%) !important;
+  }
+
+  .anatomy-pin.anatomy-pin--target {
+    left: var(--tx) !important;
+    top: var(--ty) !important;
+  }
+
+  .anatomy-pin:hover,
+  .anatomy-pin.is-active {
+    width: 32px;
+    height: 32px;
+  }
+
+  .anatomy-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    margin-top: 0.9rem;
+  }
+
+  .anatomy-legend__btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(201, 169, 110, 0.4);
+    border-radius: 12px;
+    color: #f3e9e2;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .anatomy-legend__num {
+    flex: 0 0 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .anatomy-legend__btn.is-active {
+    background: var(--color-accent);
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+
+  .anatomy-legend__btn.is-active .anatomy-legend__num {
+    background: #ffffff;
+    color: var(--color-accent-deep);
+  }
+}
+
 /* Leader Lines & Callout Dots */
 .leader-line {
   stroke: rgba(201, 169, 110, 0.5);

@@ -2001,6 +2001,7 @@
   var anatomySvg = $('#anatomy-svg');
   var anatomyHotspotsLayer = $('#anatomy-hotspots-layer');
   var anatomyPillsContainer = $('#anatomy-pills');
+  var anatomyLegend = $('#anatomy-legend');
   var anatomyBackBtn = $('#anatomy-back-btn');
   var anatomyStageTitle = $('#anatomy-stage-title');
   var acRegionBadge = $('#ac-region-badge');
@@ -2052,6 +2053,25 @@
     anatomyHotspotsLayer.innerHTML = '';
 
     if (anatomyPillsContainer) anatomyPillsContainer.innerHTML = '';
+    if (anatomyLegend) anatomyLegend.innerHTML = '';
+
+    /* Keskeny kijelzőn a feliratos gombostűk helyett számozott pont áll az
+       ábrán (CSS), a nevek pedig az ábra alatti listában vannak. */
+    function addLegendItem(number, label, active, onClick) {
+      if (!anatomyLegend) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'anatomy-legend__btn' + (active ? ' is-active' : '');
+
+      var num = document.createElement('span');
+      num.className = 'anatomy-legend__num';
+      num.textContent = String(number);
+      btn.appendChild(num);
+      btn.appendChild(document.createTextNode(label));
+
+      btn.addEventListener('click', onClick);
+      anatomyLegend.appendChild(btn);
+    }
 
     if (anatomyState.level === 1) {
       // LEVEL 1: Teljes test nézet
@@ -2110,6 +2130,13 @@
           pin.style.animationDelay = animDelay;
           pin.textContent = regionDef.name;
           pin.setAttribute('data-key', key);
+          pin.setAttribute('data-n', String(idx + 1));
+          pin.setAttribute('aria-label', regionDef.name);
+          if (regionDef.target) {
+            pin.classList.add('anatomy-pin--target');
+            pin.style.setProperty('--tx', (regionDef.target.x / 800 * 100) + '%');
+            pin.style.setProperty('--ty', (regionDef.target.y / 900 * 100) + '%');
+          }
 
           // Synchronized hover effects
           pin.addEventListener('mouseenter', function () {
@@ -2135,6 +2162,8 @@
           pin.addEventListener('click', function () { enterRegionGroup(targetGroupKey); });
           anatomyHotspotsLayer.appendChild(pin);
         }
+
+        addLegendItem(idx + 1, regionDef.name, false, function () { enterRegionGroup(targetGroupKey); });
 
         // Pill Button
         if (anatomyPillsContainer) {
@@ -2173,8 +2202,12 @@
         pin.style.top = pinPos.y + '%';
         pin.style.animationDelay = (idx * 65) + 'ms';
         pin.textContent = subItem.name;
+        pin.setAttribute('data-n', String(idx + 1));
+        pin.setAttribute('aria-label', subItem.name);
         pin.addEventListener('click', function () { selectSubSpot(subItem); });
         anatomyHotspotsLayer.appendChild(pin);
+
+        addLegendItem(idx + 1, subItem.name, isSelected, function () { selectSubSpot(subItem); });
 
         if (anatomyPillsContainer) {
           var pill = document.createElement('button');
